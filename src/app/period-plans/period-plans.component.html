@@ -42,16 +42,36 @@
           </span>
         </ng-template>
       </div>
-      <div class="list-group">
+      <div>
         <h5>Chauffører</h5>
-        <button
-          *ngFor="let driver of drivers$ | async"
-          type="button"
-          class="list-group-item list-group-item-action text-truncate pointer"
-          [class.active]="selectedDriver?.$key === driver?.$key"
-          (click)="selectedDriver = driver">
-          {{driver.displayName}}
-        </button>
+        <ng-container *ngIf="drivers$ | async as driverList">
+          <div class="list-group d-none d-xl-block">
+            <button
+              *ngFor="let driver of driverList"
+              type="button"
+              class="list-group-item list-group-item-action text-truncate pointer"
+              [class.active]="selectedDriver?.$key === driver?.$key"
+              (click)="selectedDriver = driver">
+              {{driver.displayName}}
+            </button>
+          </div>
+          <div class="d-xl-none" ngbDropdown>
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle w-100 text-truncate" ngbDropdownToggle>
+              {{ selectedDriver ? selectedDriver.displayName : 'Alle chauffører' }}
+            </button>
+            <div ngbDropdownMenu class="w-100">
+              <button
+                ngbDropdownItem
+                *ngFor="let driver of driverList"
+                type="button"
+                class="text-truncate pointer"
+                [class.active]="selectedDriver?.$key === driver?.$key"
+                (click)="selectedDriver = driver">
+                {{driver.displayName}}
+              </button>
+            </div>
+          </div>
+        </ng-container>
       </div>
     </aside>
   </div>
