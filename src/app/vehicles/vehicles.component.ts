@@ -6,6 +6,8 @@ import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {NgbUtility} from '../ngb-date-utility';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {VehicleEditorComponent} from '../vehicle-editor/vehicle-editor.component';
 
 @Component({
   standalone: false,
@@ -17,7 +19,7 @@ export class VehiclesComponent implements OnInit {
   vehicleForm: FormGroup;
   vehicles!: Observable<Vehicle[]>;
 
-  constructor(public dataStore: DataStore, private fb: FormBuilder, private ngbUtility: NgbUtility) {
+  constructor(public dataStore: DataStore, private fb: FormBuilder, private ngbUtility: NgbUtility, private modalService: NgbModal) {
     this.vehicleForm = this.fb.group({
       displayName: ['', Validators.required],
       brand: '',
@@ -38,6 +40,11 @@ export class VehiclesComponent implements OnInit {
 
   removeVehicle(vehicle: Vehicle) {
     this.dataStore.deleteVehicle(vehicle);
+  }
+
+  edit(vehicle: Vehicle) {
+    const modalRef = this.modalService.open(VehicleEditorComponent, {size: 'lg'});
+    modalRef.componentInstance.edit(vehicle, (v: Vehicle, u: any) => this.dataStore.updateVehicle(v, u));
   }
 
 }

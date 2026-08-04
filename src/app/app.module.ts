@@ -22,6 +22,8 @@ import {NgSelectModule} from '@ng-select/ng-select';
 import {PeriodPlansComponent} from './period-plans/period-plans.component';
 import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
 import {TripEditorComponent} from './trip-editor/trip-editor.component';
+import {DriverEditorComponent} from './driver-editor/driver-editor.component';
+import {VehicleEditorComponent} from './vehicle-editor/vehicle-editor.component';
 import {NgbUtility} from './ngb-date-utility';
 
 registerLocaleData(localeDa);
@@ -39,7 +41,9 @@ registerLocaleData(localeDa);
     VehiclesComponent,
     TripCreatorComponent,
     PeriodPlansComponent,
-    TripEditorComponent
+    TripEditorComponent,
+    DriverEditorComponent,
+    VehicleEditorComponent
   ],
   imports: [
     BrowserModule,

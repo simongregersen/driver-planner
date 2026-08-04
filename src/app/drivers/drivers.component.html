@@ -20,16 +20,22 @@
         <td>{{driver.name}}</td>
         <td>{{driver.birthday?.toDate()|date}}</td>
         <td class="d-print-none">
-          <a mwlConfirmationPopover
-             class="cursor float-end"
-             [popoverMessage]="'Er du sikker på, at du vil slette chaufføren<br>\'' + driver.displayName + '\'?'"
-             [confirmButtonType]="'danger'"
-             [confirmText]="'Slet'"
-             [cancelText]="'Annuller'"
-             placement="left"
-             (confirm)="removeDriver(driver)">
-            <i class="fa fa-trash" ngbTooltip="Slet"></i>
-          </a>
+          <div class="float-end icons">
+            <a class="pointer"
+               (click)="edit(driver)">
+              <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
+            </a>
+            <a mwlConfirmationPopover
+               class="pointer"
+               [popoverMessage]="'Er du sikker på, at du vil slette chaufføren<br>\'' + driver.displayName + '\'?'"
+               [confirmButtonType]="'danger'"
+               [confirmText]="'Slet'"
+               [cancelText]="'Annuller'"
+               placement="left"
+               (confirm)="removeDriver(driver)">
+              <i class="fa fa-trash" ngbTooltip="Slet"></i>
+            </a>
+          </div>
         </td>
       </tr>
       </tbody>

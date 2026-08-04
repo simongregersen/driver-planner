@@ -4,6 +4,8 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Driver} from '../driver';
 import {Observable} from 'rxjs';
 import {NgbUtility} from '../ngb-date-utility';
+import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {DriverEditorComponent} from '../driver-editor/driver-editor.component';
 
 @Component({
   standalone: false,
@@ -15,7 +17,7 @@ export class DriversComponent implements OnInit {
   driverForm: FormGroup;
   drivers!: Observable<Driver[]>;
 
-  constructor(public dataStore: DataStore, private fb: FormBuilder, private ngbUtility: NgbUtility) {
+  constructor(public dataStore: DataStore, private fb: FormBuilder, private ngbUtility: NgbUtility, private modalService: NgbModal) {
     this.driverForm = this.fb.group({
       displayName: ['', Validators.required],
       name: ['', Validators.required],
@@ -35,6 +37,11 @@ export class DriversComponent implements OnInit {
 
   removeDriver(driver: Driver) {
     this.dataStore.deleteDriver(driver);
+  }
+
+  edit(driver: Driver) {
+    const modalRef = this.modalService.open(DriverEditorComponent, {size: 'lg'});
+    modalRef.componentInstance.edit(driver, (d: Driver, u: any) => this.dataStore.updateDriver(d, u));
   }
 
 }

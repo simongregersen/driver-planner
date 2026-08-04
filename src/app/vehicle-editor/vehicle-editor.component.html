@@ -1,0 +1,56 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    Rediger
+  </h4>
+  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+</div>
+
+<form [formGroup]="vehicleForm" (ngSubmit)="onSubmit(); modal.close()">
+  <div class="modal-body">
+    <div class="form-group row"
+         [class.has-danger]="!vehicleForm.controls['displayName'].valid && vehicleForm.controls['displayName'].dirty">
+      <label for="displayName" class="col-2 col-form-label">Kaldenavn</label>
+      <div class="col-10">
+        <input class="form-control" type="text" id="displayName" formControlName="displayName">
+        <div class="form-control-feedback"
+             *ngIf="!vehicleForm.controls['displayName'].valid && vehicleForm.controls['displayName'].dirty">
+          Et kaldenavn er påkrævet.
+        </div>
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="brand" class="col-2 col-form-label">Mærke</label>
+      <div class="col-10">
+        <input class="form-control" type="text" id="brand" formControlName="brand">
+      </div>
+    </div>
+    <div class="form-group row">
+      <label for="regNo" class="col-2 col-form-label">Reg. nr.</label>
+      <div class="col-10">
+        <input class="form-control" type="text" id="regNo" formControlName="regNo">
+      </div>
+    </div>
+    <div class="row mt-3 form-group">
+      <label for="latestInspection" class="col-2 col-form-label">Sidst synet</label>
+      <div class="col-5 col-md-3">
+        <div class="input-group">
+          <input ngbDatepicker
+                 #d="ngbDatepicker"
+                 id="latestInspection"
+                 class="form-control"
+                 placeholder="yyyy-mm-dd"
+                 [showWeekNumbers]="true"
+                 [minDate]="{year: 1900, month: 1, day: 1}"
+                 (click)="d.toggle()"
+                 formControlName="latestInspection">
+          <div class="input-group-text" (click)="d.toggle()">
+            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary float-end" [disabled]="!vehicleForm.valid">Gem</button>
+  </div>
+</form>

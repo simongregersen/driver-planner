@@ -78,6 +78,11 @@ export class DataStore {
     return update(child(this.driversRef, driver.$key), {deleted: true});
   }
 
+  updateDriver(driver: Driver, updates: any) {
+    if (updates.birthday) updates.birthday = updates.birthday.valueOf();
+    return update(child(this.driversRef, driver.$key), updates);
+  }
+
   getDriver(key: string): Observable<Driver> {
     return objectVal<Driver>(child(this.driversRef, key), {keyField: '$key'});
   }
@@ -104,6 +109,11 @@ export class DataStore {
 
   deleteVehicle(vehicle: Vehicle) {
     return update(child(this.vehiclesRef, vehicle.$key), {deleted: true});
+  }
+
+  updateVehicle(vehicle: Vehicle, updates: any) {
+    if (updates.latestInspection) updates.latestInspection = updates.latestInspection.valueOf();
+    return update(child(this.vehiclesRef, vehicle.$key), updates);
   }
 
   getVehicle(key: string): Observable<Vehicle> {
