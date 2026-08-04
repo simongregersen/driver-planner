@@ -1,28 +1,28 @@
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {IMultiSelectOption} from 'angular-2-dropdown-multiselect';
+import {SelectOption} from '../select-option';
 import {DataStore} from '../data.service';
 import {Utility} from '../utility';
-import {Trip} from 'app/trip';
-import {Subscription} from 'rxjs/Subscription';
+import {Trip} from '../trip';
+import {Observable} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {NgbUtility} from '../ngb-date-utility';
 import {NgbActiveModal, NgbCalendar} from '@ng-bootstrap/ng-bootstrap';
-import * as moment from 'moment';
+import moment from 'moment';
 
 @Component({
+  standalone: false,
   selector: 'app-trip-editor',
   templateUrl: './trip-editor.component.html',
   styleUrls: ['./trip-editor.component.css']
 })
-export class TripEditorComponent implements OnInit, OnDestroy {
+export class TripEditorComponent implements OnInit {
   @Input() showDate = true;
-  save: (trip: Trip, updates: any) => void;
-  trip: Trip;
-  availableDrivers: IMultiSelectOption[];
-  availableVehicles: IMultiSelectOption[];
+  save!: (trip: Trip, updates: any) => void;
+  trip!: Trip;
+  availableDrivers$!: Observable<SelectOption[]>;
+  availableVehicles$!: Observable<SelectOption[]>;
   tripForm: FormGroup;
-  private driversSubscription: Subscription;
-  private vehiclesSubscription: Subscription;
 
   constructor(private dataStore: DataStore, private fb: FormBuilder, private ngbUtility: NgbUtility
     , private calendar: NgbCalendar, public modal: NgbActiveModal) {
@@ -39,12 +39,10 @@ export class TripEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.driversSubscription = this.dataStore.getAllDrivers()
-      .map(Utility.filterDeleted)
-      .subscribe(ds => this.availableDrivers = ds.map(d => ({id: d.$key, name: d.displayName})));
-    this.vehiclesSubscription = this.dataStore.getAllVehicles()
-      .map(Utility.filterDeleted)
-      .subscribe(vs => this.availableVehicles = vs.map(v => ({id: v.$key, name: v.displayName})));
+    this.availableDrivers$ = this.dataStore.getAllDrivers()
+      .pipe(map(Utility.filterDeleted), map(ds => ds.map(d => ({id: d.$key, name: d.displayName}))));
+    this.availableVehicles$ = this.dataStore.getAllVehicles()
+      .pipe(map(Utility.filterDeleted), map(vs => vs.map(v => ({id: v.$key, name: v.displayName}))));
   }
 
   update() {
@@ -64,14 +62,9 @@ export class TripEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    if (this.driversSubscription) this.driversSubscription.unsubscribe();
-    if (this.vehiclesSubscription) this.vehiclesSubscription.unsubscribe();
-  }
-
   onSubmit() {
     const val = this.tripForm.value;
-    const start = this.ngbUtility.toMoment(val.fromDate || {year: 1970, month: 1, day: 1}, val.fromTime);
+    const start = this.ngbUtility.toMoment(val.fromDate || {year: 1970, month: 1, day: 1}, val.fromTime)!;
     const end = (val.toDate || val.toTime) ? this.ngbUtility.toMoment(val.toDate || this.ngbUtility.getDate(start), val.toTime) : null;
 
     this.save(this.trip, {

@@ -1,23 +1,23 @@
-<div class="row mt-4 mb-2 hidden-print">
+<div class="row mt-4 mb-2 d-print-none">
   <div class="col-12">
-    <h2 class="font-weight-bold">
+    <h2 class="fw-bold">
       Dagsplan
-      <small>{{ ngbUtility.toMoment(selectedDate) | date:'EEEE, d MMMM y' }}</small>
+      <small>{{ ngbUtility.toMoment(selectedDate)?.toDate() | date:'EEEE, d MMMM y' }}</small>
     </h2>
   </div>
 </div>
-<div class="visible-print-block">
-  <h5 class="font-weight-bold">
+<div class="d-print-block">
+  <h5 class="fw-bold">
     Dagsplan
-    <small>{{ ngbUtility.toMoment(selectedDate) | date:'EEEE, d MMMM y' }}</small>
+    <small>{{ ngbUtility.toMoment(selectedDate)?.toDate() | date:'EEEE, d MMMM y' }}</small>
   </h5>
   <h6 *ngIf="selectedDriver">
     Chauffør: {{ selectedDriver.displayName }}
   </h6>
 </div>
 <div class="row">
-  <div class="col-12 col-xl-2 push-xl-10 hidden-print">
-    <aside class="float-right">
+  <div class="col-12 col-xl-2 order-xl-2 d-print-none">
+    <aside class="float-end">
       <h5>Dato</h5>
       <div class="form-group">
         <ngb-datepicker [(ngModel)]="selectedDate"
@@ -37,23 +37,25 @@
       </div>
     </aside>
   </div>
-  <div class="col-12 col-xl-10 pull-xl-2" style="margin-top: 30px">
-    <main>
-      <app-trips [trips]="filteredTrips"
+  <div class="col-12 col-xl-10" style="margin-top: 30px">
+    <main *ngIf="trips$ | async as trips">
+      <app-trips [trips]="filterTripsByDriver(trips)"
                  (edit)="edit($event)"
                  (remove)="removeTrip($event)">
       </app-trips>
-      <div class="row mt-4 mb-3 hidden-print">
-        <div class="col-12 btn-group" data-toggle="buttons">
-          <button type="button" class="btn btn-primary mr-3" (click)="create()">Opret tur</button>
-          <ss-multiselect-dropdown [(ngModel)]="selectedTemplate"
-                                   [options]="availableTemplates"
-                                   [settings]="{dynamicTitleMaxItems: 10, enableSearch: true, selectionLimit: 1, buttonClasses: 'btn btn-default btn-block'}"
-                                   [texts]="{defaultTitle: 'Vælg skabelon', searchPlaceholder: 'Søg'}">
-          </ss-multiselect-dropdown>
+      <div class="row mt-4 mb-3 d-print-none">
+        <div class="col-12 d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-primary" (click)="create()">Opret tur</button>
+          <ng-select class="flex-grow-1" style="max-width: 260px"
+                     [items]="(availableTemplates$ | async) ?? []"
+                     bindLabel="name"
+                     bindValue="id"
+                     placeholder="Vælg skabelon"
+                     [(ngModel)]="selectedTemplate">
+          </ng-select>
           <button mwlConfirmationPopover
                   class="btn btn-primary"
-                  [message]="'Er du sikker på, at du vil indsætte denne skabelon?'"
+                  [popoverMessage]="'Er du sikker på, at du vil indsætte denne skabelon?'"
                   [confirmButtonType]="'success'"
                   [confirmText]="'Indsæt'"
                   [cancelText]="'Annuller'"

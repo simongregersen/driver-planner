@@ -1,6 +1,6 @@
 <div class="row mt-4 mb-2">
   <div class="col-12">
-    <h2 class="font-weight-bold">Chauffører</h2>
+    <h2 class="fw-bold">Chauffører</h2>
   </div>
 </div>
 <div class="row mt-5">
@@ -11,18 +11,18 @@
         <th class="w-25">Kaldenavn</th>
         <th>Fulde navn</th>
         <th class="w-25">Fødselsdag</th>
-        <th class="w-5 hidden-print"></th>
+        <th class="w-5 d-print-none"></th>
       </tr>
       </thead>
       <tbody>
       <tr *ngFor="let driver of drivers | async">
         <th>{{driver.displayName}}</th>
         <td>{{driver.name}}</td>
-        <td>{{driver.birthday|date}}</td>
-        <td class="hidden-print">
+        <td>{{driver.birthday?.toDate()|date}}</td>
+        <td class="d-print-none">
           <a mwlConfirmationPopover
-             class="cursor pull-right"
-             [message]="'Er du sikker på, at du vil slette chaufføren<br>\'' + driver.displayName + '\'?'"
+             class="cursor float-end"
+             [popoverMessage]="'Er du sikker på, at du vil slette chaufføren<br>\'' + driver.displayName + '\'?'"
              [confirmButtonType]="'danger'"
              [confirmText]="'Slet'"
              [cancelText]="'Annuller'"
@@ -36,9 +36,9 @@
     </table>
   </div>
 </div>
-<div class="hidden-print">
+<div class="d-print-none">
   <h4 class="mt-5 mb-3">Opret chauffør</h4>
-  <form [formGroup]="driverForm" (ngSubmit)="create(); nickname.focus()" class="hidden-print">
+  <form [formGroup]="driverForm" (ngSubmit)="create(); nickname.focus()" class="d-print-none">
     <div class="form-group row"
          [class.has-danger]="driverForm.controls['displayName'] && !driverForm.controls['displayName'].valid && driverForm.controls['displayName'].dirty">
       <label for="nickname" class="col-2 col-form-label">Kaldenavn</label>
@@ -74,12 +74,12 @@
                  [minDate]="{year: 1900, month: 1, day: 1}"
                  (click)="d.toggle()"
                  formControlName="birthday">
-          <div class="input-group-addon" (click)="d.toggle()">
+          <div class="input-group-text" (click)="d.toggle()">
             <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
           </div>
         </div>
       </div>
     </div>
-    <button type="submit" class="btn btn-primary pull-right" [disabled]="!driverForm.valid">Opret</button>
+    <button type="submit" class="btn btn-primary float-end" [disabled]="!driverForm.valid">Opret</button>
   </form>
 </div>

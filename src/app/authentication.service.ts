@@ -1,19 +1,23 @@
 import {Injectable} from '@angular/core';
-import {AngularFireAuth} from 'angularfire2/auth';
+import {signInWithEmailAndPassword, signOut, User} from 'firebase/auth';
+import {authState} from 'rxfire/auth';
 import {Router} from '@angular/router';
+import {Observable} from 'rxjs';
+import {auth} from './firebase';
 
 @Injectable()
 export class AuthenticationService {
+  authState: Observable<User | null> = authState(auth);
 
-  constructor(public af: AngularFireAuth, private router: Router) {
+  constructor(private router: Router) {
   }
 
   login(email: string, password: string) {
-    return this.af.auth.signInWithEmailAndPassword(email, password);
+    return signInWithEmailAndPassword(auth, email, password);
   }
 
   logout() {
-    this.af.auth.signOut()
+    signOut(auth)
       .then(() => this.router.navigate(['/login']))
       .catch(err => console.log(err));
   }

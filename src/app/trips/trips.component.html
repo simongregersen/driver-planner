@@ -1,4 +1,6 @@
-<ng-template #empty><em class="hidden-print">Ingen ture.</em></ng-template>
+<ng-template #empty><em class="d-print-none">Ingen ture.</em></ng-template>
+<ng-container *ngIf="drivers$ | async as drivers">
+<ng-container *ngIf="vehicles$ | async as vehicles">
 <table class="table table-hover table-sm" *ngIf="trips && trips.length > 0; else empty">
   <thead>
   <tr>
@@ -7,44 +9,44 @@
     <th>Tur</th>
     <th class="w-15">Chauffører</th>
     <th class="w-15">Køretøjer</th>
-    <th class="w-5 hidden-print"></th>
+    <th class="w-5 d-print-none"></th>
   </tr>
   </thead>
   <tbody>
   <tr *ngFor="let trip of trips; trackBy: trackByFn">
     <th>
-      <span ngbTooltip="{{trip.start | date: 'short'}}" container="'body'">
-      {{trip.start | date: 'HH:mm' }}
+      <span ngbTooltip="{{trip.start.toDate() | date: 'short'}}" container="'body'">
+      {{trip.start.toDate() | date: 'HH:mm' }}
       </span>
     </th>
     <td class="text-muted">
-      <span ngbTooltip="{{trip.end | date: 'short'}}" container="'body'">
-        {{trip.end | date:'HH:mm' }}
+      <span ngbTooltip="{{trip.end?.toDate() | date: 'short'}}" container="'body'">
+        {{trip.end?.toDate() | date:'HH:mm' }}
       </span>
     </td>
     <td>
       {{trip.name}}
-      <small class="text-muted visible-print-inline newline"><br>{{trip.description}}</small>
+      <small class="text-muted d-print-inline newline"><br>{{trip.description}}</small>
     </td>
     <td [class.table-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
       <span *ngFor="let key of trip.drivers; let isLast=last">
-      {{ getDriver(key)?.displayName }}{{isLast ? '' : ', '}}
+      {{ getDriver(drivers, key)?.displayName }}{{isLast ? '' : ', '}}
       </span>
     </td>
     <td [class.table-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
       <span *ngFor="let key of trip.vehicles; let isLast=last">
-      {{ getVehicle(key)?.displayName }}{{isLast ? '' : ', '}}
+      {{ getVehicle(vehicles, key)?.displayName }}{{isLast ? '' : ', '}}
       </span>
     </td>
-    <td class="hidden-print">
-      <div class="pull-right icons">
+    <td class="d-print-none">
+      <div class="float-end icons">
         <a class="pointer"
            (click)="edit.emit(trip)">
           <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
         </a>
         <a mwlConfirmationPopover
            class="pointer"
-           [message]="'Er du sikker på, at du vil slette turen<br>\'' + trip.name + '\'?'"
+           [popoverMessage]="'Er du sikker på, at du vil slette turen<br>\'' + trip.name + '\'?'"
            [confirmButtonType]="'danger'"
            [confirmText]="'Slet'"
            [cancelText]="'Annuller'"
@@ -57,3 +59,5 @@
   </tr>
   </tbody>
 </table>
+</ng-container>
+</ng-container>

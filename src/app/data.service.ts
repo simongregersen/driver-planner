@@ -1,55 +1,45 @@
-import {Injectable, OnInit} from '@angular/core';
-import {AngularFireDatabase, FirebaseListObservable} from 'angularfire2/database';
-import {Trip} from './trip';
+import {Injectable} from '@angular/core';
+import {child, endAt, orderByChild, push, query, ref, remove, startAt, update} from 'firebase/database';
+import {listVal, objectVal} from 'rxfire/database';
+import {NewTrip, Trip} from './trip';
 import {Driver} from './driver';
-import {Observable} from 'rxjs/Observable';
+import {Observable} from 'rxjs';
+import {first, map, tap} from 'rxjs/operators';
 import {Vehicle} from './vehicle';
 import {NgbUtility} from './ngb-date-utility';
 import {NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
 import {Utility} from './utility';
-import {Template} from 'app/template';
-
-import 'rxjs/add/operator/first';
-import 'rxjs/add/operator/do';
+import {Template} from './template';
+import {db} from './firebase';
 import {Moment} from 'moment';
-import * as moment from 'moment';
+import moment from 'moment';
 
 @Injectable()
-export class DataStore implements OnInit {
-  private drivers$: FirebaseListObservable<Driver[]>;
-  private vehicles$: FirebaseListObservable<Vehicle[]>;
-  private trips$: FirebaseListObservable<Trip[]>;
-  private templates$: FirebaseListObservable<Template[]>;
+export class DataStore {
+  private driversRef = ref(db, '/drivers');
+  private vehiclesRef = ref(db, '/vehicles');
+  private tripsRef = ref(db, '/trips');
+  private templatesRef = ref(db, '/templates');
 
-  constructor(private db: AngularFireDatabase, private ngbUtility: NgbUtility) {
-    this.drivers$ = this.db.list('/drivers');
-    this.vehicles$ = this.db.list('/vehicles');
-    this.trips$ = this.db.list('/trips');
-    this.templates$ = this.db.list('/templates');
-  }
-
-  ngOnInit(): void {
+  constructor(private ngbUtility: NgbUtility) {
   }
 
   getTrips(from: NgbDateStruct, to?: NgbDateStruct): Observable<Trip[]> {
-    const fromDate = this.ngbUtility.toMoment(from);
-    const toDate = (to) ? this.ngbUtility.toMoment(to) : moment(fromDate);
+    const fromDate = this.ngbUtility.toMoment(from)!;
+    const toDate = (to) ? this.ngbUtility.toMoment(to)! : moment(fromDate);
     toDate.add(1, 'days');
 
-    return this.db.list('/trips', {
-      query: {
-        startAt: {value: fromDate.valueOf()},
-        endAt: {value: toDate.valueOf() - 1},
-        orderByChild: 'start'
-      }
-    }).do(ts => ts.forEach(t => {
-      t.start = moment(t.start);
-      t.end = (t.end) ? moment(t.end) : null;
-    }));
+    const q = query(this.tripsRef, orderByChild('start'), startAt(fromDate.valueOf()), endAt(toDate.valueOf() - 1));
+    return listVal<Trip>(q, {keyField: '$key'}).pipe(
+      tap(ts => ts.forEach(t => {
+        t.start = moment(t.start as any);
+        t.end = (t.end) ? moment(t.end as any) : null;
+      }))
+    );
   }
 
-  addTrip(trip: { start: Moment, end: Moment, name: string, description: string, drivers: Driver[], vehicles: Vehicle[] }) {
-    return this.trips$.push({
+  addTrip(trip: NewTrip) {
+    return push(this.tripsRef, {
       start: trip.start.valueOf(),
       end: (trip.end) ? trip.end.valueOf() : null,
       name: trip.name,
@@ -62,45 +52,46 @@ export class DataStore implements OnInit {
   updateTrip(trip: Trip, updates: any) {
     if (updates.start) updates.start = updates.start.valueOf();
     if (updates.end) updates.end = updates.end.valueOf();
-    return this.trips$.update(trip.$key, updates);
+    return update(child(this.tripsRef, trip.$key), updates);
   }
 
   removeTrip(trip: Trip) {
-    return this.trips$.remove(trip);
+    return remove(child(this.tripsRef, trip.$key));
   }
 
   getAllDrivers(): Observable<Driver[]> {
-    return this.drivers$
-      .map(Utility.filterDeleted)
-      .map(Utility.sortByDisplayName)
-      .do(ds => ds.forEach(d => {
-        if (d.birthday) d.birthday = moment(d.birthday);
-      }));
+    return listVal<Driver>(this.driversRef, {keyField: '$key'}).pipe(
+      map(Utility.filterDeleted),
+      map(Utility.sortByDisplayName),
+      tap(ds => ds.forEach(d => {
+        if (d.birthday) d.birthday = moment(d.birthday as any);
+      }))
+    );
   }
 
-  addDriver(displayName: string, name: string, birthday: Moment) {
+  addDriver(displayName: string, name: string, birthday: Moment | null) {
     const driver = {displayName, name, birthday: (birthday) ? birthday.valueOf() : null, deleted: false};
-    return this.drivers$.push(driver)
+    return push(this.driversRef, driver);
   }
-
 
   deleteDriver(driver: Driver) {
-    return this.drivers$.update(driver.$key, {deleted: true});
+    return update(child(this.driversRef, driver.$key), {deleted: true});
   }
 
   getDriver(key: string): Observable<Driver> {
-    return this.db.object(`/drivers/${key}`);
+    return objectVal<Driver>(child(this.driversRef, key), {keyField: '$key'});
   }
 
   getAllVehicles(): Observable<Vehicle[]> {
-    return this.vehicles$
-      .map(Utility.sortByDisplayName)
-      .do(ds => ds.forEach(d => {
-        if (d.latestInspection) d.latestInspection = new Date(d.latestInspection);
-      }));
+    return listVal<Vehicle>(this.vehiclesRef, {keyField: '$key'}).pipe(
+      map(Utility.sortByDisplayName),
+      tap(ds => ds.forEach(d => {
+        if (d.latestInspection) d.latestInspection = new Date(d.latestInspection as any) as any;
+      }))
+    );
   }
 
-  addVehicle(displayName: string, brand: string, regNo: string, latestInspection: Moment) {
+  addVehicle(displayName: string, brand: string, regNo: string, latestInspection: Moment | null) {
     const vehicle = {
       displayName,
       brand,
@@ -108,33 +99,33 @@ export class DataStore implements OnInit {
       latestInspection: (latestInspection) ? latestInspection.valueOf() : null,
       deleted: false
     };
-    this.vehicles$.push(vehicle);
+    push(this.vehiclesRef, vehicle);
   }
 
   deleteVehicle(vehicle: Vehicle) {
-    return this.vehicles$.update(vehicle.$key, {deleted: true});
+    return update(child(this.vehiclesRef, vehicle.$key), {deleted: true});
   }
 
   getVehicle(key: string): Observable<Vehicle> {
-    return this.db.object(`/vehicles/${key}`);
+    return objectVal<Vehicle>(child(this.vehiclesRef, key), {keyField: '$key'});
   }
 
   getAllTemplates(): Observable<Template[]> {
-    return this.templates$;
+    return listVal<Template>(this.templatesRef, {keyField: '$key'});
   }
 
   addTemplate(name: string) {
-    return this.templates$.push({name: name});
+    return push(this.templatesRef, {name: name});
   }
 
   removeTemplate(template: Template) {
-    const tripsInTemplate = this.db.list(`/tripsInTemplate/${template.$key}`).remove();
-    this.templates$.remove(template);
+    remove(ref(db, `/tripsInTemplate/${template.$key}`));
+    remove(child(this.templatesRef, template.$key));
   }
 
-  addTripToTemplate(template: Template, trip: Trip) {
-    const tripsInTemplate = this.db.list(`/tripsInTemplate/${template.$key}`);
-    return tripsInTemplate.push({
+  addTripToTemplate(template: Template, trip: NewTrip) {
+    const tripsInTemplateRef = ref(db, `/tripsInTemplate/${template.$key}`);
+    return push(tripsInTemplateRef, {
       start: trip.start.valueOf(),
       end: (trip.end) ? trip.end.valueOf() : null,
       name: trip.name,
@@ -147,23 +138,24 @@ export class DataStore implements OnInit {
   updateTripFromTemplate(template: Template, trip: Trip, updates: any) {
     if (updates.start) updates.start = updates.start.valueOf();
     if (updates.end) updates.end = updates.end.valueOf();
-    const tripsInTemplate = this.db.list(`/tripsInTemplate/${template.$key}`);
-    return tripsInTemplate.update(trip.$key, updates);
+    const tripsInTemplateRef = ref(db, `/tripsInTemplate/${template.$key}`);
+    return update(child(tripsInTemplateRef, trip.$key), updates);
   }
 
   removeTripFromTemplate(template: Template, trip: Trip) {
-    return this.db.object(`/tripsInTemplate/${template.$key}/${trip.$key}`).remove();
+    return remove(ref(db, `/tripsInTemplate/${template.$key}/${trip.$key}`));
   }
 
   insertTemplate(date: Moment, templateKey: string) {
-    this.db.list(`/tripsInTemplate/${templateKey}`).first().subscribe(trips => {
+    const tripsInTemplateRef = ref(db, `/tripsInTemplate/${templateKey}`);
+    listVal<Trip>(tripsInTemplateRef, {keyField: '$key'}).pipe(first()).subscribe(trips => {
       trips.forEach(t => {
         if (t.start) {
-          t.start = moment(t.start);
+          t.start = moment(t.start as any);
           Utility.copyDate(date, t.start);
         }
         if (t.end) {
-          t.end = moment(t.end);
+          t.end = moment(t.end as any);
           Utility.copyDate(date, t.end);
         }
         this.addTrip(t);
@@ -173,13 +165,12 @@ export class DataStore implements OnInit {
   }
 
   getTemplateTrips(template: Template): Observable<Trip[]> {
-    return this.db.list(`/tripsInTemplate/${template.$key}`, {
-      query: {
-        orderByChild: 'start'
-      }
-    }).do(ts => ts.forEach(t => {
-        t.start = moment(t.start);
-        t.end = (t.end) ? moment(t.end) : null;
-      }));
+    const q = query(ref(db, `/tripsInTemplate/${template.$key}`), orderByChild('start'));
+    return listVal<Trip>(q, {keyField: '$key'}).pipe(
+      tap(ts => ts.forEach(t => {
+        t.start = moment(t.start as any);
+        t.end = (t.end) ? moment(t.end as any) : null;
+      }))
+    );
   }
 }

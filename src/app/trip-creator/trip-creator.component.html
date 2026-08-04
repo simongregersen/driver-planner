@@ -2,9 +2,7 @@
   <h4 class="modal-title">
     Opret
   </h4>
-  <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
-    <span>&times;</span>
-  </button>
+  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
 </div>
 <form [formGroup]="tripForm" (ngSubmit)="onSubmit(); modal.close()">
   <div class="modal-body">
@@ -31,7 +29,7 @@
                  placeholder="yyyy-MM-dd"
                  [showWeekNumbers]="true"
                  (click)="d2.close(); d1.toggle()">
-          <div class="input-group-addon" (click)="d2.close(); d1.toggle()">
+          <div class="input-group-text" (click)="d2.close(); d1.toggle()">
             <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
           </div>
         </div>
@@ -56,7 +54,7 @@
                  placeholder="yyyy-MM-dd"
                  [showWeekNumbers]="true"
                  (click)="d1.close(); d2.toggle()">
-          <div class="input-group-addon" (click)="d1.close(); d2.toggle()">
+          <div class="input-group-text" (click)="d1.close(); d2.toggle()">
             <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
           </div>
         </div>
@@ -68,21 +66,25 @@
     <div class="form-group row">
       <label class="col-2 col-form-label">Chauffører</label>
       <div class="col-10">
-        <ss-multiselect-dropdown formControlName="drivers"
-                                 [options]="availableDrivers"
-                                 [settings]="{dynamicTitleMaxItems: 10, enableSearch: true}"
-                                 [texts]="{defaultTitle: 'Vælg chauffører', searchPlaceholder: 'Søg'}">
-        </ss-multiselect-dropdown>
+        <ng-select formControlName="drivers"
+                   [items]="(availableDrivers$ | async) ?? []"
+                   bindLabel="name"
+                   bindValue="id"
+                   [multiple]="true"
+                   placeholder="Vælg chauffører">
+        </ng-select>
       </div>
     </div>
     <div class="form-group row">
       <label class="col-2 col-form-label">Køretøjer</label>
       <div class="col-10">
-        <ss-multiselect-dropdown formControlName="vehicles"
-                                 [options]="availableVehicles"
-                                 [settings]="{dynamicTitleMaxItems: 10, enableSearch: true}"
-                                 [texts]="{defaultTitle: 'Vælg køretøjer', searchPlaceholder: 'Søg'}">
-        </ss-multiselect-dropdown>
+        <ng-select formControlName="vehicles"
+                   [items]="(availableVehicles$ | async) ?? []"
+                   bindLabel="name"
+                   bindValue="id"
+                   [multiple]="true"
+                   placeholder="Vælg køretøjer">
+        </ng-select>
       </div>
     </div>
     <div class="form-group row">
@@ -93,6 +95,6 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button type="submit" class="btn btn-primary pull-right" [disabled]="!tripForm.valid">Opret</button>
+    <button type="submit" class="btn btn-primary float-end" [disabled]="!tripForm.valid">Opret</button>
   </div>
 </form>

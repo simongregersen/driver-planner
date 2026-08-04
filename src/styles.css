@@ -59,6 +59,23 @@ body {
   color: #464A4C;
 }
 
+/* Bootstrap 4-alpha compatibility shims (Bootstrap 5 dropped .form-group and the has-danger pattern) */
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-control-feedback {
+  display: block;
+  color: #dc3545;
+  font-size: 80%;
+  margin-top: 0.25rem;
+}
+
+.has-danger .form-control {
+  border-color: #dc3545;
+}
+
 /* Print */
 
 @media print {

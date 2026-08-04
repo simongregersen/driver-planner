@@ -1,25 +1,25 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {DataStore} from '../data.service';
 import {Template} from '../template';
-import {Subscription} from 'rxjs/Subscription';
-import {Trip} from '../trip';
+import {Observable} from 'rxjs';
+import {take} from 'rxjs/operators';
+import {NewTrip, Trip} from '../trip';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
 
 @Component({
+  standalone: false,
   selector: 'app-templates',
   templateUrl: './templates.component.html',
   styleUrls: ['./templates.component.css']
 })
-export class TemplatesComponent implements OnInit, OnDestroy {
+export class TemplatesComponent implements OnInit {
   templateForm: FormGroup;
-  templates: Template[];
-  trips: Trip[];
-  private _selectedTemplate: Template;
-  private templateSubscription: Subscription;
-  private tripsSubscription: Subscription;
+  templates$!: Observable<Template[]>;
+  trips$!: Observable<Trip[]>;
+  private _selectedTemplate!: Template;
 
   constructor(private fb: FormBuilder, private dataStore: DataStore, private modalService: NgbModal) {
     this.templateForm = this.fb.group({
@@ -28,15 +28,11 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.templateSubscription = this.dataStore.getAllTemplates().subscribe(ts => {
-      this.templates = ts || [];
-      if (this.templates.length) this.selectedTemplate = this.templates[0];
+    this.templates$ = this.dataStore.getAllTemplates();
+    // Auto-select the first template once, when the list first arrives.
+    this.templates$.pipe(take(1)).subscribe(ts => {
+      if (ts.length) this.selectedTemplate = ts[0];
     });
-  }
-
-  ngOnDestroy(): void {
-    if (this.templateSubscription) this.templateSubscription.unsubscribe();
-    if (this.tripsSubscription) this.tripsSubscription.unsubscribe();
   }
 
   createTemplate() {
@@ -54,7 +50,7 @@ export class TemplatesComponent implements OnInit, OnDestroy {
     if (!this.selectedTemplate) return;
     const modalRef = this.modalService.open(TripCreatorComponent, {size: 'lg'});
     modalRef.componentInstance.showDate = false;
-    modalRef.componentInstance.create.subscribe(t => this.dataStore.addTripToTemplate(this.selectedTemplate, t));
+    modalRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTripToTemplate(this.selectedTemplate, t));
   }
 
   removeTrip(trip: Trip) {
@@ -64,14 +60,13 @@ export class TemplatesComponent implements OnInit, OnDestroy {
   edit(trip: Trip) {
     const modalRef = this.modalService.open(TripEditorComponent, {size: 'lg'});
     modalRef.componentInstance.showDate = false;
-    modalRef.componentInstance.edit(trip, (t, u) => this.dataStore.updateTripFromTemplate(this.selectedTemplate, t, u));
+    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTripFromTemplate(this.selectedTemplate, t, u));
   }
 
 
   set selectedTemplate(template: Template) {
     this._selectedTemplate = template;
-    if (this.tripsSubscription) this.tripsSubscription.unsubscribe();
-    this.tripsSubscription = this.dataStore.getTemplateTrips(template).subscribe(ts => this.trips = ts);
+    this.trips$ = this.dataStore.getTemplateTrips(template);
   }
 
   get selectedTemplate(): Template {

@@ -1,12 +1,12 @@
-<nav class="navbar navbar-toggleable-md navbar-inverse fixed-top bg-inverse hidden-print" *ngIf="loggedIn">
-    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
-            data-target="#topbar" aria-controls="topbar" aria-expanded="false"
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark d-print-none" *ngIf="loggedIn$ | async">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#topbar" aria-controls="topbar" aria-expanded="false"
             aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <a class="navbar-brand" href="#"><i class="fa fa-bus"></i></a>
     <div class="collapse navbar-collapse" id="topbar">
-      <ul class="navbar-nav mr-auto">
+      <ul class="navbar-nav me-auto">
         <!--<li class="nav-item"><a class="nav-link" routerLink="/overview" routerLinkActive="active">Oversigt</a></li>-->
         <li class="nav-item"><a class="nav-link" routerLink="/day-plans" routerLinkActive="active">Dagsplaner</a></li>
         <li class="nav-item"><a class="nav-link" routerLink="/period-plans" routerLinkActive="active">Periodeplaner</a></li>

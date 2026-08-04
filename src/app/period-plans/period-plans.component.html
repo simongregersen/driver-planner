@@ -1,18 +1,18 @@
-<div class="row mt-4 mb-2 hidden-print">
+<div class="row mt-4 mb-2 d-print-none">
   <div class="col-12">
-    <h2 class="font-weight-bold">
+    <h2 class="fw-bold">
       Periodeplan
       <small>
-        {{ ngbUtility.toMoment(from) | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to) | date:'EEEE, d MMMM' }}
+        {{ ngbUtility.toMoment(from)?.toDate() | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to)?.toDate() | date:'EEEE, d MMMM' }}
       </small>
     </h2>
   </div>
 </div>
-<div class="visible-print-block">
-  <h5 class="font-weight-bold">
+<div class="d-print-block">
+  <h5 class="fw-bold">
     Periodeplan
     <small>
-      {{ ngbUtility.toMoment(from) | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to) | date:'EEEE, d MMMM' }}
+      {{ ngbUtility.toMoment(from)?.toDate() | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to)?.toDate() | date:'EEEE, d MMMM' }}
     </small>
   </h5>
   <h6 *ngIf="selectedDriver">
@@ -20,8 +20,8 @@
   </h6>
 </div>
 <div class="row">
-  <div class="col-12 col-xl-2 push-xl-10 hidden-print">
-    <aside class="float-right">
+  <div class="col-12 col-xl-2 order-xl-2 d-print-none">
+    <aside class="float-end">
       <h5>Periode</h5>
       <div class="form-group">
         <ngb-datepicker #dp
@@ -45,7 +45,7 @@
       <div class="list-group">
         <h5>Chauffører</h5>
         <button
-          *ngFor="let driver of drivers"
+          *ngFor="let driver of drivers$ | async"
           type="button"
           class="list-group-item list-group-item-action text-truncate pointer"
           [class.active]="selectedDriver?.$key === driver?.$key"
@@ -55,11 +55,11 @@
       </div>
     </aside>
   </div>
-  <div class="col-12 col-xl-10 pull-xl-2">
-    <main>
+  <div class="col-12 col-xl-10">
+    <main *ngIf="trips$ | async as trips">
       <div *ngFor="let date of range">
-        <h5 class="mt-4 mb-4">{{ ngbUtility?.toMoment(date) | date:'EEEE, d MMMM y'}}</h5>
-        <app-trips [trips]="filterByDate(filteredTrips, date)"
+        <h5 class="mt-4 mb-4">{{ ngbUtility?.toMoment(date)?.toDate() | date:'EEEE, d MMMM y'}}</h5>
+        <app-trips [trips]="filterByDate(filterTripsByDriver(trips), date)"
                    (edit)="edit($event)"
                    (remove)="removeTrip($event)"></app-trips>
       </div>

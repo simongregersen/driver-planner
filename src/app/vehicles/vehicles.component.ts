@@ -3,17 +3,19 @@ import {DataStore} from '../data.service';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {Utility} from '../utility';
 import {Vehicle} from '../vehicle';
-import {Observable} from 'rxjs/Observable';
+import {Observable} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {NgbUtility} from '../ngb-date-utility';
 
 @Component({
+  standalone: false,
   selector: 'app-vehicles',
   templateUrl: './vehicles.component.html',
   styleUrls: ['./vehicles.component.css']
 })
 export class VehiclesComponent implements OnInit {
   vehicleForm: FormGroup;
-  vehicles: Observable<Vehicle[]>;
+  vehicles!: Observable<Vehicle[]>;
 
   constructor(public dataStore: DataStore, private fb: FormBuilder, private ngbUtility: NgbUtility) {
     this.vehicleForm = this.fb.group({
@@ -25,7 +27,7 @@ export class VehiclesComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.vehicles = this.dataStore.getAllVehicles().map(Utility.filterDeleted);
+    this.vehicles = this.dataStore.getAllVehicles().pipe(map(Utility.filterDeleted));
   }
 
   create() {

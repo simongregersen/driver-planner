@@ -1,54 +1,46 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {NgbCalendar, NgbDateStruct, NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {Component, OnInit} from '@angular/core';
+import {NgbCalendar, NgbDate, NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {NgbUtility} from '../ngb-date-utility';
-import {NgbDate} from '@ng-bootstrap/ng-bootstrap/datepicker/ngb-date';
 import {DataStore} from '../data.service';
 import {Trip} from '../trip';
-import {Subscription} from 'rxjs/Subscription';
+import {Observable} from 'rxjs';
 import {Driver} from '../driver';
 import {Utility} from '../utility';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 
 @Component({
+  standalone: false,
   selector: 'app-driver-plans',
   templateUrl: './period-plans.component.html',
   styleUrls: ['./period-plans.component.css']
 })
-export class PeriodPlansComponent implements OnDestroy, OnInit {
-  hovered: NgbDateStruct;
-  from: NgbDateStruct;
-  to: NgbDateStruct;
-  range: NgbDateStruct[];
-  drivers: Driver[];
-  trips: Trip[];
-  filteredTrips: Trip[];
+export class PeriodPlansComponent implements OnInit {
+  hovered: NgbDate | null = null;
+  from: NgbDate | null = null;
+  to: NgbDate | null = null;
+  range!: NgbDate[];
+  drivers$!: Observable<Driver[]>;
+  trips$!: Observable<Trip[]>;
 
-  private driversSubscription: Subscription;
-  private tripsSubscription: Subscription;
-  private _selectedDriver: Driver;
+  private _selectedDriver: Driver | null = null;
 
-  isHovered = date => this.from && !this.to && this.hovered && this.ngbUtility.after(date, this.from)
+  isHovered = (date: NgbDate) => this.from && !this.to && this.hovered && this.ngbUtility.after(date, this.from)
     && this.ngbUtility.before(date, this.hovered);
-  isInside = date => this.ngbUtility.after(date, this.from) && this.ngbUtility.before(date, this.to);
-  isFrom = date => this.ngbUtility.equals(date, this.from);
-  isTo = date => this.ngbUtility.equals(date, this.to);
+  isInside = (date: NgbDate) => this.ngbUtility.after(date, this.from) && this.ngbUtility.before(date, this.to);
+  isFrom = (date: NgbDate) => this.ngbUtility.equals(date, this.from);
+  isTo = (date: NgbDate) => this.ngbUtility.equals(date, this.to);
 
   constructor(public ngbUtility: NgbUtility, public dataStore: DataStore, private calendar: NgbCalendar, private modalService: NgbModal) {
   }
 
   ngOnInit(): void {
-    this.driversSubscription = this.dataStore.getAllDrivers().subscribe(ds => this.drivers = ds);
+    this.drivers$ = this.dataStore.getAllDrivers();
     this.from = this.calendar.getToday();
     this.to = this.calendar.getNext(this.calendar.getToday(), 'd', 6);
     this.fetchTrips();
   }
 
-  ngOnDestroy(): void {
-    if (this.tripsSubscription) this.tripsSubscription.unsubscribe();
-    if (this.driversSubscription) this.driversSubscription.unsubscribe();
-  }
-
-  onDateChange(date: NgbDateStruct) {
+  onDateChange(date: NgbDate) {
     if (!this.from && !this.to) {
       this.from = date;
     } else if (this.from && !this.to && this.ngbUtility.after(date, this.from)) {
@@ -66,48 +58,34 @@ export class PeriodPlansComponent implements OnDestroy, OnInit {
 
   edit(trip: Trip) {
     const modalRef = this.modalService.open(TripEditorComponent, {size: 'lg'});
-    modalRef.componentInstance.edit(trip, (t, u) => this.dataStore.updateTrip(t, u));
+    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u));
   }
 
   fetchTrips(): void {
-    this.range = this.ngbUtility.range(this.from, this.to);
-    if (this.tripsSubscription) this.tripsSubscription.unsubscribe();
-    this.tripsSubscription = this.dataStore.getTrips(this.from, this.to).subscribe(ts => {
-      this.trips = this.filteredTrips = ts;
-      this.filterTripsByDriver();
-    });
+    this.range = this.ngbUtility.range(this.from!, this.to);
+    this.trips$ = this.dataStore.getTrips(this.from!, this.to!);
   }
 
   filterByDate(trips: Trip[], date: NgbDate): Trip[] {
     if (!trips || !trips.length) return [];
 
     const start = this.ngbUtility.toMoment(date);
-    const end = this.ngbUtility.toMoment(this.calendar.getNext(NgbDate.from(date), 'd'));
-    return trips.filter(t => t.start >= start && t.start < end);
+    const end = this.ngbUtility.toMoment(this.calendar.getNext(date, 'd'));
+    return trips.filter(t => t.start >= start! && t.start < end!);
   }
 
-  private filterTripsByDriver() {
-    if (!this._selectedDriver) return;
-    this.filteredTrips = this.trips.filter(t => Utility.isAssigned(this._selectedDriver, t));
+  filterTripsByDriver(trips: Trip[] | null): Trip[] {
+    if (!trips) return [];
+    if (!this._selectedDriver) return trips;
+    return trips.filter(t => Utility.isAssigned(this._selectedDriver!, t));
   }
 
   set selectedDriver(driver: Driver) {
-    if (!this.trips) {
-      return;
-    }
-
-    if (this._selectedDriver && driver.$key === this._selectedDriver.$key) {
-      this._selectedDriver = null;
-      this.filteredTrips = this.trips;
-    } else {
-      this._selectedDriver = driver;
-      this.filterTripsByDriver()
-    }
+    this._selectedDriver = (this._selectedDriver && driver.$key === this._selectedDriver.$key) ? null : driver;
   }
 
-  get selectedDriver(): Driver {
+  get selectedDriver(): Driver | null {
     return this._selectedDriver;
   }
-
 
 }

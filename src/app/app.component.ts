@@ -1,20 +1,20 @@
 import {Component} from '@angular/core';
+import {Observable} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {AuthenticationService} from './authentication.service';
-import {isNullOrUndefined} from 'util';
 
 @Component({
+  standalone: false,
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 
 export class AppComponent {
-  loggedIn = false;
+  loggedIn$: Observable<boolean>;
 
   constructor(private authService: AuthenticationService) {
-    this.authService.af.auth.onAuthStateChanged(auth => {
-      this.loggedIn = !isNullOrUndefined(auth);
-    });
+    this.loggedIn$ = this.authService.authState.pipe(map(user => user != null));
   }
 
   logout() {

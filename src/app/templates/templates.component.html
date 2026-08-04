@@ -1,15 +1,15 @@
-<div class="row mt-4 mb-2 hidden-print">
+<div class="row mt-4 mb-2 d-print-none">
   <div class="col-12">
-    <h2 class="font-weight-bold">Skabeloner</h2>
+    <h2 class="fw-bold">Skabeloner</h2>
   </div>
 </div>
 <div class="row">
-  <div class="col-12 col-xl-2 push-xl-10 hidden-print">
+  <div class="col-12 col-xl-2 order-xl-2 d-print-none">
     <aside>
       <div class="row list-group mb-4">
         <h5>Oversigt</h5>
         <button
-          *ngFor="let template of templates"
+          *ngFor="let template of templates$ | async"
           type="button"
           class="list-group-item list-group-item-action text-truncate pointer justify-content-between"
           [class.active]="selectedTemplate?.$key === template?.$key"
@@ -18,7 +18,7 @@
           {{template.name}}
           <a mwlConfirmationPopover
              class="pointer"
-             [message]="'Er du sikker på, at du vil slette skabelonen<br>\'' + template.name + '\'?'"
+             [popoverMessage]="'Er du sikker på, at du vil slette skabelonen<br>\'' + template.name + '\'?'"
              [confirmButtonType]="'danger'"
              [confirmText]="'Slet'"
              [cancelText]="'Annuller'"
@@ -36,24 +36,22 @@
             <label for="name">Opret skabelon</label>
             <div class="input-group">
               <input class="form-control" placeholder="Navn" id="name" formControlName="name">
-              <span class="input-group-btn">
-                <button class="btn btn-secondary" type="button" (click)="createTemplate()">Opret</button>
-              </span>
+              <button class="btn btn-secondary" type="button" (click)="createTemplate()">Opret</button>
             </div>
           </div>
         </form>
       </div>
     </aside>
   </div>
-  <div class="col-12 col-xl-9 pull-xl-2" style="margin-top: 30px">
+  <div class="col-12 col-xl-9" style="margin-top: 30px">
     <main>
-      <app-trips [trips]="trips"
+      <app-trips [trips]="(trips$ | async) ?? []"
                  (edit)="edit($event)"
                  (remove)="removeTrip($event)">
       </app-trips>
-      <div class="row mt-4 mb-3 hidden-print">
-        <div class="col-12 btn-group" data-toggle="buttons">
-          <button type="button" class="btn btn-primary mr-3" (click)="create()">Opret tur</button>
+      <div class="row mt-4 mb-3 d-print-none">
+        <div class="col-12 btn-group">
+          <button type="button" class="btn btn-primary me-3" (click)="create()">Opret tur</button>
         </div>
       </div>
     </main>

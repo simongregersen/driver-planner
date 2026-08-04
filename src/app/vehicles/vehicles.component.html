@@ -1,6 +1,6 @@
 <div class="row mt-4 mb-2">
   <div class="col-12">
-    <h2 class="font-weight-bold">Køretøjer</h2>
+    <h2 class="fw-bold">Køretøjer</h2>
   </div>
 </div>
 <div class="row mt-5">
@@ -12,7 +12,7 @@
         <th class="w-25">Mærke</th>
         <th class="w-25">Reg. nr.</th>
         <th class="w-25">Sidst synet</th>
-        <th class="w-5 hidden-print"></th>
+        <th class="w-5 d-print-none"></th>
       </tr>
       </thead>
       <tbody>
@@ -21,10 +21,10 @@
         <td>{{vehicle.brand}}</td>
         <td>{{vehicle.regNo}}</td>
         <td>{{vehicle.latestInspection | date }}</td>
-        <td class="hidden-print">
+        <td class="d-print-none">
           <a mwlConfirmationPopover
-             class="pointer pull-right"
-             [message]="'Er du sikker på, at du vil slette køretøjet<br>\'' + vehicle.displayName + '\'?'"
+             class="pointer float-end"
+             [popoverMessage]="'Er du sikker på, at du vil slette køretøjet<br>\'' + vehicle.displayName + '\'?'"
              [confirmButtonType]="'danger'"
              [confirmText]="'Slet'"
              [cancelText]="'Annuller'"
@@ -38,7 +38,7 @@
     </table>
   </div>
 </div>
-<div class="hidden-print">
+<div class="d-print-none">
   <h4 class="mt-5 mb-3">Opret køretøj</h4>
   <form [formGroup]="vehicleForm" (ngSubmit)="create(); nickname.focus()">
     <div class="form-group row"
@@ -77,12 +77,12 @@
                  [minDate]="{year: 1900, month: 1, day: 1}"
                  (click)="d.toggle()"
                  formControlName="latestInspection">
-          <div class="input-group-addon" (click)="d.toggle()">
+          <div class="input-group-text" (click)="d.toggle()">
             <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
           </div>
         </div>
       </div>
     </div>
-    <button type="submit" class="btn btn-primary pull-right" [disabled]="!vehicleForm.valid">Opret</button>
+    <button type="submit" class="btn btn-primary float-end" [disabled]="!vehicleForm.valid">Opret</button>
   </form>
 </div>
