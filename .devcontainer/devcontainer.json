@@ -2,6 +2,14 @@
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/java:1": {"version": "17"},
     "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
+  "forwardPorts": [4200, 9099, 9000, 4000],
+  "portsAttributes": {
+    "4200": {"label": "Angular dev server"},
+    "9099": {"label": "Auth Emulator"},
+    "9000": {"label": "Database Emulator"},
+    "4000": {"label": "Emulator UI"}
   }
 }

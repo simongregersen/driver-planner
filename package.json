@@ -8,7 +8,8 @@
     "build": "ng build",
     "test": "ng test",
     "prod": "ng build --configuration production",
-    "deploy": "ng build --configuration production && firebase deploy"
+    "deploy": "ng build --configuration production && firebase deploy",
+    "emulators": "ng build --configuration development && firebase emulators:start --import=./.emulator-data --export-on-exit"
   },
   "private": true,
   "dependencies": {
@@ -37,6 +38,7 @@
     "@angular/cli": "^22.1.2",
     "@angular/compiler-cli": "^22.1.0",
     "@types/node": "^24.0.0",
+    "firebase-tools": "^14.0.0",
     "jsdom": "^28.0.0",
     "typescript": "~6.0.2",
     "vitest": "^4.0.8"

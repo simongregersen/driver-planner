@@ -1,0 +1,14 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "trips": {
+      ".indexOn": "start"
+    },
+    "tripsInTemplate": {
+      "$templateKey": {
+        ".indexOn": "start"
+      }
+    }
+  }
+}
