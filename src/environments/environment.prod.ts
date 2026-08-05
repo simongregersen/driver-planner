@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  useEmulators: false,
   firebase: {
     apiKey: 'AIzaSyBfU6bU7RifNOxm2XpxBHY8Z-yhwmRFthU',
     authDomain: 'driver-planner.firebaseapp.com',
