@@ -76,6 +76,29 @@ body {
   border-color: #dc3545;
 }
 
+/* Datepicker: bigger tap targets on small screens (applies to every ngb-datepicker instance) */
+
+@media (max-width: 767px) {
+  .ngb-dp-day,
+  .ngb-dp-weekday,
+  .ngb-dp-week-number {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+  }
+
+  .ngb-dp-weekday,
+  .ngb-dp-week-number {
+    line-height: 2.75rem !important;
+  }
+
+  [ngbDatepickerDayView] {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    line-height: 2.75rem !important;
+    font-size: 1.1rem !important;
+  }
+}
+
 /* Print */
 
 @media print {
