@@ -25,3 +25,8 @@
 .custom-day.today {
   box-shadow: inset 0 0 0 2px var(--bs-primary);
 }
+
+.day-public-toggle:checked {
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
+}

@@ -5,7 +5,7 @@
       <small>{{ ngbUtility.toMoment(selectedDate)?.toDate() | date:'EEEE, d MMMM y' }}</small>
     </h2>
     <div class="form-check form-switch">
-      <input class="form-check-input" type="checkbox" id="dayPublic" role="switch"
+      <input class="form-check-input day-public-toggle" type="checkbox" id="dayPublic" role="switch"
              [checked]="(dayPublic$ | async) ?? false"
              (change)="setDayPublic($any($event.target).checked)">
       <label class="form-check-label" for="dayPublic">Synlig for chauffører</label>

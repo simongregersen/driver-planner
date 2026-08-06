@@ -34,11 +34,12 @@
                         [minDate]="minDate"
                         [showWeekNumbers]="true">
         </ngb-datepicker>
-        <ng-template #t let-date="date" let-focused="focused">
+        <ng-template #t let-date="date" let-focused="focused" let-today="today">
           <span class="custom-day"
                 [class.focused]="focused"
                 [class.range]="isFrom(date) || isTo(date) || isInside(date) || isHovered(date)"
                 [class.faded]="isHovered(date) || isInside(date)"
+                [class.today]="today"
                 (mouseenter)="hovered = date"
                 (mouseleave)="hovered = null">
           {{ date.day }}
