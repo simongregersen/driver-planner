@@ -1,5 +1,8 @@
-import {Component, OnInit} from '@angular/core';
-import {NgbCalendar, NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
+import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {AsyncPipe, DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {NgbCalendar, NgbDatepicker, NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
 import {Observable} from 'rxjs';
 import {Trip} from '../trip';
 import {Driver} from '../driver';
@@ -8,27 +11,35 @@ import {UserService} from '../user.service';
 import {AuthenticationService} from '../authentication.service';
 import {Utility} from '../utility';
 import {NgbUtility} from '../ngb-date-utility';
+import {TripsComponent} from '../trips/trips.component';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-my-trips',
   templateUrl: './my-trips.component.html',
-  styleUrls: ['./my-trips.component.css']
+  styleUrls: ['./my-trips.component.css'],
+  imports: [FormsModule, AsyncPipe, DatePipe, NgbDatepicker, TripsComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MyTripsComponent implements OnInit {
+  readonly dataStore = inject(DataStore);
+  readonly userService = inject(UserService);
+  readonly ngbUtility = inject(NgbUtility);
+  private readonly authService = inject(AuthenticationService);
+  private readonly calendar = inject(NgbCalendar);
+  private readonly destroyRef = inject(DestroyRef);
+
   trips$!: Observable<Trip[]>;
   private _selectedDate!: NgbDateStruct;
 
-  constructor(public dataStore: DataStore, public userService: UserService, public ngbUtility: NgbUtility,
-              private authService: AuthenticationService, private calendar: NgbCalendar) {
-  }
-
   ngOnInit(): void {
-    this.userService.driverProfile$.subscribe(driver => {
-      if (driver?.deleted) {
-        this.authService.logout();
-      }
-    });
+    this.userService.driverProfile$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(driver => {
+        if (driver?.deleted) {
+          this.authService.logout();
+        }
+      });
 
     this.selectedDate = this.calendar.getToday();
   }

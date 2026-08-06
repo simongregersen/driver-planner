@@ -14,7 +14,7 @@ import {db} from './firebase';
 import {Moment} from 'moment';
 import moment from 'moment';
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class DataStore {
   private driversRef = ref(db, '/drivers');
   private vehiclesRef = ref(db, '/vehicles');

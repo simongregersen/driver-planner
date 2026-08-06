@@ -1,0 +1,34 @@
+import {Routes} from '@angular/router';
+import {authGuard} from './auth-guard';
+import {adminGuard} from './admin-guard';
+
+export const routes: Routes = [
+  {
+    path: 'login',
+    loadComponent: () => import('./sign-in/sign-in.component').then(m => m.SignInComponent),
+  },
+  {
+    path: '',
+    canActivate: [authGuard],
+    children: [
+      {path: '', pathMatch: 'full', redirectTo: 'day-plans'},
+      {
+        path: 'my-trips',
+        loadComponent: () => import('./my-trips/my-trips.component').then(m => m.MyTripsComponent),
+      },
+      {
+        path: '',
+        canActivate: [adminGuard],
+        children: [
+          {path: 'overview', loadComponent: () => import('./overview/overview.component').then(m => m.OverviewComponent)},
+          {path: 'day-plans', loadComponent: () => import('./day-plans/day-plans.component').then(m => m.DayPlansComponent)},
+          {path: 'period-plans', loadComponent: () => import('./period-plans/period-plans.component').then(m => m.PeriodPlansComponent)},
+          {path: 'templates', loadComponent: () => import('./templates/templates.component').then(m => m.TemplatesComponent)},
+          {path: 'routes', loadComponent: () => import('./routes/routes.component').then(m => m.RoutesComponent)},
+          {path: 'drivers', loadComponent: () => import('./drivers/drivers.component').then(m => m.DriversComponent)},
+          {path: 'vehicles', loadComponent: () => import('./vehicles/vehicles.component').then(m => m.VehiclesComponent)},
+        ],
+      },
+    ],
+  },
+];

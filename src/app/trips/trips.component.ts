@@ -1,28 +1,31 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input, OnInit, output} from '@angular/core';
+import {AsyncPipe, DatePipe} from '@angular/common';
+import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
 import {Trip} from '../trip';
 import {DataStore} from '../data.service';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-trips',
   templateUrl: './trips.component.html',
-  styleUrls: ['./trips.component.css']
+  styleUrls: ['./trips.component.css'],
+  imports: [AsyncPipe, DatePipe, NgbTooltip, ConfirmationPopoverModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TripsComponent implements OnInit {
-  @Input() trips: Trip[] = [];
-  @Input() readonly = false;
-  @Output() edit = new EventEmitter<Trip>();
-  @Output() remove = new EventEmitter<Trip>();
+  trips = input<Trip[]>([]);
+  readonly = input(false);
+  edit = output<Trip>();
+  remove = output<Trip>();
+
+  readonly dataStore = inject(DataStore);
 
   drivers$!: Observable<Driver[]>;
   vehicles$!: Observable<Vehicle[]>;
-
-  constructor(public dataStore: DataStore) {
-  }
 
   ngOnInit(): void {
     this.drivers$ = this.dataStore.getAllDrivers();
@@ -35,9 +38,5 @@ export class TripsComponent implements OnInit {
 
   getVehicle(vehicles: Vehicle[] | null, key: string): Vehicle | undefined {
     return vehicles?.find(v => v.$key === key);
-  }
-
-  trackByFn(index: number, item: Trip) {
-    return item.$key;
   }
 }

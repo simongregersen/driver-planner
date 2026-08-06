@@ -8,26 +8,27 @@
     <aside>
       <div class="row list-group mb-4">
         <h5>Oversigt</h5>
-        <button
-          *ngFor="let template of templates$ | async"
-          type="button"
-          class="list-group-item list-group-item-action text-truncate pointer justify-content-between"
-          [class.active]="selectedTemplate?.$key === template?.$key"
-          (click)="selectedTemplate = template">
+        @for (template of (templates$ | async) ?? []; track template.$key) {
+          <button
+            type="button"
+            class="list-group-item list-group-item-action text-truncate pointer justify-content-between"
+            [class.active]="selectedTemplate?.$key === template?.$key"
+            (click)="selectedTemplate = template">
 
-          {{template.name}}
-          <a mwlConfirmationPopover
-             class="pointer"
-             [popoverMessage]="'Er du sikker på, at du vil slette skabelonen<br>\'' + template.name + '\'?'"
-             [confirmButtonType]="'danger'"
-             [confirmText]="'Slet'"
-             [cancelText]="'Annuller'"
-             [appendToBody]="true"
-             placement="left"
-             (confirm)="removeTemplate(template)">
-            <i class="fa fa-trash" ngbTooltip="Slet" container="body"></i>
-          </a>
-        </button>
+            {{template.name}}
+            <a mwlConfirmationPopover
+               class="pointer"
+               [popoverMessage]="'Er du sikker på, at du vil slette skabelonen<br>\'' + template.name + '\'?'"
+               [confirmButtonType]="'danger'"
+               [confirmText]="'Slet'"
+               [cancelText]="'Annuller'"
+               [appendToBody]="true"
+               placement="left"
+               (confirm)="removeTemplate(template)">
+              <i class="fa fa-trash" ngbTooltip="Slet" container="body"></i>
+            </a>
+          </button>
+        }
       </div>
       <div class="list-group">
         <form [formGroup]="templateForm" (ngSubmit)="createTemplate()">

@@ -1,29 +1,32 @@
-import {Component} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {NgbActiveModal, NgbInputDatepicker} from '@ng-bootstrap/ng-bootstrap';
+import moment from 'moment';
 import {Vehicle} from '../vehicle';
 import {NgbUtility} from '../ngb-date-utility';
-import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
-import moment from 'moment';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-vehicle-editor',
   templateUrl: './vehicle-editor.component.html',
-  styleUrls: ['./vehicle-editor.component.css']
+  styleUrls: ['./vehicle-editor.component.css'],
+  imports: [ReactiveFormsModule, NgbInputDatepicker],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VehicleEditorComponent {
   save!: (vehicle: Vehicle, updates: any) => void;
   vehicle!: Vehicle;
-  vehicleForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private ngbUtility: NgbUtility, public modal: NgbActiveModal) {
-    this.vehicleForm = this.fb.group({
-      displayName: ['', Validators.required],
-      brand: '',
-      regNo: '',
-      latestInspection: null
-    });
-  }
+  private readonly fb = inject(FormBuilder);
+  private readonly ngbUtility = inject(NgbUtility);
+  readonly modal = inject(NgbActiveModal);
+
+  vehicleForm: FormGroup = this.fb.group({
+    displayName: ['', Validators.required],
+    brand: '',
+    regNo: '',
+    latestInspection: null
+  });
 
   update() {
     this.vehicleForm.patchValue({

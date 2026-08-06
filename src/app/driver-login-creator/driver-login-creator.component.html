@@ -7,16 +7,19 @@
 
 <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
   <div class="modal-body">
-    <div class="alert alert-danger" *ngIf="error">{{error}}</div>
+    @if (error) {
+      <div class="alert alert-danger">{{error}}</div>
+    }
     <div class="form-group row"
          [class.has-danger]="!loginForm.controls['email'].valid && loginForm.controls['email'].dirty">
       <label for="email" class="col-3 col-form-label">E-mail</label>
       <div class="col-9">
         <input class="form-control" type="email" id="email" formControlName="email">
-        <div class="form-control-feedback"
-             *ngIf="!loginForm.controls['email'].valid && loginForm.controls['email'].dirty">
-          En gyldig e-mail er påkrævet.
-        </div>
+        @if (!loginForm.controls['email'].valid && loginForm.controls['email'].dirty) {
+          <div class="form-control-feedback">
+            En gyldig e-mail er påkrævet.
+          </div>
+        }
       </div>
     </div>
     <div class="form-group row mt-3"
@@ -24,10 +27,11 @@
       <label for="password" class="col-3 col-form-label">Kodeord</label>
       <div class="col-9">
         <input class="form-control" type="password" id="password" formControlName="password">
-        <div class="form-control-feedback"
-             *ngIf="!loginForm.controls['password'].valid && loginForm.controls['password'].dirty">
-          Kodeordet skal være mindst 6 tegn.
-        </div>
+        @if (!loginForm.controls['password'].valid && loginForm.controls['password'].dirty) {
+          <div class="form-control-feedback">
+            Kodeordet skal være mindst 6 tegn.
+          </div>
+        }
       </div>
     </div>
   </div>

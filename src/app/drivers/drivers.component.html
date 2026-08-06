@@ -16,34 +16,38 @@
       </tr>
       </thead>
       <tbody>
-      <tr *ngFor="let driver of drivers | async">
-        <th>{{driver.displayName}}</th>
-        <td>{{driver.name}}</td>
-        <td>{{driver.birthday?.toDate()|date}}</td>
-        <td>{{driver.email}}</td>
-        <td class="d-print-none">
-          <div class="float-end icons">
-            <a class="pointer" *ngIf="!driver.uid"
-               (click)="createLogin(driver)">
-              <i class="fa fa-key" ngbTooltip="Opret login"></i>
-            </a>
-            <a class="pointer"
-               (click)="edit(driver)">
-              <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
-            </a>
-            <a mwlConfirmationPopover
-               class="pointer"
-               [popoverMessage]="'Er du sikker på, at du vil slette chaufføren<br>\'' + driver.displayName + '\'?'"
-               [confirmButtonType]="'danger'"
-               [confirmText]="'Slet'"
-               [cancelText]="'Annuller'"
-               placement="left"
-               (confirm)="removeDriver(driver)">
-              <i class="fa fa-trash" ngbTooltip="Slet"></i>
-            </a>
-          </div>
-        </td>
-      </tr>
+      @for (driver of (drivers | async) ?? []; track driver.$key) {
+        <tr>
+          <th>{{driver.displayName}}</th>
+          <td>{{driver.name}}</td>
+          <td>{{driver.birthday?.toDate()|date}}</td>
+          <td>{{driver.email}}</td>
+          <td class="d-print-none">
+            <div class="float-end icons">
+              @if (!driver.uid) {
+                <a class="pointer"
+                   (click)="createLogin(driver)">
+                  <i class="fa fa-key" ngbTooltip="Opret login"></i>
+                </a>
+              }
+              <a class="pointer"
+                 (click)="edit(driver)">
+                <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
+              </a>
+              <a mwlConfirmationPopover
+                 class="pointer"
+                 [popoverMessage]="'Er du sikker på, at du vil slette chaufføren<br>\'' + driver.displayName + '\'?'"
+                 [confirmButtonType]="'danger'"
+                 [confirmText]="'Slet'"
+                 [cancelText]="'Annuller'"
+                 placement="left"
+                 (confirm)="removeDriver(driver)">
+                <i class="fa fa-trash" ngbTooltip="Slet"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+      }
       </tbody>
     </table>
   </div>
@@ -56,10 +60,11 @@
       <label for="nickname" class="col-2 col-form-label">Kaldenavn</label>
       <div class="col-10">
         <input class="form-control" type="text" id="nickname" formControlName="displayName" #nickname>
-        <div class="form-control-feedback"
-             *ngIf="driverForm.controls['displayName'] && !driverForm.controls['displayName'].valid && driverForm.controls['displayName'].dirty">
-          Et kaldenavn er påkrævet.
-        </div>
+        @if (driverForm.controls['displayName'] && !driverForm.controls['displayName'].valid && driverForm.controls['displayName'].dirty) {
+          <div class="form-control-feedback">
+            Et kaldenavn er påkrævet.
+          </div>
+        }
       </div>
     </div>
     <div class="form-group row"
@@ -67,10 +72,11 @@
       <label for="name" class="col-2 col-form-label">Navn</label>
       <div class="col-10">
         <input class="form-control" type="text" id="name" formControlName="name">
-        <div class="form-control-feedback"
-             *ngIf="driverForm.controls['name'] && !driverForm.controls['name'].valid && driverForm.controls['name'].dirty">
-          Et navn er påkrævet.
-        </div>
+        @if (driverForm.controls['name'] && !driverForm.controls['name'].valid && driverForm.controls['name'].dirty) {
+          <div class="form-control-feedback">
+            Et navn er påkrævet.
+          </div>
+        }
       </div>
     </div>
     <div class="row mt-3 form-group">

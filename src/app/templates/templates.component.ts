@@ -1,31 +1,37 @@
-import {Component, OnInit} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {AsyncPipe} from '@angular/common';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
 import {DataStore} from '../data.service';
 import {Template} from '../template';
 import {Observable} from 'rxjs';
 import {take} from 'rxjs/operators';
 import {NewTrip, Trip} from '../trip';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
+import {TripsComponent} from '../trips/trips.component';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-templates',
   templateUrl: './templates.component.html',
-  styleUrls: ['./templates.component.css']
+  styleUrls: ['./templates.component.css'],
+  imports: [ReactiveFormsModule, AsyncPipe, ConfirmationPopoverModule, NgbTooltip, TripsComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TemplatesComponent implements OnInit {
-  templateForm: FormGroup;
+  private readonly fb = inject(FormBuilder);
+  private readonly dataStore = inject(DataStore);
+  private readonly modalService = inject(NgbModal);
+
   templates$!: Observable<Template[]>;
   trips$!: Observable<Trip[]>;
   private _selectedTemplate!: Template;
 
-  constructor(private fb: FormBuilder, private dataStore: DataStore, private modalService: NgbModal) {
-    this.templateForm = this.fb.group({
-      name: ['', Validators.required]
-    })
-  }
+  templateForm: FormGroup = this.fb.group({
+    name: ['', Validators.required]
+  });
 
   ngOnInit(): void {
     this.templates$ = this.dataStore.getAllTemplates();

@@ -3,7 +3,7 @@ import {Injectable} from '@angular/core';
 import moment from 'moment';
 import {Moment} from 'moment';
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class NgbUtility {
 
   constructor(private calendar: NgbCalendar) {

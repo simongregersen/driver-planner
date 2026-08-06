@@ -15,9 +15,11 @@
       {{ ngbUtility.toMoment(from)?.toDate() | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to)?.toDate() | date:'EEEE, d MMMM' }}
     </small>
   </h5>
-  <h6 *ngIf="selectedDriver">
-    Chauffør: {{ selectedDriver.displayName }}
-  </h6>
+  @if (selectedDriver) {
+    <h6>
+      Chauffør: {{ selectedDriver.displayName }}
+    </h6>
+  }
 </div>
 <div class="row">
   <div class="col-12 col-xl-2 order-xl-2 d-print-none">
@@ -44,45 +46,51 @@
       </div>
       <div>
         <h5>Chauffører</h5>
-        <ng-container *ngIf="drivers$ | async as driverList">
+        @if (drivers$ | async; as driverList) {
           <div class="list-group d-none d-xl-block">
-            <button
-              *ngFor="let driver of driverList"
-              type="button"
-              class="list-group-item list-group-item-action text-truncate pointer"
-              [class.active]="selectedDriver?.$key === driver?.$key"
-              (click)="selectedDriver = driver">
-              {{driver.displayName}}
-            </button>
+            @for (driver of driverList; track driver.$key) {
+              <button
+                type="button"
+                class="list-group-item list-group-item-action text-truncate pointer"
+                [class.active]="selectedDriver?.$key === driver?.$key"
+                (click)="selectedDriver = driver">
+                {{driver.displayName}}
+              </button>
+            }
           </div>
           <div class="d-xl-none" ngbDropdown>
             <button type="button" class="btn btn-outline-secondary dropdown-toggle w-100 text-truncate" ngbDropdownToggle>
               {{ selectedDriver ? selectedDriver.displayName : 'Alle chauffører' }}
             </button>
             <div ngbDropdownMenu class="w-100">
-              <button
-                ngbDropdownItem
-                *ngFor="let driver of driverList"
-                type="button"
-                class="text-truncate pointer"
-                [class.active]="selectedDriver?.$key === driver?.$key"
-                (click)="selectedDriver = driver">
-                {{driver.displayName}}
-              </button>
+              @for (driver of driverList; track driver.$key) {
+                <button
+                  ngbDropdownItem
+                  type="button"
+                  class="text-truncate pointer"
+                  [class.active]="selectedDriver?.$key === driver?.$key"
+                  (click)="selectedDriver = driver">
+                  {{driver.displayName}}
+                </button>
+              }
             </div>
           </div>
-        </ng-container>
+        }
       </div>
     </aside>
   </div>
   <div class="col-12 col-xl-10">
-    <main *ngIf="trips$ | async as trips">
-      <div *ngFor="let date of range">
-        <h5 class="mt-4 mb-4">{{ ngbUtility?.toMoment(date)?.toDate() | date:'EEEE, d MMMM y'}}</h5>
-        <app-trips [trips]="filterByDate(filterTripsByDriver(trips), date)"
-                   (edit)="edit($event)"
-                   (remove)="removeTrip($event)"></app-trips>
-      </div>
-    </main>
+    @if (trips$ | async; as trips) {
+      <main>
+        @for (date of range; track (date.year * 10000 + date.month * 100 + date.day)) {
+          <div>
+            <h5 class="mt-4 mb-4">{{ ngbUtility?.toMoment(date)?.toDate() | date:'EEEE, d MMMM y'}}</h5>
+            <app-trips [trips]="filterByDate(filterTripsByDriver(trips), date)"
+                       (edit)="edit($event)"
+                       (remove)="removeTrip($event)"></app-trips>
+          </div>
+        }
+      </main>
+    }
   </div>
 </div>

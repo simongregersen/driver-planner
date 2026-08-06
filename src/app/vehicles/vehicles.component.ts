@@ -1,32 +1,38 @@
-import {Component, OnInit} from '@angular/core';
-import {DataStore} from '../data.service';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {AsyncPipe, DatePipe} from '@angular/common';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Utility} from '../utility';
 import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {NgbUtility} from '../ngb-date-utility';
-import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {NgbInputDatepicker, NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
+import {DataStore} from '../data.service';
 import {VehicleEditorComponent} from '../vehicle-editor/vehicle-editor.component';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-vehicles',
   templateUrl: './vehicles.component.html',
-  styleUrls: ['./vehicles.component.css']
+  styleUrls: ['./vehicles.component.css'],
+  imports: [ReactiveFormsModule, AsyncPipe, DatePipe, NgbInputDatepicker, ConfirmationPopoverModule, NgbTooltip],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VehiclesComponent implements OnInit {
-  vehicleForm: FormGroup;
+  readonly dataStore = inject(DataStore);
+  private readonly fb = inject(FormBuilder);
+  private readonly ngbUtility = inject(NgbUtility);
+  private readonly modalService = inject(NgbModal);
+
   vehicles!: Observable<Vehicle[]>;
 
-  constructor(public dataStore: DataStore, private fb: FormBuilder, private ngbUtility: NgbUtility, private modalService: NgbModal) {
-    this.vehicleForm = this.fb.group({
-      displayName: ['', Validators.required],
-      brand: '',
-      regNo: '',
-      latestInspection: null
-    })
-  }
+  vehicleForm: FormGroup = this.fb.group({
+    displayName: ['', Validators.required],
+    brand: '',
+    regNo: '',
+    latestInspection: null
+  });
 
   ngOnInit() {
     this.vehicles = this.dataStore.getAllVehicles().pipe(map(Utility.filterDeleted));

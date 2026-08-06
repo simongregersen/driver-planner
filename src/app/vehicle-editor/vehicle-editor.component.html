@@ -12,10 +12,11 @@
       <label for="displayName" class="col-2 col-form-label">Kaldenavn</label>
       <div class="col-10">
         <input class="form-control" type="text" id="displayName" formControlName="displayName">
-        <div class="form-control-feedback"
-             *ngIf="!vehicleForm.controls['displayName'].valid && vehicleForm.controls['displayName'].dirty">
-          Et kaldenavn er påkrævet.
-        </div>
+        @if (!vehicleForm.controls['displayName'].valid && vehicleForm.controls['displayName'].dirty) {
+          <div class="form-control-feedback">
+            Et kaldenavn er påkrævet.
+          </div>
+        }
       </div>
     </div>
     <div class="form-group row">

@@ -5,7 +5,7 @@ import {Router} from '@angular/router';
 import {Observable} from 'rxjs';
 import {auth} from './firebase';
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class AuthenticationService {
   authState: Observable<User | null> = authState(auth);
 

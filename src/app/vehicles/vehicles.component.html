@@ -16,30 +16,32 @@
       </tr>
       </thead>
       <tbody>
-      <tr *ngFor="let vehicle of vehicles | async">
-        <th>{{vehicle.displayName}}</th>
-        <td>{{vehicle.brand}}</td>
-        <td>{{vehicle.regNo}}</td>
-        <td>{{vehicle.latestInspection | date }}</td>
-        <td class="d-print-none">
-          <div class="float-end icons">
-            <a class="pointer"
-               (click)="edit(vehicle)">
-              <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
-            </a>
-            <a mwlConfirmationPopover
-               class="pointer"
-               [popoverMessage]="'Er du sikker på, at du vil slette køretøjet<br>\'' + vehicle.displayName + '\'?'"
-               [confirmButtonType]="'danger'"
-               [confirmText]="'Slet'"
-               [cancelText]="'Annuller'"
-               placement="left"
-               (confirm)="removeVehicle(vehicle)">
-              <i class="fa fa-trash" ngbTooltip="Slet"></i>
-            </a>
-          </div>
-        </td>
-      </tr>
+      @for (vehicle of (vehicles | async) ?? []; track vehicle.$key) {
+        <tr>
+          <th>{{vehicle.displayName}}</th>
+          <td>{{vehicle.brand}}</td>
+          <td>{{vehicle.regNo}}</td>
+          <td>{{vehicle.latestInspection | date }}</td>
+          <td class="d-print-none">
+            <div class="float-end icons">
+              <a class="pointer"
+                 (click)="edit(vehicle)">
+                <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
+              </a>
+              <a mwlConfirmationPopover
+                 class="pointer"
+                 [popoverMessage]="'Er du sikker på, at du vil slette køretøjet<br>\'' + vehicle.displayName + '\'?'"
+                 [confirmButtonType]="'danger'"
+                 [confirmText]="'Slet'"
+                 [cancelText]="'Annuller'"
+                 placement="left"
+                 (confirm)="removeVehicle(vehicle)">
+                <i class="fa fa-trash" ngbTooltip="Slet"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+      }
       </tbody>
     </table>
   </div>
@@ -52,10 +54,11 @@
       <label for="nickname" class="col-2 col-form-label">Kaldenavn</label>
       <div class="col-10">
         <input class="form-control" type="text" id="nickname" formControlName="displayName" #nickname>
-        <div class="form-control-feedback"
-             *ngIf="vehicleForm.controls['displayName'] && !vehicleForm.controls['displayName'].valid && vehicleForm.controls['displayName'].dirty">
-          Et kaldenavn er påkrævet.
-        </div>
+        @if (vehicleForm.controls['displayName'] && !vehicleForm.controls['displayName'].valid && vehicleForm.controls['displayName'].dirty) {
+          <div class="form-control-feedback">
+            Et kaldenavn er påkrævet.
+          </div>
+        }
       </div>
     </div>
     <div class="form-group row">

@@ -1,27 +1,30 @@
-import {Component} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {NgbActiveModal, NgbInputDatepicker} from '@ng-bootstrap/ng-bootstrap';
 import {Driver} from '../driver';
 import {NgbUtility} from '../ngb-date-utility';
-import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-driver-editor',
   templateUrl: './driver-editor.component.html',
-  styleUrls: ['./driver-editor.component.css']
+  styleUrls: ['./driver-editor.component.css'],
+  imports: [ReactiveFormsModule, NgbInputDatepicker],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DriverEditorComponent {
   save!: (driver: Driver, updates: any) => void;
   driver!: Driver;
-  driverForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private ngbUtility: NgbUtility, public modal: NgbActiveModal) {
-    this.driverForm = this.fb.group({
-      displayName: ['', Validators.required],
-      name: ['', Validators.required],
-      birthday: null
-    });
-  }
+  private readonly fb = inject(FormBuilder);
+  private readonly ngbUtility = inject(NgbUtility);
+  readonly modal = inject(NgbActiveModal);
+
+  driverForm: FormGroup = this.fb.group({
+    displayName: ['', Validators.required],
+    name: ['', Validators.required],
+    birthday: null
+  });
 
   update() {
     this.driverForm.patchValue({

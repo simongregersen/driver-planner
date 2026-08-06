@@ -1,5 +1,16 @@
-import {Component, OnInit} from '@angular/core';
-import {NgbCalendar, NgbDate, NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {AsyncPipe, DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {
+  NgbCalendar,
+  NgbDate,
+  NgbDatepicker,
+  NgbDropdown,
+  NgbDropdownItem,
+  NgbDropdownMenu,
+  NgbDropdownToggle,
+  NgbModal,
+} from '@ng-bootstrap/ng-bootstrap';
 import {NgbUtility} from '../ngb-date-utility';
 import {DataStore} from '../data.service';
 import {Trip} from '../trip';
@@ -7,14 +18,26 @@ import {Observable} from 'rxjs';
 import {Driver} from '../driver';
 import {Utility} from '../utility';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
+import {TripsComponent} from '../trips/trips.component';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-driver-plans',
   templateUrl: './period-plans.component.html',
-  styleUrls: ['./period-plans.component.css']
+  styleUrls: ['./period-plans.component.css'],
+  imports: [
+    FormsModule, AsyncPipe, DatePipe,
+    NgbDatepicker, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu, NgbDropdownItem,
+    TripsComponent,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PeriodPlansComponent implements OnInit {
+  readonly ngbUtility = inject(NgbUtility);
+  readonly dataStore = inject(DataStore);
+  private readonly calendar = inject(NgbCalendar);
+  private readonly modalService = inject(NgbModal);
+
   hovered: NgbDate | null = null;
   from: NgbDate | null = null;
   to: NgbDate | null = null;
@@ -29,9 +52,6 @@ export class PeriodPlansComponent implements OnInit {
   isInside = (date: NgbDate) => this.ngbUtility.after(date, this.from) && this.ngbUtility.before(date, this.to);
   isFrom = (date: NgbDate) => this.ngbUtility.equals(date, this.from);
   isTo = (date: NgbDate) => this.ngbUtility.equals(date, this.to);
-
-  constructor(public ngbUtility: NgbUtility, public dataStore: DataStore, private calendar: NgbCalendar, private modalService: NgbModal) {
-  }
 
   ngOnInit(): void {
     this.drivers$ = this.dataStore.getAllDrivers();

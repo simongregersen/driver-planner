@@ -12,7 +12,7 @@ import {DataStore} from './data.service';
 import {AppUser} from './user';
 import {Driver} from './driver';
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class UserService {
   private usersRef = ref(db, '/users');
 

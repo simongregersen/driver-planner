@@ -1,7 +1,20 @@
-import {Component, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {AsyncPipe, DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {
+  NgbCalendar,
+  NgbDateStruct,
+  NgbDatepicker,
+  NgbDropdown,
+  NgbDropdownItem,
+  NgbDropdownMenu,
+  NgbDropdownToggle,
+  NgbModal,
+} from '@ng-bootstrap/ng-bootstrap';
+import {NgSelectModule} from '@ng-select/ng-select';
+import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
 import {DataStore} from '../data.service';
 import {NewTrip, Trip} from '../trip';
-import {NgbCalendar, NgbDateStruct, NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {Driver} from '../driver';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
@@ -10,23 +23,32 @@ import {Utility} from '../utility';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {SelectOption} from '../select-option';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
+import {TripsComponent} from '../trips/trips.component';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-day-plans',
   templateUrl: './day-plans.component.html',
-  styleUrls: ['./day-plans.component.css']
+  styleUrls: ['./day-plans.component.css'],
+  imports: [
+    FormsModule, AsyncPipe, DatePipe,
+    NgbDatepicker, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu, NgbDropdownItem,
+    NgSelectModule, ConfirmationPopoverModule, TripsComponent,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DayPlansComponent implements OnInit {
+  readonly dataStore = inject(DataStore);
+  readonly ngbUtility = inject(NgbUtility);
+  private readonly calendar = inject(NgbCalendar);
+  private readonly modalService = inject(NgbModal);
+
   drivers!: Observable<Driver[]>;
   availableTemplates$!: Observable<SelectOption[]>;
   trips$!: Observable<Trip[]>;
   selectedTemplate!: string;
   private _selectedDriver: Driver | null = null;
   private _selectedDate!: NgbDateStruct;
-
-  constructor(public dataStore: DataStore, public ngbUtility: NgbUtility, private calendar: NgbCalendar, private modalService: NgbModal) {
-  }
 
   ngOnInit(): void {
     this.selectedDate = this.calendar.getToday();

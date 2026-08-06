@@ -24,8 +24,10 @@
     </aside>
   </div>
   <div class="col-12 col-xl-10" style="margin-top: 30px">
-    <main *ngIf="trips$ | async as trips">
-      <app-trips [trips]="filterMyTrips(trips, userService.driverProfile$ | async)" [readonly]="true"></app-trips>
-    </main>
+    @if (trips$ | async; as trips) {
+      <main>
+        <app-trips [trips]="filterMyTrips(trips, userService.driverProfile$ | async)" [readonly]="true"></app-trips>
+      </main>
+    }
   </div>
 </div>

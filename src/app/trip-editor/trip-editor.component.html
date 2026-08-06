@@ -12,10 +12,11 @@
       <label for="name" class="col-2 col-form-label">Navn</label>
       <div class="col-10">
         <input class="form-control" type="text" id="name" formControlName="name">
-        <div class="form-control-feedback"
-             *ngIf="!tripForm.controls['name'].valid && tripForm.controls['name'].dirty">
-          Navn påkrævet.
-        </div>
+        @if (!tripForm.controls['name'].valid && tripForm.controls['name'].dirty) {
+          <div class="form-control-feedback">
+            Navn påkrævet.
+          </div>
+        }
       </div>
     </div>
     <div class="row form-group"
@@ -35,10 +36,11 @@
             <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
           </div>
         </div>
-        <div class="form-control-feedback"
-             *ngIf="!tripForm.controls['fromDate'].valid && tripForm.controls['fromDate'].dirty">
-          Dato påkrævet.
-        </div>
+        @if (!tripForm.controls['fromDate'].valid && tripForm.controls['fromDate'].dirty) {
+          <div class="form-control-feedback">
+            Dato påkrævet.
+          </div>
+        }
       </div>
       <div class="col-5 col-md-3">
         <ngb-timepicker formControlName="fromTime" [spinners]="false"></ngb-timepicker>

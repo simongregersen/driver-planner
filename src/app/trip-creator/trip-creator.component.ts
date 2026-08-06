@@ -1,30 +1,36 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit, output} from '@angular/core';
+import {AsyncPipe} from '@angular/common';
 import {DataStore} from '../data.service';
 import {SelectOption} from '../select-option';
 import {Utility} from '../utility';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {NgbUtility} from '../ngb-date-utility';
-import {NgbActiveModal, NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
+import {NgbActiveModal, NgbInputDatepicker, NgbDateStruct, NgbTimepicker} from '@ng-bootstrap/ng-bootstrap';
+import {NgSelectModule} from '@ng-select/ng-select';
 import {NewTrip} from '../trip';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-trip-creator',
   templateUrl: './trip-creator.component.html',
-  styleUrls: ['./trip-creator.component.css']
+  styleUrls: ['./trip-creator.component.css'],
+  imports: [ReactiveFormsModule, AsyncPipe, NgbInputDatepicker, NgbTimepicker, NgSelectModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TripCreatorComponent implements OnInit {
-  @Output() create = new EventEmitter<NewTrip>();
-  @Input() defaultDate: NgbDateStruct | null = null;
-  @Input() showDate = true;
+  create = output<NewTrip>();
+  defaultDate: NgbDateStruct | null = null;
+  showDate = true;
   availableDrivers$!: Observable<SelectOption[]>;
   availableVehicles$!: Observable<SelectOption[]>;
   tripForm!: FormGroup;
 
-  constructor(private dataStore: DataStore, private fb: FormBuilder, private ngbUtility: NgbUtility, public modal: NgbActiveModal) {
-  }
+  private readonly dataStore = inject(DataStore);
+  private readonly fb = inject(FormBuilder);
+  private readonly ngbUtility = inject(NgbUtility);
+  readonly modal = inject(NgbActiveModal);
 
   ngOnInit() {
     this.tripForm = this.fb.group({
