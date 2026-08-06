@@ -30,6 +30,7 @@ export class MyTripsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   trips$!: Observable<Trip[]>;
+  dayPublic$!: Observable<boolean>;
   readonly minDate = this.ngbUtility.minDate(5);
   private _selectedDate!: NgbDateStruct;
 
@@ -53,6 +54,7 @@ export class MyTripsComponent implements OnInit {
   set selectedDate(date: NgbDateStruct) {
     this._selectedDate = date;
     this.trips$ = this.dataStore.getTrips(date);
+    this.dayPublic$ = this.dataStore.getDayPublic(date);
   }
 
   get selectedDate(): NgbDateStruct {

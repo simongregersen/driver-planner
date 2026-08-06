@@ -46,6 +46,8 @@ export class DayPlansComponent implements OnInit {
   drivers!: Observable<Driver[]>;
   availableTemplates$!: Observable<SelectOption[]>;
   trips$!: Observable<Trip[]>;
+  dayPublic$!: Observable<boolean>;
+  publicDates$!: Observable<string[]>;
   selectedTemplate!: string;
   readonly minDate = this.ngbUtility.minDate(5);
   private _selectedDriver: Driver | null = null;
@@ -56,6 +58,11 @@ export class DayPlansComponent implements OnInit {
     this.drivers = this.dataStore.getAllDrivers();
     this.availableTemplates$ = this.dataStore.getAllTemplates()
       .pipe(map(ts => ts.map(t => ({id: t.$key, name: t.name}))));
+    this.publicDates$ = this.dataStore.getPublicDates();
+  }
+
+  isPublicDate(date: NgbDateStruct, publicDates: string[]): boolean {
+    return publicDates.includes(this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!));
   }
 
   removeTrip(trip: Trip) {
@@ -94,10 +101,15 @@ export class DayPlansComponent implements OnInit {
   set selectedDate(date: NgbDateStruct) {
     this._selectedDate = date;
     this.trips$ = this.dataStore.getTrips(date);
+    this.dayPublic$ = this.dataStore.getDayPublic(date);
   }
 
   get selectedDate(): NgbDateStruct {
     return this._selectedDate;
+  }
+
+  setDayPublic(isPublic: boolean) {
+    this.dataStore.setDayPublic(this.selectedDate, isPublic);
   }
 
 }

@@ -41,10 +41,14 @@
     </aside>
   </div>
   <div class="col-12 col-xl-10" style="margin-top: 30px">
-    @if (trips$ | async; as trips) {
-      <main>
-        <app-trips [trips]="filterMyTrips(trips, userService.driverProfile$ | async)" [readonly]="true"></app-trips>
-      </main>
+    @if (dayPublic$ | async) {
+      @if (trips$ | async; as trips) {
+        <main>
+          <app-trips [trips]="filterMyTrips(trips, userService.driverProfile$ | async)" [readonly]="true"></app-trips>
+        </main>
+      }
+    } @else {
+      <p class="text-muted">Denne dag er endnu ikke gjort synlig af en administrator.</p>
     }
   </div>
 </div>

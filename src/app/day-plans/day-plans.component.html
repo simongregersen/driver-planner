@@ -4,6 +4,12 @@
       Dagsplan
       <small>{{ ngbUtility.toMoment(selectedDate)?.toDate() | date:'EEEE, d MMMM y' }}</small>
     </h2>
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="dayPublic" role="switch"
+             [checked]="(dayPublic$ | async) ?? false"
+             (change)="setDayPublic($any($event.target).checked)">
+      <label class="form-check-label" for="dayPublic">Synlig for chauffører</label>
+    </div>
   </div>
 </div>
 <div class="d-none d-print-block">
@@ -22,10 +28,26 @@
     <aside>
       <h5>Dato</h5>
       <div class="form-group d-flex justify-content-center justify-content-xl-start">
-        <ngb-datepicker [(ngModel)]="selectedDate"
-                        [minDate]="minDate"
-                        [showWeekNumbers]="true">
-        </ngb-datepicker>
+        @if (publicDates$ | async; as publicDates) {
+          <ngb-datepicker [(ngModel)]="selectedDate"
+                          [minDate]="minDate"
+                          [showWeekNumbers]="true"
+                          [dayTemplate]="t">
+          </ngb-datepicker>
+          <ng-template #t let-date="date" let-currentMonth="currentMonth" let-selected="selected"
+                       let-disabled="disabled" let-focused="focused" let-today="today">
+            <span class="custom-day btn-light"
+                  [class.bg-primary]="selected"
+                  [class.text-white]="selected"
+                  [class.text-muted]="!selected && (date.month !== currentMonth || disabled)"
+                  [class.outside]="!selected && (date.month !== currentMonth || disabled)"
+                  [class.active]="focused"
+                  [class.public-day]="isPublicDate(date, publicDates)"
+                  [class.today]="today">
+              {{ date.day }}
+            </span>
+          </ng-template>
+        }
       </div>
       <div>
         <h5>Chauffører</h5>

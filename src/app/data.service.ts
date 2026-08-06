@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {child, endAt, orderByChild, push, query, ref, remove, startAt, update} from 'firebase/database';
+import {child, endAt, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, Trip} from './trip';
 import {Driver} from './driver';
@@ -20,6 +20,7 @@ export class DataStore {
   private vehiclesRef = ref(db, '/vehicles');
   private tripsRef = ref(db, '/trips');
   private templatesRef = ref(db, '/templates');
+  private daysRef = ref(db, '/days');
 
   constructor(private ngbUtility: NgbUtility) {
   }
@@ -57,6 +58,24 @@ export class DataStore {
 
   removeTrip(trip: Trip) {
     return remove(child(this.tripsRef, trip.$key));
+  }
+
+  getDayPublic(date: NgbDateStruct): Observable<boolean> {
+    const key = this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!);
+    return objectVal<boolean>(child(this.daysRef, `${key}/public`)).pipe(map(v => !!v));
+  }
+
+  setDayPublic(date: NgbDateStruct, isPublic: boolean) {
+    const key = this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!);
+    return update(child(this.daysRef, key), {public: isPublic});
+  }
+
+  getPublicDates(): Observable<string[]> {
+    const todayKey = this.ngbUtility.dateKey(moment());
+    const q = query(this.daysRef, orderByKey(), startAt(todayKey));
+    return objectVal<Record<string, {public: boolean}> | null>(q).pipe(
+      map(days => Object.entries(days || {}).filter(([, v]) => v?.public).map(([key]) => key))
+    );
   }
 
   getAllDrivers(): Observable<Driver[]> {

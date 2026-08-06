@@ -25,6 +25,10 @@ export class NgbUtility {
     return this.getDate(moment().subtract(yearsBack, 'years'));
   }
 
+  dateKey(date: Moment): string {
+    return date.format('YYYY-MM-DD');
+  }
+
   getTime(date: Moment): NgbTimeStruct {
     return {hour: date.hour(), minute: date.minute(), second: date.second()};
   }
