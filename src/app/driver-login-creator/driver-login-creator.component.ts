@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject, NgZone} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 import {Driver} from '../driver';
@@ -14,12 +14,11 @@ import {UserService} from '../user.service';
 })
 export class DriverLoginCreatorComponent {
   driver!: Driver;
-  error: string | null = null;
-  saving = false;
+  error = signal<string | null>(null);
+  saving = signal(false);
 
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
-  private readonly ngZone = inject(NgZone);
   readonly modal = inject(NgbActiveModal);
 
   loginForm: FormGroup = this.fb.group({
@@ -29,14 +28,14 @@ export class DriverLoginCreatorComponent {
 
   onSubmit() {
     const val = this.loginForm.value;
-    this.error = null;
-    this.saving = true;
+    this.error.set(null);
+    this.saving.set(true);
     this.userService.createDriverLogin(val.email, val.password, this.driver.$key)
-      .then(() => this.ngZone.run(() => this.modal.close()))
-      .catch(err => this.ngZone.run(() => {
-        this.error = DriverLoginCreatorComponent.mapError(err?.code);
-        this.saving = false;
-      }));
+      .then(() => this.modal.close())
+      .catch(err => {
+        this.error.set(DriverLoginCreatorComponent.mapError(err?.code));
+        this.saving.set(false);
+      });
   }
 
   private static mapError(code: string): string {
