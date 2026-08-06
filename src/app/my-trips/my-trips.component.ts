@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit} from '@a
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {NgbCalendar, NgbDatepicker, NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
+import {NgbCalendar, NgbInputDatepicker, NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
 import {Observable} from 'rxjs';
 import {Trip} from '../trip';
 import {Driver} from '../driver';
@@ -18,7 +18,7 @@ import {TripsComponent} from '../trips/trips.component';
   selector: 'app-my-trips',
   templateUrl: './my-trips.component.html',
   styleUrls: ['./my-trips.component.css'],
-  imports: [FormsModule, AsyncPipe, DatePipe, NgbDatepicker, TripsComponent],
+  imports: [FormsModule, AsyncPipe, DatePipe, NgbInputDatepicker, TripsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MyTripsComponent implements OnInit {

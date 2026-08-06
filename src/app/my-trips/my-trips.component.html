@@ -16,10 +16,20 @@
   <div class="col-12 col-xl-2 order-xl-2 d-print-none">
     <aside>
       <h5>Dato</h5>
-      <div class="form-group d-flex justify-content-center justify-content-xl-start">
-        <ngb-datepicker [(ngModel)]="selectedDate"
-                        [showWeekNumbers]="true">
-        </ngb-datepicker>
+      <div class="form-group">
+        <div class="input-group">
+          <input ngbDatepicker
+                 #d="ngbDatepicker"
+                 id="selectedDate"
+                 class="form-control"
+                 placeholder="yyyy-mm-dd"
+                 [showWeekNumbers]="true"
+                 (click)="d.toggle()"
+                 [(ngModel)]="selectedDate">
+          <div class="input-group-text" (click)="d.toggle()">
+            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
+          </div>
+        </div>
       </div>
     </aside>
   </div>
