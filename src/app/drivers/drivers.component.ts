@@ -6,6 +6,7 @@ import {Observable} from 'rxjs';
 import {NgbUtility} from '../ngb-date-utility';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {DriverEditorComponent} from '../driver-editor/driver-editor.component';
+import {DriverLoginCreatorComponent} from '../driver-login-creator/driver-login-creator.component';
 
 @Component({
   standalone: false,
@@ -42,6 +43,11 @@ export class DriversComponent implements OnInit {
   edit(driver: Driver) {
     const modalRef = this.modalService.open(DriverEditorComponent, {size: 'lg'});
     modalRef.componentInstance.edit(driver, (d: Driver, u: any) => this.dataStore.updateDriver(d, u));
+  }
+
+  createLogin(driver: Driver) {
+    const modalRef = this.modalService.open(DriverLoginCreatorComponent);
+    modalRef.componentInstance.driver = driver;
   }
 
 }

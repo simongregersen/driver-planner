@@ -14,6 +14,7 @@ import {Observable} from 'rxjs';
 })
 export class TripsComponent implements OnInit {
   @Input() trips: Trip[] = [];
+  @Input() readonly = false;
   @Output() edit = new EventEmitter<Trip>();
   @Output() remove = new EventEmitter<Trip>();
 

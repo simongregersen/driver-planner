@@ -9,7 +9,7 @@
     <th>Tur</th>
     <th class="w-15">Chauffører</th>
     <th class="w-15">Køretøjer</th>
-    <th class="w-5 d-print-none"></th>
+    <th class="w-5 d-print-none" *ngIf="!readonly"></th>
   </tr>
   </thead>
   <tbody>
@@ -38,7 +38,7 @@
       {{ getVehicle(vehicles, key)?.displayName }}{{isLast ? '' : ', '}}
       </span>
     </td>
-    <td class="d-print-none">
+    <td class="d-print-none" *ngIf="!readonly">
       <div class="float-end icons">
         <a class="pointer"
            (click)="edit.emit(trip)">

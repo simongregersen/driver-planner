@@ -1,0 +1,31 @@
+<div class="row mt-4 mb-2 d-print-none">
+  <div class="col-12">
+    <h2 class="fw-bold">
+      Mine ture
+      <small>{{ ngbUtility.toMoment(selectedDate)?.toDate() | date:'EEEE, d MMMM y' }}</small>
+    </h2>
+  </div>
+</div>
+<div class="d-none d-print-block">
+  <h5 class="fw-bold">
+    Mine ture
+    <small>{{ ngbUtility.toMoment(selectedDate)?.toDate() | date:'EEEE, d MMMM y' }}</small>
+  </h5>
+</div>
+<div class="row">
+  <div class="col-12 col-xl-2 order-xl-2 d-print-none">
+    <aside>
+      <h5>Dato</h5>
+      <div class="form-group d-flex justify-content-center justify-content-xl-start">
+        <ngb-datepicker [(ngModel)]="selectedDate"
+                        [showWeekNumbers]="true">
+        </ngb-datepicker>
+      </div>
+    </aside>
+  </div>
+  <div class="col-12 col-xl-10" style="margin-top: 30px">
+    <main *ngIf="trips$ | async as trips">
+      <app-trips [trips]="filterMyTrips(trips, userService.driverProfile$ | async)" [readonly]="true"></app-trips>
+    </main>
+  </div>
+</div>

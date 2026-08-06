@@ -8,7 +8,9 @@ import {DriversComponent} from '../drivers/drivers.component';
 import {VehiclesComponent} from '../vehicles/vehicles.component';
 import {PeriodPlansComponent} from '../period-plans/period-plans.component';
 import {AuthGuard} from '../auth-guard';
+import {AdminGuard} from '../admin-guard';
 import {SignInComponent} from '../sign-in/sign-in.component';
+import {MyTripsComponent} from '../my-trips/my-trips.component';
 
 const routes: Routes = [
   {
@@ -20,13 +22,20 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       {path: '', pathMatch: 'full', redirectTo: 'day-plans'},
-      {path: 'overview', component: OverviewComponent},
-      {path: 'day-plans', component: DayPlansComponent},
-      {path: 'period-plans', component: PeriodPlansComponent},
-      {path: 'templates', component: TemplatesComponent},
-      {path: 'routes', component: RoutesComponent},
-      {path: 'drivers', component: DriversComponent},
-      {path: 'vehicles', component: VehiclesComponent}
+      {path: 'my-trips', component: MyTripsComponent},
+      {
+        path: '',
+        canActivate: [AdminGuard],
+        children: [
+          {path: 'overview', component: OverviewComponent},
+          {path: 'day-plans', component: DayPlansComponent},
+          {path: 'period-plans', component: PeriodPlansComponent},
+          {path: 'templates', component: TemplatesComponent},
+          {path: 'routes', component: RoutesComponent},
+          {path: 'drivers', component: DriversComponent},
+          {path: 'vehicles', component: VehiclesComponent}
+        ]
+      }
     ]
   }
 ];
@@ -34,7 +43,7 @@ const routes: Routes = [
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule],
-  providers: [AuthGuard]
+  providers: [AuthGuard, AdminGuard]
 })
 export class AppRoutingModule {
 }

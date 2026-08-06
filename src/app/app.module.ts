@@ -25,6 +25,9 @@ import {TripEditorComponent} from './trip-editor/trip-editor.component';
 import {DriverEditorComponent} from './driver-editor/driver-editor.component';
 import {VehicleEditorComponent} from './vehicle-editor/vehicle-editor.component';
 import {NgbUtility} from './ngb-date-utility';
+import {UserService} from './user.service';
+import {MyTripsComponent} from './my-trips/my-trips.component';
+import {DriverLoginCreatorComponent} from './driver-login-creator/driver-login-creator.component';
 
 registerLocaleData(localeDa);
 
@@ -43,7 +46,9 @@ registerLocaleData(localeDa);
     PeriodPlansComponent,
     TripEditorComponent,
     DriverEditorComponent,
-    VehicleEditorComponent
+    VehicleEditorComponent,
+    MyTripsComponent,
+    DriverLoginCreatorComponent
   ],
   imports: [
     BrowserModule,
@@ -57,6 +62,7 @@ registerLocaleData(localeDa);
   providers: [
     {provide: LOCALE_ID, useValue: 'da-DK'},
     AuthenticationService,
+    UserService,
     DataStore,
     NgbUtility
   ],

@@ -6,13 +6,16 @@
     </button>
     <a class="navbar-brand" href="#"><i class="fa fa-bus"></i></a>
     <div class="collapse navbar-collapse" id="topbar">
-      <ul class="navbar-nav me-auto">
+      <ul class="navbar-nav me-auto" *ngIf="isAdmin$ | async">
         <!--<li class="nav-item"><a class="nav-link" routerLink="/overview" routerLinkActive="active">Oversigt</a></li>-->
         <li class="nav-item"><a class="nav-link" routerLink="/day-plans" routerLinkActive="active">Dagsplaner</a></li>
         <li class="nav-item"><a class="nav-link" routerLink="/period-plans" routerLinkActive="active">Periodeplaner</a></li>
         <li class="nav-item"><a class="nav-link" routerLink="/templates" routerLinkActive="active">Skabeloner</a></li>
         <li class="nav-item"><a class="nav-link" routerLink="/drivers" routerLinkActive="active">Chauffører</a></li>
         <li class="nav-item"><a class="nav-link" routerLink="/vehicles" routerLinkActive="active">Køretøjer</a></li>
+      </ul>
+      <ul class="navbar-nav me-auto" *ngIf="!(isAdmin$ | async)">
+        <li class="nav-item"><a class="nav-link" routerLink="/my-trips" routerLinkActive="active">Mine ture</a></li>
       </ul>
       <ul class="navbar-nav icons topbar-icons">
         <li class="nav-item">

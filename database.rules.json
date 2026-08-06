@@ -1,14 +1,49 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null",
-    "trips": {
-      ".indexOn": "start"
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['role'])",
+        "role": {
+          ".validate": "newData.val() === 'admin' || newData.val() === 'driver'"
+        },
+        "driverId": {
+          ".validate": "newData.isString()"
+        }
+      }
     },
+
+    "drivers": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+
+    "vehicles": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+
+    "templates": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+
     "tripsInTemplate": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$templateKey": {
         ".indexOn": "start"
       }
+    },
+
+    "trips": {
+      ".indexOn": "start",
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
     }
   }
 }

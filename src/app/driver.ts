@@ -6,4 +6,6 @@ export interface Driver extends AngularFireObject {
   name: string;
   birthday: Moment | null;
   deleted: boolean;
+  uid?: string;
+  email?: string;
 }
