@@ -22,6 +22,7 @@ export class AppComponent {
   loggedIn$: Observable<boolean> = this.authService.authState.pipe(map(user => user != null));
   isAdmin$: Observable<boolean> = this.userService.isAdmin$;
   isDriver$: Observable<boolean> = this.userService.driverProfile$.pipe(map(driver => driver != null));
+  email$: Observable<string | null> = this.authService.authState.pipe(map(user => user?.email ?? null));
 
   logout() {
     this.authService.logout();

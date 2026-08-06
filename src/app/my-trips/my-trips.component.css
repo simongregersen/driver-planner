@@ -25,3 +25,7 @@
 .custom-day.public-day:not(.bg-primary) {
   background-color: #d4edda;
 }
+
+.sidebar-stack {
+  display: inline-grid;
+}

@@ -10,6 +10,7 @@
       <ul class="navbar-nav me-auto">
         @if (isDriver$ | async) {
           <li class="nav-item"><a class="nav-link" routerLink="/my-trips" routerLinkActive="active">Mine ture</a></li>
+          <li class="nav-item"><a class="nav-link"></a></li>
         }
         @if (isAdmin$ | async) {
           <!--<li class="nav-item"><a class="nav-link" routerLink="/overview" routerLinkActive="active">Oversigt</a></li>-->
@@ -25,7 +26,7 @@
           <a class="nav-link pointer" (click)="print()" ngbTooltip="Print" placement="bottom">Print</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link pointer" (click)="logout()" ngbTooltip="Log ud" placement="bottom">Log ud</a>
+          <a class="nav-link pointer" (click)="logout()" [ngbTooltip]="'Log ud (' + (email$ | async) + ')'" placement="bottom">Log ud ({{ email$ | async }})</a>
         </li>
       </ul>
     </div>

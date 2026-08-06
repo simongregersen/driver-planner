@@ -47,6 +47,10 @@ export class NgbUtility {
       ? false : one.day > two.day : one.month > two.month : one.year > two.year;
   }
 
+  isPast(date: NgbDateStruct): boolean {
+    return this.before(date, this.calendar.getToday());
+  }
+
   range(from: NgbDateStruct, to: NgbDateStruct | null): NgbDate[] {
     let fromDate = NgbDate.from(from)!;
     const toDate = NgbDate.from(to);

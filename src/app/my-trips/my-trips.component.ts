@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit} from '@a
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {NgbCalendar, NgbDatepicker, NgbInputDatepicker, NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
+import {NgbCalendar, NgbDate, NgbDatepicker, NgbInputDatepicker, NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
 import {Observable} from 'rxjs';
 import {Trip} from '../trip';
 import {Driver} from '../driver';
@@ -50,6 +50,18 @@ export class MyTripsComponent implements OnInit {
 
   isPublicDate(date: NgbDateStruct, publicDates: string[]): boolean {
     return publicDates.includes(this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!));
+  }
+
+  previousDay() {
+    this.selectedDate = this.calendar.getPrev(NgbDate.from(this.selectedDate)!, 'd');
+  }
+
+  nextDay() {
+    this.selectedDate = this.calendar.getNext(NgbDate.from(this.selectedDate)!, 'd');
+  }
+
+  goToToday() {
+    this.selectedDate = this.calendar.getToday();
   }
 
   filterMyTrips(trips: Trip[] | null, driver: Driver | null): Trip[] {
