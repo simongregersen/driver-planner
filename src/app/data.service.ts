@@ -3,7 +3,8 @@ import {child, endAt, orderByChild, orderByKey, push, query, ref, remove, startA
 import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, Trip} from './trip';
 import {Driver} from './driver';
-import {Observable} from 'rxjs';
+import {AppUser} from './user';
+import {firstValueFrom, Observable} from 'rxjs';
 import {first, map, tap} from 'rxjs/operators';
 import {Vehicle} from './vehicle';
 import {NgbUtility} from './ngb-date-utility';
@@ -21,6 +22,7 @@ export class DataStore {
   private tripsRef = ref(db, '/trips');
   private templatesRef = ref(db, '/templates');
   private daysRef = ref(db, '/days');
+  private usersRef = ref(db, '/users');
 
   constructor(private ngbUtility: NgbUtility) {
   }
@@ -35,6 +37,7 @@ export class DataStore {
       tap(ts => ts.forEach(t => {
         t.start = moment(t.start as any);
         t.end = (t.end) ? moment(t.end as any) : null;
+        t.modified = (t.modified) ? moment(t.modified as any) : undefined;
       }))
     );
   }
@@ -51,18 +54,28 @@ export class DataStore {
   }
 
   updateTrip(trip: Trip, updates: any) {
+    // Gates on the destination day (updates.start is always populated by the trip editor on every submit),
+    // so this reflects where the trip ends up, not where it was before the edit.
+    const effectiveStart: Moment = updates.start || trip.start;
     if (updates.start) updates.start = updates.start.valueOf();
     if (updates.end) updates.end = updates.end.valueOf();
-    return update(child(this.tripsRef, trip.$key), updates);
+    return firstValueFrom(this.isDayPublic(effectiveStart)).then(isPublic => {
+      if (isPublic) updates.modified = moment().valueOf();
+      return update(child(this.tripsRef, trip.$key), updates);
+    });
   }
 
   removeTrip(trip: Trip) {
     return remove(child(this.tripsRef, trip.$key));
   }
 
-  getDayPublic(date: NgbDateStruct): Observable<boolean> {
-    const key = this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!);
+  private isDayPublic(date: Moment): Observable<boolean> {
+    const key = this.ngbUtility.dateKey(date);
     return objectVal<boolean>(child(this.daysRef, `${key}/public`)).pipe(map(v => !!v));
+  }
+
+  getDayPublic(date: NgbDateStruct): Observable<boolean> {
+    return this.isDayPublic(this.ngbUtility.toMoment(date)!);
   }
 
   setDayPublic(date: NgbDateStruct, isPublic: boolean) {
@@ -95,6 +108,14 @@ export class DataStore {
 
   deleteDriver(driver: Driver) {
     return update(child(this.driversRef, driver.$key), {deleted: true});
+  }
+
+  getAllUsers(): Observable<Record<string, AppUser>> {
+    return objectVal<Record<string, AppUser> | null>(this.usersRef).pipe(map(users => users || {}));
+  }
+
+  setUserAdmin(uid: string, isAdmin: boolean) {
+    return update(child(this.usersRef, uid), {role: isAdmin ? 'admin' : 'driver'});
   }
 
   updateDriver(driver: Driver, updates: any) {

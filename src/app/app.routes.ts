@@ -1,6 +1,9 @@
+import {inject} from '@angular/core';
 import {Routes} from '@angular/router';
+import {map, take} from 'rxjs/operators';
 import {authGuard} from './auth-guard';
 import {adminGuard} from './admin-guard';
+import {UserService} from './user.service';
 
 export const routes: Routes = [
   {
@@ -11,7 +14,11 @@ export const routes: Routes = [
     path: '',
     canActivate: [authGuard],
     children: [
-      {path: '', pathMatch: 'full', redirectTo: 'day-plans'},
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: () => inject(UserService).driverProfile$.pipe(take(1), map(driver => driver ? '/my-trips' : '/day-plans')),
+      },
       {
         path: 'my-trips',
         loadComponent: () => import('./my-trips/my-trips.component').then(m => m.MyTripsComponent),

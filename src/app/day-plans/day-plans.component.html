@@ -87,11 +87,7 @@
   <div class="col-12 col-xl-10" style="margin-top: 30px">
     @if (trips$ | async; as trips) {
       <main>
-        <app-trips [trips]="filterTripsByDriver(trips)"
-                   (edit)="edit($event)"
-                   (remove)="removeTrip($event)">
-        </app-trips>
-        <div class="row mt-4 mb-3 d-print-none">
+        <div class="row mb-3 d-print-none">
           <div class="col-12 d-flex align-items-center gap-2">
             <button type="button" class="btn btn-primary" (click)="create()">Opret tur</button>
             <ng-select class="flex-grow-1" style="max-width: 260px"
@@ -106,6 +102,7 @@
                     [popoverMessage]="'Er du sikker på, at du vil indsætte denne skabelon?'"
                     [confirmButtonType]="'success'"
                     [confirmText]="'Indsæt'"
+                    placement="bottom"
                     [cancelText]="'Annuller'"
                     [appendToBody]="true"
                     (confirm)="insertTemplate()">
@@ -113,6 +110,10 @@
             </button>
           </div>
         </div>
+        <app-trips [trips]="filterTripsByDriver(trips)"
+                   (edit)="edit($event)"
+                   (remove)="removeTrip($event)">
+        </app-trips>
       </main>
     }
   </div>

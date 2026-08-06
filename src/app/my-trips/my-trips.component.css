@@ -21,3 +21,7 @@
 .custom-day.today {
   box-shadow: inset 0 0 0 2px var(--bs-primary);
 }
+
+.custom-day.public-day:not(.bg-primary) {
+  background-color: #d4edda;
+}

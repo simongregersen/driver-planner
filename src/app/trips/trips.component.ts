@@ -8,6 +8,7 @@ import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {combineLatest, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
+import moment from 'moment';
 
 @Component({
   standalone: true,
@@ -20,6 +21,7 @@ import {map} from 'rxjs/operators';
 export class TripsComponent implements OnInit {
   trips = input<Trip[]>([]);
   readonly = input(false);
+  highlightModified = input(false);
   edit = output<Trip>();
   remove = output<Trip>();
 
@@ -39,5 +41,9 @@ export class TripsComponent implements OnInit {
 
   getVehicle(vehicles: Vehicle[] | null, key: string): Vehicle | undefined {
     return vehicles?.find(v => v.$key === key);
+  }
+
+  isRecentlyModified(trip: Trip): boolean {
+    return this.highlightModified() && !!trip.modified && trip.modified.isAfter(moment().subtract(24, 'hours'));
   }
 }

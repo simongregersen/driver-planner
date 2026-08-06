@@ -5,6 +5,7 @@ import {NgbInputDatepicker, NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstr
 import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
 import {DataStore} from '../data.service';
 import {Driver} from '../driver';
+import {AppUser} from '../user';
 import {Observable} from 'rxjs';
 import {NgbUtility} from '../ngb-date-utility';
 import {DriverEditorComponent} from '../driver-editor/driver-editor.component';
@@ -25,6 +26,7 @@ export class DriversComponent implements OnInit {
   private readonly modalService = inject(NgbModal);
 
   drivers!: Observable<Driver[]>;
+  users$!: Observable<Record<string, AppUser>>;
 
   driverForm: FormGroup = this.fb.group({
     displayName: ['', Validators.required],
@@ -33,7 +35,12 @@ export class DriversComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.drivers = this.dataStore.getAllDrivers()
+    this.drivers = this.dataStore.getAllDrivers();
+    this.users$ = this.dataStore.getAllUsers();
+  }
+
+  isDriverAdmin(driver: Driver, users: Record<string, AppUser>): boolean {
+    return !!driver.uid && users[driver.uid]?.role === 'admin';
   }
 
   create() {
@@ -44,6 +51,11 @@ export class DriversComponent implements OnInit {
 
   removeDriver(driver: Driver) {
     this.dataStore.deleteDriver(driver);
+  }
+
+  setDriverAdmin(driver: Driver, isAdmin: boolean) {
+    if (!driver.uid) return;
+    this.dataStore.setUserAdmin(driver.uid, isAdmin);
   }
 
   edit(driver: Driver) {

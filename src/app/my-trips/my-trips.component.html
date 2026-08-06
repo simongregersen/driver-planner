@@ -16,49 +16,52 @@
   <div class="col-12 col-xl-2 order-xl-2 d-print-none">
     <aside>
       <h5>Dato</h5>
-      <div class="form-group d-none d-xl-flex justify-content-xl-start">
-        <ngb-datepicker [(ngModel)]="selectedDate"
-                        [minDate]="minDate"
-                        [showWeekNumbers]="true"
-                        [dayTemplate]="t">
-        </ngb-datepicker>
-      </div>
-      <div class="form-group d-xl-none">
-        <div class="input-group">
-          <input ngbDatepicker
-                 #d="ngbDatepicker"
-                 id="selectedDate"
-                 class="form-control"
-                 placeholder="yyyy-mm-dd"
-                 [showWeekNumbers]="true"
-                 [minDate]="minDate"
-                 [dayTemplate]="t"
-                 (click)="d.toggle()"
-                 [(ngModel)]="selectedDate">
-          <div class="input-group-text" (click)="d.toggle()">
-            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
+      @if (publicDates$ | async; as publicDates) {
+        <div class="form-group d-none d-xl-flex justify-content-xl-start">
+          <ngb-datepicker [(ngModel)]="selectedDate"
+                          [minDate]="minDate"
+                          [showWeekNumbers]="true"
+                          [dayTemplate]="t">
+          </ngb-datepicker>
+        </div>
+        <div class="form-group d-xl-none">
+          <div class="input-group">
+            <input ngbDatepicker
+                   #d="ngbDatepicker"
+                   id="selectedDate"
+                   class="form-control"
+                   placeholder="yyyy-mm-dd"
+                   [showWeekNumbers]="true"
+                   [minDate]="minDate"
+                   [dayTemplate]="t"
+                   (click)="d.toggle()"
+                   [(ngModel)]="selectedDate">
+            <div class="input-group-text" (click)="d.toggle()">
+              <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
+            </div>
           </div>
         </div>
-      </div>
-      <ng-template #t let-date="date" let-currentMonth="currentMonth" let-selected="selected"
-                   let-disabled="disabled" let-focused="focused" let-today="today">
-        <span class="custom-day btn-light"
-              [class.bg-primary]="selected"
-              [class.text-white]="selected"
-              [class.text-muted]="!selected && (date.month !== currentMonth || disabled)"
-              [class.outside]="!selected && (date.month !== currentMonth || disabled)"
-              [class.active]="focused"
-              [class.today]="today">
-          {{ date.day }}
-        </span>
-      </ng-template>
+        <ng-template #t let-date="date" let-currentMonth="currentMonth" let-selected="selected"
+                     let-disabled="disabled" let-focused="focused" let-today="today">
+          <span class="custom-day btn-light"
+                [class.bg-primary]="selected"
+                [class.text-white]="selected"
+                [class.text-muted]="!selected && (date.month !== currentMonth || disabled)"
+                [class.outside]="!selected && (date.month !== currentMonth || disabled)"
+                [class.active]="focused"
+                [class.public-day]="isPublicDate(date, publicDates)"
+                [class.today]="today">
+            {{ date.day }}
+          </span>
+        </ng-template>
+      }
     </aside>
   </div>
   <div class="col-12 col-xl-10" style="margin-top: 30px">
     @if (dayPublic$ | async) {
       @if (trips$ | async; as trips) {
         <main>
-          <app-trips [trips]="filterMyTrips(trips, userService.driverProfile$ | async)" [readonly]="true"></app-trips>
+          <app-trips [trips]="filterMyTrips(trips, userService.driverProfile$ | async)" [readonly]="true" [highlightModified]="true"></app-trips>
         </main>
       }
     } @else {

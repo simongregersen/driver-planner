@@ -12,41 +12,51 @@
         <th>Fulde navn</th>
         <th class="w-25">Fødselsdag</th>
         <th>Login</th>
+        <th class="w-15">Admin</th>
         <th class="w-5 d-print-none"></th>
       </tr>
       </thead>
       <tbody>
-      @for (driver of (drivers | async) ?? []; track driver.$key) {
-        <tr>
-          <th>{{driver.displayName}}</th>
-          <td>{{driver.name}}</td>
-          <td>{{driver.birthday?.toDate()|date}}</td>
-          <td>{{driver.email}}</td>
-          <td class="d-print-none">
-            <div class="float-end icons">
-              @if (!driver.uid) {
-                <a class="pointer"
-                   (click)="createLogin(driver)">
-                  <i class="fa fa-key" ngbTooltip="Opret login"></i>
-                </a>
+      @if (users$ | async; as users) {
+        @for (driver of (drivers | async) ?? []; track driver.$key) {
+          <tr>
+            <th>{{driver.displayName}}</th>
+            <td>{{driver.name}}</td>
+            <td>{{driver.birthday?.toDate()|date}}</td>
+            <td>{{driver.email}}</td>
+            <td>
+              @if (driver.uid) {
+                <input class="form-check-input" type="checkbox"
+                       [checked]="isDriverAdmin(driver, users)"
+                       (change)="setDriverAdmin(driver, $any($event.target).checked)">
               }
-              <a class="pointer"
-                 (click)="edit(driver)">
-                <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
-              </a>
-              <a mwlConfirmationPopover
-                 class="pointer"
-                 [popoverMessage]="'Er du sikker på, at du vil slette chaufføren<br>\'' + driver.displayName + '\'?'"
-                 [confirmButtonType]="'danger'"
-                 [confirmText]="'Slet'"
-                 [cancelText]="'Annuller'"
-                 placement="left"
-                 (confirm)="removeDriver(driver)">
-                <i class="fa fa-trash" ngbTooltip="Slet"></i>
-              </a>
-            </div>
-          </td>
-        </tr>
+            </td>
+            <td class="d-print-none">
+              <div class="float-end icons">
+                @if (!driver.uid) {
+                  <a class="pointer"
+                     (click)="createLogin(driver)">
+                    <i class="fa fa-key" ngbTooltip="Opret login"></i>
+                  </a>
+                }
+                <a class="pointer"
+                   (click)="edit(driver)">
+                  <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
+                </a>
+                <a mwlConfirmationPopover
+                   class="pointer"
+                   [popoverMessage]="'Er du sikker på, at du vil slette chaufføren<br>\'' + driver.displayName + '\'?'"
+                   [confirmButtonType]="'danger'"
+                   [confirmText]="'Slet'"
+                   [cancelText]="'Annuller'"
+                   placement="left"
+                   (confirm)="removeDriver(driver)">
+                  <i class="fa fa-trash" ngbTooltip="Slet"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        }
       }
       </tbody>
     </table>

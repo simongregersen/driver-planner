@@ -28,7 +28,7 @@ export class UserService {
     this.role$ = this.user$.pipe(map(u => u?.role ?? null));
     this.isAdmin$ = this.role$.pipe(map(r => r === 'admin'));
     this.driverProfile$ = this.user$.pipe(
-      switchMap(u => (u?.role === 'driver' && u.driverId) ? this.dataStore.getDriver(u.driverId) : of(null))
+      switchMap(u => u?.driverId ? this.dataStore.getDriver(u.driverId) : of(null))
     );
   }
 

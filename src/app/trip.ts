@@ -7,6 +7,7 @@ export interface Trip extends AngularFireObject {
   description: string;
   drivers: string[];
   vehicles: string[];
+  modified?: Moment;
 }
 
 export interface NewTrip {

@@ -17,7 +17,7 @@
       </thead>
       <tbody>
       @for (trip of trips(); track trip.$key) {
-        <tr>
+        <tr [class.table-info]="isRecentlyModified(trip)">
           <th>
             <span ngbTooltip="{{trip.start.toDate() | date: 'short'}}" container="'body'">
             {{trip.start.toDate() | date: 'HH:mm' }}

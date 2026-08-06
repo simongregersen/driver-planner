@@ -31,6 +31,7 @@ export class MyTripsComponent implements OnInit {
 
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
+  publicDates$!: Observable<string[]>;
   readonly minDate = this.ngbUtility.minDate(5);
   private _selectedDate!: NgbDateStruct;
 
@@ -44,6 +45,11 @@ export class MyTripsComponent implements OnInit {
       });
 
     this.selectedDate = this.calendar.getToday();
+    this.publicDates$ = this.dataStore.getPublicDates();
+  }
+
+  isPublicDate(date: NgbDateStruct, publicDates: string[]): boolean {
+    return publicDates.includes(this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!));
   }
 
   filterMyTrips(trips: Trip[] | null, driver: Driver | null): Trip[] {
