@@ -31,6 +31,7 @@ export class TripCreatorComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly ngbUtility = inject(NgbUtility);
   readonly modal = inject(NgbActiveModal);
+  readonly minDate = this.ngbUtility.minDate(5);
 
   ngOnInit() {
     this.tripForm = this.fb.group({

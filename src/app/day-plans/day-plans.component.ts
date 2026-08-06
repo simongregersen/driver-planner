@@ -47,6 +47,7 @@ export class DayPlansComponent implements OnInit {
   availableTemplates$!: Observable<SelectOption[]>;
   trips$!: Observable<Trip[]>;
   selectedTemplate!: string;
+  readonly minDate = this.ngbUtility.minDate(5);
   private _selectedDriver: Driver | null = null;
   private _selectedDate!: NgbDateStruct;
 

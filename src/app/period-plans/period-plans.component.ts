@@ -44,6 +44,7 @@ export class PeriodPlansComponent implements OnInit {
   range!: NgbDate[];
   drivers$!: Observable<Driver[]>;
   trips$!: Observable<Trip[]>;
+  readonly minDate = this.ngbUtility.minDate(5);
 
   private _selectedDriver: Driver | null = null;
 

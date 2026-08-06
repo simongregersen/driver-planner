@@ -21,6 +21,10 @@ export class NgbUtility {
     return {year: date.year(), month: date.month() + 1, day: date.date()};
   }
 
+  minDate(yearsBack: number): NgbDateStruct {
+    return this.getDate(moment().subtract(yearsBack, 'years'));
+  }
+
   getTime(date: Moment): NgbTimeStruct {
     return {hour: date.hour(), minute: date.minute(), second: date.second()};
   }

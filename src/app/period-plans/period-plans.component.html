@@ -31,6 +31,7 @@
                         (ngModelChange)="onDateChange($event)"
                         [displayMonths]="1"
                         [dayTemplate]="t"
+                        [minDate]="minDate"
                         [showWeekNumbers]="true">
         </ngb-datepicker>
         <ng-template #t let-date="date" let-focused="focused">

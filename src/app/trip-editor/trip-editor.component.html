@@ -31,6 +31,7 @@
                  class="form-control"
                  placeholder="yyyy-MM-dd"
                  [showWeekNumbers]="true"
+                 [minDate]="minDate"
                  (click)="d2.close(); d1.toggle()">
           <div class="input-group-text" (click)="d2.close(); d1.toggle()">
             <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
@@ -57,6 +58,7 @@
                  class="form-control"
                  placeholder="yyyy-MM-dd"
                  [showWeekNumbers]="true"
+                 [minDate]="minDate"
                  (click)="d1.close(); d2.toggle()">
           <div class="input-group-text" (click)="d1.close(); d2.toggle()">
             <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>

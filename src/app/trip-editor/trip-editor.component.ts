@@ -32,6 +32,7 @@ export class TripEditorComponent implements OnInit {
   private readonly ngbUtility = inject(NgbUtility);
   private readonly calendar = inject(NgbCalendar);
   readonly modal = inject(NgbActiveModal);
+  readonly minDate = this.ngbUtility.minDate(5);
 
   tripForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
