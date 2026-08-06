@@ -6,7 +6,8 @@ import {Trip} from '../trip';
 import {DataStore} from '../data.service';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
-import {Observable} from 'rxjs';
+import {combineLatest, Observable} from 'rxjs';
+import {map} from 'rxjs/operators';
 
 @Component({
   standalone: true,
@@ -24,12 +25,12 @@ export class TripsComponent implements OnInit {
 
   readonly dataStore = inject(DataStore);
 
-  drivers$!: Observable<Driver[]>;
-  vehicles$!: Observable<Vehicle[]>;
+  viewModel$!: Observable<{drivers: Driver[]; vehicles: Vehicle[]}>;
 
   ngOnInit(): void {
-    this.drivers$ = this.dataStore.getAllDrivers();
-    this.vehicles$ = this.dataStore.getAllVehicles();
+    this.viewModel$ = combineLatest([this.dataStore.getAllDrivers(), this.dataStore.getAllVehicles()]).pipe(
+      map(([drivers, vehicles]) => ({drivers, vehicles}))
+    );
   }
 
   getDriver(drivers: Driver[] | null, key: string): Driver | undefined {
