@@ -31,3 +31,56 @@
   align-items: center;
   padding: 48px 0;
 }
+
+/* Below 768px the table becomes a stack of cards, one per trip, with a label
+   before each field standing in for the column headers the cards no longer have. */
+@media (max-width: 767px) {
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table,
+  .data-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--mat-sys-corner-medium);
+  }
+
+  .data-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .data-table tbody tr > th,
+  .data-table tbody tr > td {
+    width: auto;
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .data-table tbody tr > [data-label]::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .data-table tbody tr > .trip-cell {
+    order: -1;
+    font-weight: 600;
+  }
+
+  .data-table tbody tr > .cell-actions {
+    width: auto;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+}

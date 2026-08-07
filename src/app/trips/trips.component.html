@@ -21,36 +21,34 @@
             [class.row-highlight]="isRecentlyModified(trip)"
             [class.pointer]="!readonly() && rowClickToEdit()"
             (click)="onRowClick(trip)">
-          <th>
+          <th data-label="Start">
             <span [matTooltip]="(trip.start.toDate() | date: 'short') ?? ''">
             {{trip.start.toDate() | date: 'HH:mm' }}
             </span>
             @for (entry of startReportEntries(trip); track entry.key) {
-              <br>
               <small class="report-line report-start">{{entry.time}}</small>
             }
           </th>
-          <td class="muted">
+          <td class="muted" data-label="Slut">
             <span [matTooltip]="(trip.end?.toDate() | date: 'short') ?? ''">
               {{trip.end?.toDate() | date:'HH:mm' }}
             </span>
             @for (entry of endReportEntries(trip); track entry.key) {
-              <br>
               <small class="report-line report-end">{{entry.time}}</small>
             }
           </td>
-          <td>
+          <td class="trip-cell">
             {{trip.name}}
             <small class="muted newline" [class.print-only]="hideDescriptionOnScreen()"><br>{{trip.description}}</small>
           </td>
-          <td [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
+          <td data-label="Chauffører" [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
             @for (key of trip.drivers; track key; let isLast = $last) {
               <span>
               {{ getDriver(drivers, key)?.displayName }}{{isLast ? '' : ', '}}
               </span>
             }
           </td>
-          <td [class.cell-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
+          <td data-label="Køretøjer" [class.cell-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
             @for (key of trip.vehicles; track key; let isLast = $last) {
               <span>
               {{ getVehicle(vehicles, key)?.displayName }}{{isLast ? '' : ', '}}
