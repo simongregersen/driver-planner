@@ -1,27 +1,31 @@
+/* Angular Material system tokens (--mat-sys-*) come from the prebuilt theme loaded in angular.json. */
+
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
   font-size: 14px;
-  font-family: sans-serif;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface);
 }
 
 body {
-  padding-top: 50px;
+  padding-top: 64px;
   padding-bottom: 50px;
+}
+
+.container {
+  width: 98%;
+  margin: 0 auto;
+  padding: 0 12px;
+  box-sizing: border-box;
 }
 
 @media (max-width: 767px) {
   .container {
     width: 100%;
-    margin-left: 0;
-    margin-right: 0;
-  }
-}
-
-@media (min-width: 1200px) {
-  .container{
-    width: 98%;
+    padding: 0 8px;
   }
 }
 
@@ -29,73 +33,223 @@ body {
   cursor: pointer;
 }
 
-.list-group button {
-  outline: none;
+.full-width {
+  width: 100%;
 }
 
-/* Extension of Bootstrap's Flexbox width classes */
+/* Page scaffolding
+   ------------------------------------------------------------------ */
 
-.w-5 {
-  width: 5% !important;
+.page-header {
+  margin: 24px 0 8px;
 }
 
-.w-6 {
-  width: 6% !important;
+.page-title {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
 }
 
-.w-7_5 {
-  width: 7.5% !important;
+.page-title small,
+.page-subtitle {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface-variant);
 }
 
-.w-15 {
-  width: 15% !important;
+.section-title {
+  margin: 0 0 8px;
+  font: var(--mat-sys-title-medium);
 }
 
-.icons {
-  color: #464A4C;
+.muted {
+  color: var(--mat-sys-on-surface-variant);
 }
 
-/* Bootstrap 4-alpha compatibility shims (Bootstrap 5 dropped .form-group and the has-danger pattern) */
-
-.form-group {
-  margin-bottom: 1rem;
+/* Sidebar-on-the-right page layout, matching the previous 2/10 column split.
+   Below the xl breakpoint the sidebar stacks above the main content. */
+.page-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
 }
 
-.form-control-feedback {
-  display: block;
-  color: #dc3545;
-  font-size: 80%;
-  margin-top: 0.25rem;
+@media (min-width: 1200px) {
+  .page-layout {
+    /* Wide enough for the inline calendar the sidebar hosts on several pages. */
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .page-layout > .page-aside {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .page-layout > .page-main {
+    grid-column: 1;
+    grid-row: 1;
+  }
 }
 
-.has-danger .form-control {
-  border-color: #dc3545;
+/* Centred while the sidebar is stacked above the content, left-aligned once it
+   moves beside it. */
+.page-aside {
+  display: grid;
+  justify-items: center;
 }
 
-/* Datepicker: bigger tap targets on small screens (applies to every ngb-datepicker instance) */
+@media (min-width: 1200px) {
+  .page-aside {
+    justify-items: start;
+  }
+}
 
+.sidebar-stack {
+  display: inline-grid;
+  gap: 16px;
+}
+
+.page-main {
+  min-width: 0;
+  margin-top: 24px;
+}
+
+/* Forms
+   ------------------------------------------------------------------ */
+
+.form-stack {
+  display: grid;
+  gap: 4px;
+}
+
+/* A label plus its controls on one line, wrapping on narrow screens. */
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.field-row > .field-label {
+  flex: 0 0 auto;
+  min-width: 110px;
+  padding-top: 14px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.app-error {
+  padding: 12px 16px;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+/* Tables
+   ------------------------------------------------------------------ */
+
+/* Wide tables scroll inside their own box rather than pushing the page sideways. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  /* Matches the sidebar headings (1rem) rather than Material's denser body-medium. */
+  font: var(--mat-sys-body-large);
+}
+
+.data-table th,
+.data-table td {
+  padding: 8px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.data-table thead th {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.data-table tbody tr.hoverable:hover {
+  background: var(--mat-sys-surface-container-highest);
+}
+
+.data-table .row-highlight {
+  background: var(--mat-sys-secondary-container);
+}
+
+.data-table .cell-warning {
+  background: var(--mat-sys-error-container);
+}
+
+.data-table .row-total {
+  background: var(--mat-sys-surface-container);
+  font-weight: 600;
+}
+
+.data-table .cell-actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Column widths carried over from the previous layout. */
+.col-w-5 { width: 5%; }
+.col-w-6 { width: 6%; }
+.col-w-15 { width: 15%; }
+.col-w-25 { width: 25%; }
+
+/* Inline confirmation menus
+   ------------------------------------------------------------------ */
+
+.confirm-message {
+  padding: 12px 16px 4px;
+  max-width: 260px;
+  font: var(--mat-sys-body-medium);
+  white-space: normal;
+}
+
+/* Destructive choices, tinted through the tokens Material actually reads for
+   menu-item and button labels. */
+.mat-mdc-menu-item.confirm-danger .mat-mdc-menu-item-text {
+  color: var(--mat-sys-error);
+}
+
+button.confirm-danger {
+  --mat-button-text-label-text-color: var(--mat-sys-error);
+}
+
+/* Datepicker: mark days already published to drivers. */
+.public-day .mat-calendar-body-cell-content:not(.mat-calendar-body-selected) {
+  background: #d4edda;
+}
+
+/* Bigger tap targets on small screens. */
 @media (max-width: 767px) {
-  .ngb-dp-day,
-  .ngb-dp-weekday,
-  .ngb-dp-week-number {
-    width: 2.75rem !important;
-    height: 2.75rem !important;
-  }
-
-  .ngb-dp-weekday,
-  .ngb-dp-week-number {
-    line-height: 2.75rem !important;
-  }
-
-  [ngbDatepickerDayView] {
-    width: 2.75rem !important;
-    height: 2.75rem !important;
-    line-height: 2.75rem !important;
-    font-size: 1.1rem !important;
+  .mat-calendar-body-cell-content {
+    height: 2.5rem;
+    width: 2.5rem;
+    font-size: 1.1rem;
   }
 }
 
-/* Print */
+/* Print
+   ------------------------------------------------------------------ */
+
+/* .no-print deliberately has no on-screen rule: setting `display` here would override
+   the layout display of any element that also carries a layout class. */
+
+.print-only {
+  display: none;
+}
 
 @media print {
   html, body {
@@ -108,11 +262,25 @@ body {
   ::first-letter {
     margin-top: 0;
   }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .page-layout {
+    display: block;
+  }
+
+  .page-main {
+    margin-top: 0;
+  }
 }
 
 @page {
   size: auto;
   margin: 15mm 10mm 15mm 10mm;
 }
-
-

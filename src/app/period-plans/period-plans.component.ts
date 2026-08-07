@@ -1,17 +1,13 @@
 import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {FormsModule} from '@angular/forms';
-import {
-  NgbCalendar,
-  NgbDate,
-  NgbDatepicker,
-  NgbDropdown,
-  NgbDropdownItem,
-  NgbDropdownMenu,
-  NgbDropdownToggle,
-  NgbModal,
-} from '@ng-bootstrap/ng-bootstrap';
-import {NgbUtility} from '../ngb-date-utility';
+import {MatButtonModule} from '@angular/material/button';
+import {DateRange, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
+import {MatDialog} from '@angular/material/dialog';
+import {MatDividerModule} from '@angular/material/divider';
+import {MatIconModule} from '@angular/material/icon';
+import {MatMenuModule} from '@angular/material/menu';
+import {Moment} from 'moment';
+import {DateUtility} from '../date-utility';
 import {DataStore} from '../data.service';
 import {Trip} from '../trip';
 import {Observable} from 'rxjs';
@@ -19,6 +15,7 @@ import {Driver} from '../driver';
 import {Utility} from '../utility';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {TripsComponent} from '../trips/trips.component';
+import {DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -26,51 +23,53 @@ import {TripsComponent} from '../trips/trips.component';
   templateUrl: './period-plans.component.html',
   styleUrls: ['./period-plans.component.css'],
   imports: [
-    FormsModule, AsyncPipe, DatePipe,
-    NgbDatepicker, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu, NgbDropdownItem,
+    AsyncPipe, DatePipe,
+    MatButtonModule, MatDatepickerModule, MatDividerModule, MatIconModule, MatMenuModule,
     TripsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PeriodPlansComponent implements OnInit {
-  readonly ngbUtility = inject(NgbUtility);
+  readonly dateUtility = inject(DateUtility);
   readonly dataStore = inject(DataStore);
-  private readonly calendar = inject(NgbCalendar);
-  private readonly modalService = inject(NgbModal);
+  private readonly dialog = inject(MatDialog);
 
-  hovered: NgbDate | null = null;
-  from: NgbDate | null = null;
-  to: NgbDate | null = null;
-  range!: NgbDate[];
+  from: Moment | null = null;
+  to: Moment | null = null;
+  range!: Moment[];
   drivers$!: Observable<Driver[]>;
   trips$!: Observable<Trip[]>;
-  readonly minDate = this.ngbUtility.minDate(5);
+  readonly minDate = this.dateUtility.minDate(5);
+
+  // The calendar renders the from/to highlight itself once it is handed a DateRange.
+  selectedRange = new DateRange<Moment>(null, null);
+
+  readonly dateClass: MatCalendarCellClassFunction<Moment> = date =>
+    this.dateUtility.isPast(date) ? 'past-day' : '';
 
   private _selectedDriver: Driver | null = null;
 
-  isHovered = (date: NgbDate) => this.from && !this.to && this.hovered && this.ngbUtility.after(date, this.from)
-    && this.ngbUtility.before(date, this.hovered);
-  isInside = (date: NgbDate) => this.ngbUtility.after(date, this.from) && this.ngbUtility.before(date, this.to);
-  isFrom = (date: NgbDate) => this.ngbUtility.equals(date, this.from);
-  isTo = (date: NgbDate) => this.ngbUtility.equals(date, this.to);
-
   ngOnInit(): void {
     this.drivers$ = this.dataStore.getAllDrivers();
-    this.from = this.calendar.getToday();
-    this.to = this.calendar.getNext(this.calendar.getToday(), 'd', 6);
+    this.from = this.dateUtility.today();
+    this.to = this.dateUtility.addDays(this.from, 6);
+    this.updateRange();
     this.fetchTrips();
   }
 
-  onDateChange(date: NgbDate) {
+  onDateChange(date: Moment | null) {
+    if (!date) return;
+
     if (!this.from && !this.to) {
       this.from = date;
-    } else if (this.from && !this.to && this.ngbUtility.after(date, this.from)) {
+    } else if (this.from && !this.to && this.dateUtility.after(date, this.from)) {
       this.to = date;
       this.fetchTrips();
     } else {
       this.to = null;
       this.from = date;
     }
+    this.updateRange();
   }
 
   removeTrip(trip: Trip) {
@@ -78,20 +77,20 @@ export class PeriodPlansComponent implements OnInit {
   }
 
   edit(trip: Trip) {
-    const modalRef = this.modalService.open(TripEditorComponent, {size: 'lg'});
-    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
+    const dialogRef = this.dialog.open(TripEditorComponent, DIALOG_CONFIG);
+    dialogRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
   }
 
   fetchTrips(): void {
-    this.range = this.ngbUtility.range(this.from!, this.to);
+    this.range = this.dateUtility.range(this.from!, this.to);
     this.trips$ = this.dataStore.getTrips(this.from!, this.to!);
   }
 
-  filterByDate(trips: Trip[], date: NgbDate): Trip[] {
+  filterByDate(trips: Trip[], date: Moment): Trip[] {
     if (!trips || !trips.length) return [];
 
-    const start = this.ngbUtility.toMoment(date);
-    const end = this.ngbUtility.toMoment(this.calendar.getNext(date, 'd'));
+    const start = this.dateUtility.toMoment(date);
+    const end = this.dateUtility.toMoment(this.dateUtility.addDays(date, 1));
     return trips.filter(t => t.start >= start! && t.start < end!);
   }
 
@@ -107,6 +106,10 @@ export class PeriodPlansComponent implements OnInit {
 
   get selectedDriver(): Driver | null {
     return this._selectedDriver;
+  }
+
+  private updateRange(): void {
+    this.selectedRange = new DateRange<Moment>(this.from, this.to);
   }
 
 }

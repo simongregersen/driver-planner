@@ -1,37 +1,21 @@
-.custom-day {
-  text-align: center;
-  padding: 0.185rem 0.25rem;
-  display: inline-block;
-  height: 2rem;
-  width: 2rem;
+.inline-calendar {
+  width: 296px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
 }
 
-.custom-day.focused {
-  background-color: #e6e6e6;
+.filter-button .ellipsis {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.custom-day.range, .custom-day:hover {
-  background-color: #0275d8;
-  color: white;
+.day-heading {
+  margin: 24px 0;
+  font: var(--mat-sys-title-medium);
 }
 
-.faded {
+::ng-deep .past-day .mat-calendar-body-cell-content {
   opacity: 0.5;
-}
-
-.custom-day.today {
-  box-shadow: inset 0 0 0 2px var(--bs-primary);
-}
-
-.sidebar-stack {
-  display: inline-grid;
-}
-
-@media (max-width: 767px) {
-  .custom-day {
-    height: 2.75rem;
-    width: 2.75rem;
-    line-height: 2.375rem;
-    font-size: 1.1rem;
-  }
 }

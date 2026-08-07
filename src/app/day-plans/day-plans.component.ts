@@ -1,31 +1,30 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {afterRenderEffect, ChangeDetectionStrategy, Component, computed, inject, OnInit, viewChild} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {
-  NgbCalendar,
-  NgbDate,
-  NgbDateStruct,
-  NgbDatepicker,
-  NgbDropdown,
-  NgbDropdownItem,
-  NgbDropdownMenu,
-  NgbDropdownToggle,
-  NgbInputDatepicker,
-  NgbModal,
-} from '@ng-bootstrap/ng-bootstrap';
-import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
+import {MatDialog} from '@angular/material/dialog';
+import {MatDividerModule} from '@angular/material/divider';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatIconModule} from '@angular/material/icon';
+import {MatInputModule} from '@angular/material/input';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {DataStore} from '../data.service';
 import {NewTrip, Trip, TripReport} from '../trip';
 import {Driver} from '../driver';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
-import {NgbUtility} from '../ngb-date-utility';
+import {Moment} from 'moment';
+import {DateUtility} from '../date-utility';
 import {Utility} from '../utility';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {SelectOption} from '../select-option';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
 import {TripReportComponent} from '../trip-report/trip-report.component';
 import {TripsComponent} from '../trips/trips.component';
+import {DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -34,48 +33,64 @@ import {TripsComponent} from '../trips/trips.component';
   styleUrls: ['./day-plans.component.css'],
   imports: [
     FormsModule, AsyncPipe, DatePipe,
-    NgbDatepicker, NgbInputDatepicker, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu, NgbDropdownItem,
-    ConfirmationPopoverModule, TripsComponent,
+    MatButtonModule, MatDatepickerModule, MatDividerModule, MatFormFieldModule, MatIconModule,
+    MatInputModule, MatMenuModule, MatSlideToggleModule,
+    TripsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DayPlansComponent implements OnInit {
   readonly dataStore = inject(DataStore);
-  readonly ngbUtility = inject(NgbUtility);
-  private readonly calendar = inject(NgbCalendar);
-  private readonly modalService = inject(NgbModal);
+  readonly dateUtility = inject(DateUtility);
+  private readonly dialog = inject(MatDialog);
 
   drivers!: Observable<Driver[]>;
   availableTemplates$!: Observable<SelectOption[]>;
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
-  publicDates$!: Observable<string[]>;
-  readonly minDate = this.ngbUtility.minDate(5);
+  readonly minDate = this.dateUtility.minDate(5);
   private _selectedDriver: Driver | null = null;
-  private _selectedDate!: NgbDateStruct;
+  private _selectedDate: Moment = this.dateUtility.today();
+
+  private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
+  private readonly publicDates = toSignal(this.dataStore.getPublicDates(), {initialValue: [] as string[]});
+
+  readonly dateClass = computed<MatCalendarCellClassFunction<Moment>>(() => {
+    const publicDates = this.publicDates();
+    return date => this.isPublicDate(date, publicDates) ? 'public-day' : '';
+  });
+
+  constructor() {
+    // A calendar only rebuilds its cells on an explicit refresh, never on a new dateClass
+    // alone. This has to run *after* render, so the calendar has already received the new
+    // dateClass binding by the time it re-reads it.
+    afterRenderEffect(() => {
+      this.dateClass();
+      this.calendar()?.updateTodaysDate();
+    });
+  }
 
   ngOnInit(): void {
-    this.selectedDate = this.calendar.getToday();
+    this.selectedDate = this.dateUtility.today();
     this.drivers = this.dataStore.getAllDrivers();
     this.availableTemplates$ = this.dataStore.getAllTemplates()
       .pipe(map(ts => ts.map(t => ({id: t.$key, name: t.name}))));
-    this.publicDates$ = this.dataStore.getPublicDates();
   }
 
-  isPublicDate(date: NgbDateStruct, publicDates: string[]): boolean {
-    return publicDates.includes(this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!));
+  isPublicDate(date: Moment, publicDates: string[]): boolean {
+    return publicDates.includes(this.dateUtility.dateKey(date));
   }
 
   previousDay() {
-    this.selectedDate = this.calendar.getPrev(NgbDate.from(this.selectedDate)!, 'd');
+    this.selectedDate = this.dateUtility.addDays(this.selectedDate, -1);
   }
 
   nextDay() {
-    this.selectedDate = this.calendar.getNext(NgbDate.from(this.selectedDate)!, 'd');
+    this.selectedDate = this.dateUtility.addDays(this.selectedDate, 1);
   }
 
   goToToday() {
-    this.selectedDate = this.calendar.getToday();
+    this.selectedDate = this.dateUtility.today();
   }
 
   removeTrip(trip: Trip) {
@@ -83,23 +98,23 @@ export class DayPlansComponent implements OnInit {
   }
 
   edit(trip: Trip) {
-    const modalRef = this.modalService.open(TripEditorComponent, {size: 'lg'});
-    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
+    const dialogRef = this.dialog.open(TripEditorComponent, DIALOG_CONFIG);
+    dialogRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
   }
 
   create() {
-    const modalRef = this.modalService.open(TripCreatorComponent, {size: 'lg'});
-    modalRef.componentInstance.defaultDate = this.selectedDate;
-    modalRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
+    const dialogRef = this.dialog.open(TripCreatorComponent, DIALOG_CONFIG);
+    dialogRef.componentInstance.defaultDate = this.selectedDate;
+    dialogRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
   }
 
   openTripReport(trip: Trip) {
-    const modalRef = this.modalService.open(TripReportComponent, {size: 'lg'});
-    modalRef.componentInstance.edit(trip, (t: Trip, driverKey: string, report: TripReport) => this.dataStore.updateTripReport(t, driverKey, report));
+    const dialogRef = this.dialog.open(TripReportComponent, DIALOG_CONFIG);
+    dialogRef.componentInstance.edit(trip, (t: Trip, driverKey: string, report: TripReport) => this.dataStore.updateTripReport(t, driverKey, report));
   }
 
   insertTemplate(templateId: string) {
-    this.dataStore.insertTemplate(this.ngbUtility.toMoment(this.selectedDate)!, templateId);
+    this.dataStore.insertTemplate(this.selectedDate, templateId);
   }
 
   filterTripsByDriver(trips: Trip[] | null): Trip[] {
@@ -116,13 +131,18 @@ export class DayPlansComponent implements OnInit {
     return this._selectedDriver;
   }
 
-  set selectedDate(date: NgbDateStruct) {
+  /** The calendar and the date input both hand back null when a selection is cleared. */
+  onDateSelected(date: Moment | null) {
+    if (date) this.selectedDate = date;
+  }
+
+  set selectedDate(date: Moment) {
     this._selectedDate = date;
     this.trips$ = this.dataStore.getTrips(date);
     this.dayPublic$ = this.dataStore.getDayPublic(date);
   }
 
-  get selectedDate(): NgbDateStruct {
+  get selectedDate(): Moment {
     return this._selectedDate;
   }
 

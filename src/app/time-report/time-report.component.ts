@@ -1,15 +1,21 @@
 import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {NgbDropdown, NgbDropdownItem, NgbDropdownMenu, NgbDropdownToggle, NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialog} from '@angular/material/dialog';
+import {MatIconModule} from '@angular/material/icon';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {BehaviorSubject, combineLatest, Observable, of} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
 import moment, {Moment} from 'moment';
 import {DataStore} from '../data.service';
 import {UserService} from '../user.service';
-import {NgbUtility} from '../ngb-date-utility';
+import {DateUtility} from '../date-utility';
 import {Driver} from '../driver';
 import {Trip, TripReport} from '../trip';
 import {TripReportComponent} from '../trip-report/trip-report.component';
+import {DIALOG_CONFIG} from '../dialog-config';
 
 interface TimeReportRow {
   key: string;
@@ -38,14 +44,17 @@ interface PeriodReport {
   selector: 'app-time-report',
   templateUrl: './time-report.component.html',
   styleUrls: ['./time-report.component.css'],
-  imports: [AsyncPipe, DatePipe, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu, NgbDropdownItem, NgbTooltip],
+  imports: [
+    AsyncPipe, DatePipe,
+    MatButtonModule, MatIconModule, MatMenuModule, MatProgressSpinnerModule, MatTooltipModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimeReportComponent implements OnInit {
   readonly userService = inject(UserService);
   private readonly dataStore = inject(DataStore);
-  private readonly ngbUtility = inject(NgbUtility);
-  private readonly modalService = inject(NgbModal);
+  private readonly dateUtility = inject(DateUtility);
+  private readonly dialog = inject(MatDialog);
 
   isAdmin$!: Observable<boolean>;
   drivers$!: Observable<Driver[]>;
@@ -71,15 +80,15 @@ export class TimeReportComponent implements OnInit {
       switchMap(([periodStart, driverKey]) => {
         if (!driverKey) return of(null);
         const periodEnd = periodStart.clone().add(13, 'days');
-        const from = this.ngbUtility.getDate(periodStart);
-        const to = this.ngbUtility.getDate(periodEnd);
+        const from = this.dateUtility.getDate(periodStart);
+        const to = this.dateUtility.getDate(periodEnd);
         return combineLatest([
           this.dataStore.getTrips(from, to),
           this.dataStore.getPublicDatesInRange(periodStart, periodEnd),
         ]).pipe(
           map(([trips, publicDates]) => {
             const publicDateSet = new Set(publicDates);
-            const publicTrips = trips.filter(t => publicDateSet.has(this.ngbUtility.dateKey(t.start)));
+            const publicTrips = trips.filter(t => publicDateSet.has(this.dateUtility.dateKey(t.start)));
             return this.buildReport(publicTrips, driverKey);
           })
         );
@@ -120,8 +129,8 @@ export class TimeReportComponent implements OnInit {
   }
 
   openTripReport(trip: Trip, driverKey: string) {
-    const modalRef = this.modalService.open(TripReportComponent, {size: 'lg'});
-    modalRef.componentInstance.edit(trip, (t: Trip, dKey: string, report: TripReport) => this.dataStore.updateTripReport(t, dKey, report), driverKey);
+    const dialogRef = this.dialog.open(TripReportComponent, DIALOG_CONFIG);
+    dialogRef.componentInstance.edit(trip, (t: Trip, dKey: string, report: TripReport) => this.dataStore.updateTripReport(t, dKey, report), driverKey);
   }
 
   private buildReport(trips: Trip[], driverKey: string): PeriodReport {

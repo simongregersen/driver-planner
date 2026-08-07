@@ -1,124 +1,124 @@
-<div class="row mt-4 mb-2 d-print-none">
-  <div class="col-12">
-    <h2 class="fw-bold">
-      Timeseddel
-      <small>{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
-    </h2>
-    @if (isAdmin$ | async) {
-      @if (selectedDriver) {
-        <h6>Chauffør: {{ selectedDriver.displayName }}</h6>
-      }
-    } @else if (userService.driverProfile$ | async; as driver) {
-      <h6>Chauffør: {{ driver.displayName }}</h6>
+<div class="page-header no-print">
+  <h2 class="page-title">
+    Timeseddel
+    <small>{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
+  </h2>
+  @if (isAdmin$ | async) {
+    @if (selectedDriver) {
+      <h6 class="page-subtitle">Chauffør: {{ selectedDriver.displayName }}</h6>
     }
-  </div>
+  } @else if (userService.driverProfile$ | async; as driver) {
+    <h6 class="page-subtitle">Chauffør: {{ driver.displayName }}</h6>
+  }
 </div>
-<div class="d-none d-print-block">
-  <h5 class="fw-bold">
+<div class="print-only">
+  <h5 class="page-title">
     Timeseddel
     <small>{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
   </h5>
   @if (isAdmin$ | async) {
     @if (selectedDriver) {
-      <h6>Chauffør: {{ selectedDriver.displayName }}</h6>
+      <h6 class="page-subtitle">Chauffør: {{ selectedDriver.displayName }}</h6>
     }
   } @else if (userService.driverProfile$ | async; as driver) {
-    <h6>Chauffør: {{ driver.displayName }}</h6>
+    <h6 class="page-subtitle">Chauffør: {{ driver.displayName }}</h6>
   }
 </div>
-<div class="row">
-  <div class="col-12 col-xl-2 order-xl-2 d-print-none">
-    <aside>
+<div class="page-layout">
+  <aside class="page-aside no-print">
+    <div class="sidebar-stack">
       @if (isAdmin$ | async) {
-        <h5>Chauffør</h5>
-        @if (drivers$ | async; as driverList) {
-          <div ngbDropdown>
-            <button type="button" class="btn btn-outline-secondary dropdown-toggle w-100 text-truncate" ngbDropdownToggle>
-              {{ selectedDriver ? selectedDriver.displayName : 'Vælg chauffør' }}
+        <div>
+          <h5 class="section-title">Chauffør</h5>
+          @if (drivers$ | async; as driverList) {
+            <button matButton="outlined" type="button" class="full-width filter-button"
+                    [matMenuTriggerFor]="driverMenu">
+              <span class="ellipsis">{{ selectedDriver ? selectedDriver.displayName : 'Vælg chauffør' }}</span>
+              <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
             </button>
-            <div ngbDropdownMenu class="w-100">
+            <mat-menu #driverMenu="matMenu">
               @for (driver of driverList; track driver.$key) {
-                <button
-                  ngbDropdownItem
-                  type="button"
-                  class="text-truncate pointer"
-                  [class.active]="selectedDriver?.$key === driver.$key"
-                  (click)="selectDriver(driver)">
+                <button mat-menu-item type="button"
+                        [class.active-item]="selectedDriver?.$key === driver.$key"
+                        (click)="selectDriver(driver)">
                   {{ driver.displayName }}
                 </button>
               }
-            </div>
-          </div>
-        }
+            </mat-menu>
+          }
+        </div>
       }
-      <h5 class="mt-3">Periode</h5>
-      <div class="btn-group d-flex" role="group" aria-label="Periode-navigation">
-        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="previousPeriod()">Forrige</button>
-        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="goToCurrentPeriod()">Denne periode</button>
-        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="nextPeriod()">Næste</button>
+      <div>
+        <h5 class="section-title">Periode</h5>
+        <div class="button-row" role="group" aria-label="Periode-navigation">
+          <button matButton="outlined" type="button" (click)="previousPeriod()">Forrige</button>
+          <button matButton="outlined" type="button" (click)="goToCurrentPeriod()">Denne periode</button>
+          <button matButton="outlined" type="button" (click)="nextPeriod()">Næste</button>
+        </div>
       </div>
-    </aside>
-  </div>
-  <div class="col-12 col-xl-10" style="margin-top: 30px">
+    </div>
+  </aside>
+  <main class="page-main">
     @if (effectiveDriverKey$ | async; as driverKey) {
       @if (report$ | async; as report) {
         @if (report.weeks.length > 0) {
-          <table class="table table-sm">
-            <thead>
-            <tr>
-              <th>Dato</th>
-              <th>Tur</th>
-              <th>Start</th>
-              <th>Slut</th>
-              <th>Tid</th>
-              <th class="d-print-none"></th>
-            </tr>
-            </thead>
-            @for (week of report.weeks; track week.weekLabel) {
-              <tbody>
-                @for (row of week.rows; track row.key) {
-                  <tr>
-                    <td>{{ row.date.toDate() | date:'EEE d/M' }}</td>
-                    <td>{{ row.name }}</td>
-                    <td>{{ row.start }}</td>
-                    <td>{{ row.end }}</td>
-                    <td>{{ row.durationLabel }}</td>
-                    <td class="d-print-none">
-                      <a class="pointer" (click)="openTripReport(row.trip, driverKey)">
-                        <i class="fa fa-stopwatch" ngbTooltip="Registrer tider"></i>
-                      </a>
-                    </td>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+              <tr>
+                <th>Dato</th>
+                <th>Tur</th>
+                <th>Start</th>
+                <th>Slut</th>
+                <th>Tid</th>
+                <th class="no-print"></th>
+              </tr>
+              </thead>
+              @for (week of report.weeks; track week.weekLabel) {
+                <tbody>
+                  @for (row of week.rows; track row.key) {
+                    <tr class="hoverable">
+                      <td>{{ row.date.toDate() | date:'EEE d/M' }}</td>
+                      <td>{{ row.name }}</td>
+                      <td>{{ row.start }}</td>
+                      <td>{{ row.end }}</td>
+                      <td>{{ row.durationLabel }}</td>
+                      <td class="no-print cell-actions">
+                        <button matIconButton type="button" matTooltip="Registrer tider"
+                                (click)="openTripReport(row.trip, driverKey)">
+                          <mat-icon>timer</mat-icon>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                  <tr class="row-total">
+                    <td colspan="4">{{ week.weekLabel }}</td>
+                    <td>{{ week.totalLabel }}</td>
+                    <td class="no-print"></td>
                   </tr>
-                }
-                <tr class="table-light fw-bold">
-                  <td colspan="4">{{ week.weekLabel }}</td>
-                  <td>{{ week.totalLabel }}</td>
-                  <td class="d-print-none"></td>
-                </tr>
-              </tbody>
-            }
-            <tfoot>
-            <tr class="fw-bold">
-              <td colspan="4">I alt</td>
-              <td>{{ report.totalLabel }}</td>
-              <td class="d-print-none"></td>
-            </tr>
-            </tfoot>
-          </table>
+                </tbody>
+              }
+              <tfoot>
+              <tr class="row-total">
+                <td colspan="4">I alt</td>
+                <td>{{ report.totalLabel }}</td>
+                <td class="no-print"></td>
+              </tr>
+              </tfoot>
+            </table>
+          </div>
         } @else {
-          <em class="d-print-none">Ingen ture i denne periode.</em>
+          <em class="no-print">Ingen ture i denne periode.</em>
         }
       }
     } @else {
       @if (isAdmin$ | async) {
-        <p class="text-muted">Vælg en chauffør for at se timeseddel.</p>
+        <p class="muted">Vælg en chauffør for at se timeseddel.</p>
       } @else {
-        <div class="d-flex justify-content-center align-items-center d-print-none py-5">
-          <div class="spinner-border" role="status">
-            <span class="visually-hidden">Indlæser...</span>
-          </div>
+        <div class="loading no-print">
+          <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
         </div>
       }
     }
-  </div>
+  </main>
 </div>

@@ -2,54 +2,55 @@
   @let drivers = viewModel.drivers;
   @let vehicles = viewModel.vehicles;
   @if (trips().length > 0) {
-    <table class="table table-hover table-sm">
+    <table class="data-table">
       <thead>
       <tr>
-        <th class="w-6">Start</th>
-        <th class="w-6">Slut</th>
+        <th class="col-w-6">Start</th>
+        <th class="col-w-6">Slut</th>
         <th>Tur</th>
-        <th class="w-15">Chauffører</th>
-        <th class="w-15">Køretøjer</th>
+        <th class="col-w-15">Chauffører</th>
+        <th class="col-w-15">Køretøjer</th>
         @if (!readonly() || reportable()) {
-          <th class="d-print-none"></th>
+          <th class="no-print"></th>
         }
       </tr>
       </thead>
       <tbody>
       @for (trip of trips(); track trip.$key) {
-        <tr [class.table-primary]="isRecentlyModified(trip)"
+        <tr class="hoverable"
+            [class.row-highlight]="isRecentlyModified(trip)"
             [class.pointer]="!readonly() && rowClickToEdit()"
             (click)="onRowClick(trip)">
           <th>
-            <span ngbTooltip="{{trip.start.toDate() | date: 'short'}}" container="'body'">
+            <span [matTooltip]="(trip.start.toDate() | date: 'short') ?? ''">
             {{trip.start.toDate() | date: 'HH:mm' }}
             </span>
             @for (entry of startReportEntries(trip); track entry.key) {
               <br>
-              <small class="report-line text-success">{{entry.time}}</small>
+              <small class="report-line report-start">{{entry.time}}</small>
             }
           </th>
-          <td class="text-muted">
-            <span ngbTooltip="{{trip.end?.toDate() | date: 'short'}}" container="'body'">
+          <td class="muted">
+            <span [matTooltip]="(trip.end?.toDate() | date: 'short') ?? ''">
               {{trip.end?.toDate() | date:'HH:mm' }}
             </span>
             @for (entry of endReportEntries(trip); track entry.key) {
               <br>
-              <small class="report-line text-danger">{{entry.time}}</small>
+              <small class="report-line report-end">{{entry.time}}</small>
             }
           </td>
           <td>
             {{trip.name}}
-            <small class="text-muted d-print-inline newline"><br>{{trip.description}}</small>
+            <small class="muted newline"><br>{{trip.description}}</small>
           </td>
-          <td [class.table-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
+          <td [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
             @for (key of trip.drivers; track key; let isLast = $last) {
               <span>
               {{ getDriver(drivers, key)?.displayName }}{{isLast ? '' : ', '}}
               </span>
             }
           </td>
-          <td [class.table-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
+          <td [class.cell-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
             @for (key of trip.vehicles; track key; let isLast = $last) {
               <span>
               {{ getVehicle(vehicles, key)?.displayName }}{{isLast ? '' : ', '}}
@@ -57,31 +58,33 @@
             }
           </td>
           @if (!readonly() || reportable()) {
-            <td class="d-print-none text-nowrap">
-              <div class="d-flex gap-2 justify-content-end icons">
+            <td class="no-print cell-actions">
+              <div class="row-actions">
                 @if (reportable()) {
-                  <a class="pointer"
-                     (click)="$event.stopPropagation(); report.emit(trip)">
-                    <i class="fa fa-stopwatch" ngbTooltip="Registrer tider"></i>
-                  </a>
+                  <button matIconButton type="button" matTooltip="Registrer tider"
+                          (click)="$event.stopPropagation(); report.emit(trip)">
+                    <mat-icon>timer</mat-icon>
+                  </button>
                 }
                 @if (!readonly()) {
-                  <a class="pointer"
-                     (click)="$event.stopPropagation(); edit.emit(trip)">
-                    <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
-                  </a>
-                  <a mwlConfirmationPopover
-                     class="pointer"
-                     [popoverMessage]="'Er du sikker på, at du vil slette turen<br>\'' + trip.name + '\'?'"
-                     [confirmButtonType]="'danger'"
-                     [confirmText]="'Slet'"
-                     [cancelText]="'Annuller'"
-                     placement="left"
-                     [appendToBody]="true"
-                     (click)="$event.stopPropagation()"
-                     (confirm)="remove.emit(trip)">
-                    <i class="fa fa-trash" ngbTooltip="Slet"></i>
-                  </a>
+                  <button matIconButton type="button" matTooltip="Rediger"
+                          (click)="$event.stopPropagation(); edit.emit(trip)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button matIconButton type="button" matTooltip="Slet"
+                          [matMenuTriggerFor]="removeMenu"
+                          (click)="$event.stopPropagation()">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                  <mat-menu #removeMenu="matMenu" xPosition="before">
+                    <p class="confirm-message">
+                      Er du sikker på, at du vil slette turen<br>'{{ trip.name }}'?
+                    </p>
+                    <button mat-menu-item type="button" class="confirm-danger"
+                            (click)="$event.stopPropagation(); remove.emit(trip)">Slet
+                    </button>
+                    <button mat-menu-item type="button" (click)="$event.stopPropagation()">Annuller</button>
+                  </mat-menu>
                 }
               </div>
             </td>
@@ -91,12 +94,10 @@
       </tbody>
     </table>
   } @else {
-    <em class="d-print-none">Ingen ture.</em>
+    <em class="no-print">Ingen ture.</em>
   }
 } @else {
-  <div class="d-flex justify-content-center align-items-center d-print-none py-5">
-    <div class="spinner-border" role="status">
-      <span class="visually-hidden">Indlæser...</span>
-    </div>
+  <div class="loading no-print">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
   </div>
 }

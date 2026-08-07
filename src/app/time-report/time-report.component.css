@@ -1,0 +1,22 @@
+.button-row {
+  display: flex;
+  gap: 4px;
+}
+
+.button-row > button {
+  flex: 1 1 0;
+}
+
+.filter-button .ellipsis {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+}

@@ -1,105 +1,78 @@
-<div class="modal-header">
-  <h4 class="modal-title">
-    Opret
-  </h4>
-  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-</div>
-<form [formGroup]="tripForm" (ngSubmit)="onSubmit(); modal.close()">
-  <div class="modal-body">
-    <div class="form-group row"
-         [class.has-danger]="!tripForm.controls['name'].valid && tripForm.controls['name'].dirty">
-      <label for="name" class="col-2 col-form-label">Navn</label>
-      <div class="col-10">
-        <input class="form-control" type="text" id="name" formControlName="name">
-        @if (!tripForm.controls['name'].valid && tripForm.controls['name'].dirty) {
-          <div class="form-control-feedback">
-            Navn påkrævet.
-          </div>
+<h2 mat-dialog-title>Opret</h2>
+
+<mat-dialog-content>
+  <form id="tripCreatorForm" class="form-stack" [formGroup]="tripForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+    <mat-form-field class="full-width">
+      <mat-label>Navn</mat-label>
+      <input matInput type="text" formControlName="name">
+      @if (tripForm.controls['name'].hasError('required')) {
+        <mat-error>Navn påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="datetime-row">
+      @if (showDate) {
+        <mat-form-field>
+          <mat-label>Fra dato</mat-label>
+          <input matInput formControlName="fromDate" [matDatepicker]="d1" [min]="minDate" placeholder="yyyy-MM-dd">
+          <mat-datepicker-toggle matIconSuffix [for]="d1"></mat-datepicker-toggle>
+          <mat-datepicker #d1></mat-datepicker>
+          @if (tripForm.controls['fromDate'].hasError('required')) {
+            <mat-error>Dato påkrævet.</mat-error>
+          }
+        </mat-form-field>
+      }
+      <mat-form-field>
+        <mat-label>Fra tid</mat-label>
+        <input matInput formControlName="fromTime" [matTimepicker]="t1">
+        <mat-timepicker-toggle matIconSuffix [for]="t1"></mat-timepicker-toggle>
+        <mat-timepicker #t1 interval="15m"></mat-timepicker>
+      </mat-form-field>
+    </div>
+
+    <div class="datetime-row">
+      @if (showDate) {
+        <mat-form-field>
+          <mat-label>Til dato</mat-label>
+          <input matInput formControlName="toDate" [matDatepicker]="d2" [min]="minDate" placeholder="yyyy-MM-dd">
+          <mat-datepicker-toggle matIconSuffix [for]="d2"></mat-datepicker-toggle>
+          <mat-datepicker #d2></mat-datepicker>
+        </mat-form-field>
+      }
+      <mat-form-field>
+        <mat-label>Til tid</mat-label>
+        <input matInput formControlName="toTime" [matTimepicker]="t2">
+        <mat-timepicker-toggle matIconSuffix [for]="t2"></mat-timepicker-toggle>
+        <mat-timepicker #t2 interval="15m"></mat-timepicker>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field class="full-width">
+      <mat-label>Chauffører</mat-label>
+      <mat-select formControlName="drivers" multiple placeholder="Vælg chauffører">
+        @for (option of (availableDrivers$ | async) ?? []; track option.id) {
+          <mat-option [value]="option.id">{{ option.name }}</mat-option>
         }
-      </div>
-    </div>
-    <div class="row form-group"
-         [class.has-danger]="!tripForm.controls['fromDate'].valid && tripForm.controls['fromDate'].dirty">
-      <label for="fromDate" class="col-2 col-form-label">Fra</label>
-      <div class="col-5 col-md-3" [hidden]="!showDate">
-        <div class="input-group">
-          <input formControlName="fromDate"
-                 ngbDatepicker
-                 #d1="ngbDatepicker"
-                 id="fromDate"
-                 class="form-control"
-                 placeholder="yyyy-MM-dd"
-                 [showWeekNumbers]="true"
-                 [minDate]="minDate"
-                 (click)="d2.close(); d1.toggle()">
-          <div class="input-group-text" (click)="d2.close(); d1.toggle()">
-            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
-          </div>
-        </div>
-        @if (!tripForm.controls['fromDate'].valid && tripForm.controls['fromDate'].dirty) {
-          <div class="form-control-feedback">
-            Dato påkrævet.
-          </div>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Køretøjer</mat-label>
+      <mat-select formControlName="vehicles" multiple placeholder="Vælg køretøjer">
+        @for (option of (availableVehicles$ | async) ?? []; track option.id) {
+          <mat-option [value]="option.id">{{ option.name }}</mat-option>
         }
-      </div>
-      <div class="col-5 col-md-3">
-        <ngb-timepicker formControlName="fromTime" [spinners]="false"></ngb-timepicker>
-      </div>
-    </div>
-    <div class="row mt-3 form-group">
-      <label for="toDate" class="col-2 col-form-label">Til</label>
-      <div class="col-5 col-md-3" [hidden]="!showDate">
-        <div class="input-group">
-          <input formControlName="toDate"
-                 ngbDatepicker
-                 #d2="ngbDatepicker"
-                 id="toDate"
-                 class="form-control"
-                 placeholder="yyyy-MM-dd"
-                 [showWeekNumbers]="true"
-                 [minDate]="minDate"
-                 (click)="d1.close(); d2.toggle()">
-          <div class="input-group-text" (click)="d1.close(); d2.toggle()">
-            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
-          </div>
-        </div>
-      </div>
-      <div class="col-5 col-md-3">
-        <ngb-timepicker formControlName="toTime" [spinners]="false"></ngb-timepicker>
-      </div>
-    </div>
-    <div class="form-group row">
-      <label class="col-2 col-form-label">Chauffører</label>
-      <div class="col-10">
-        <ng-select formControlName="drivers"
-                   [items]="(availableDrivers$ | async) ?? []"
-                   bindLabel="name"
-                   bindValue="id"
-                   [multiple]="true"
-                   placeholder="Vælg chauffører">
-        </ng-select>
-      </div>
-    </div>
-    <div class="form-group row">
-      <label class="col-2 col-form-label">Køretøjer</label>
-      <div class="col-10">
-        <ng-select formControlName="vehicles"
-                   [items]="(availableVehicles$ | async) ?? []"
-                   bindLabel="name"
-                   bindValue="id"
-                   [multiple]="true"
-                   placeholder="Vælg køretøjer">
-        </ng-select>
-      </div>
-    </div>
-    <div class="form-group row">
-      <label for="notes" class="col-2 col-form-label">Beskrivelse</label>
-      <div class="col-10">
-        <textarea class="form-control" id="notes" rows="10" formControlName="description"></textarea>
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button type="submit" class="btn btn-primary float-end" [disabled]="!tripForm.valid">Opret</button>
-  </div>
-</form>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Beskrivelse</mat-label>
+      <textarea matInput rows="10" formControlName="description"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="tripCreatorForm" [disabled]="!tripForm.valid">Opret</button>
+</mat-dialog-actions>

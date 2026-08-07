@@ -1,0 +1,14 @@
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.create-section {
+  margin-top: 48px;
+}
+
+.date-field {
+  width: 220px;
+  max-width: 100%;
+}

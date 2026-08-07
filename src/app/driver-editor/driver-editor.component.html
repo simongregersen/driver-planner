@@ -1,57 +1,33 @@
-<div class="modal-header">
-  <h4 class="modal-title">
-    Rediger
-  </h4>
-  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-</div>
+<h2 mat-dialog-title>Rediger</h2>
 
-<form [formGroup]="driverForm" (ngSubmit)="onSubmit(); modal.close()">
-  <div class="modal-body">
-    <div class="form-group row"
-         [class.has-danger]="!driverForm.controls['displayName'].valid && driverForm.controls['displayName'].dirty">
-      <label for="displayName" class="col-2 col-form-label">Kaldenavn</label>
-      <div class="col-10">
-        <input class="form-control" type="text" id="displayName" formControlName="displayName">
-        @if (!driverForm.controls['displayName'].valid && driverForm.controls['displayName'].dirty) {
-          <div class="form-control-feedback">
-            Et kaldenavn er påkrævet.
-          </div>
-        }
-      </div>
-    </div>
-    <div class="form-group row"
-         [class.has-danger]="!driverForm.controls['name'].valid && driverForm.controls['name'].dirty">
-      <label for="name" class="col-2 col-form-label">Navn</label>
-      <div class="col-10">
-        <input class="form-control" type="text" id="name" formControlName="name">
-        @if (!driverForm.controls['name'].valid && driverForm.controls['name'].dirty) {
-          <div class="form-control-feedback">
-            Et navn er påkrævet.
-          </div>
-        }
-      </div>
-    </div>
-    <div class="row mt-3 form-group">
-      <label for="birthday" class="col-2 col-form-label">Fødselsdag</label>
-      <div class="col-5 col-md-3">
-        <div class="input-group">
-          <input ngbDatepicker
-                 #d="ngbDatepicker"
-                 id="birthday"
-                 class="form-control"
-                 placeholder="yyyy-mm-dd"
-                 [showWeekNumbers]="true"
-                 [minDate]="{year: 1900, month: 1, day: 1}"
-                 (click)="d.toggle()"
-                 formControlName="birthday">
-          <div class="input-group-text" (click)="d.toggle()">
-            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button type="submit" class="btn btn-primary float-end" [disabled]="!driverForm.valid">Gem</button>
-  </div>
-</form>
+<mat-dialog-content>
+  <form id="driverEditorForm" class="form-stack" [formGroup]="driverForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+    <mat-form-field class="full-width">
+      <mat-label>Kaldenavn</mat-label>
+      <input matInput type="text" formControlName="displayName">
+      @if (driverForm.controls['displayName'].hasError('required')) {
+        <mat-error>Et kaldenavn er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Navn</mat-label>
+      <input matInput type="text" formControlName="name">
+      @if (driverForm.controls['name'].hasError('required')) {
+        <mat-error>Et navn er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="date-field">
+      <mat-label>Fødselsdag</mat-label>
+      <input matInput formControlName="birthday" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
+      <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
+      <mat-datepicker #d startView="multi-year"></mat-datepicker>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="driverEditorForm" [disabled]="!driverForm.valid">Gem</button>
+</mat-dialog-actions>

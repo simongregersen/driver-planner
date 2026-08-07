@@ -1,149 +1,104 @@
-<div class="row mt-4 mb-2 d-print-none">
-  <div class="col-12">
-    <h2 class="fw-bold">
-      Dagsplan
-      <small>{{ ngbUtility.toMoment(selectedDate)?.toDate() | date:'EEEE, d MMMM y' }}</small>
-    </h2>
-    <div class="form-check form-switch">
-      <input class="form-check-input day-public-toggle" type="checkbox" id="dayPublic" role="switch"
-             [checked]="(dayPublic$ | async) ?? false"
-             (change)="setDayPublic($any($event.target).checked)">
-      <label class="form-check-label" for="dayPublic">Synlig for chauffører</label>
-    </div>
-  </div>
-</div>
-<div class="d-none d-print-block">
-  <h5 class="fw-bold">
+<div class="page-header no-print">
+  <h2 class="page-title">
     Dagsplan
-    <small>{{ ngbUtility.toMoment(selectedDate)?.toDate() | date:'EEEE, d MMMM y' }}</small>
+    <small>{{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
+  </h2>
+  <mat-slide-toggle class="day-public-toggle"
+                    [checked]="(dayPublic$ | async) ?? false"
+                    (change)="setDayPublic($event.checked)">
+    Synlig for chauffører
+  </mat-slide-toggle>
+</div>
+<div class="print-only">
+  <h5 class="page-title">
+    Dagsplan
+    <small>{{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
   </h5>
   @if (selectedDriver) {
-    <h6>
+    <h6 class="page-subtitle">
       Chauffør: {{ selectedDriver.displayName }}
     </h6>
   }
 </div>
-<div class="row">
-  <div class="col-12 col-xl-2 order-xl-2 d-print-none">
-    <aside>
-      <div class="d-flex justify-content-center justify-content-xl-start">
-        <div class="sidebar-stack">
-          @if (publicDates$ | async; as publicDates) {
-            <div class="d-none d-xl-block">
-              <ngb-datepicker [(ngModel)]="selectedDate"
-                              [minDate]="minDate"
-                              [showWeekNumbers]="true"
-                              [dayTemplate]="t">
-              </ngb-datepicker>
-            </div>
-            <div class="d-xl-none">
-              <div class="input-group">
-                <input ngbDatepicker
-                       #d="ngbDatepicker"
-                       id="selectedDate"
-                       class="form-control"
-                       placeholder="yyyy-mm-dd"
-                       [showWeekNumbers]="true"
-                       [minDate]="minDate"
-                       [dayTemplate]="t"
-                       (click)="d.toggle()"
-                       [(ngModel)]="selectedDate">
-                <div class="input-group-text" (click)="d.toggle()">
-                  <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
-                </div>
-              </div>
-            </div>
-            <div class="btn-group d-flex mt-2" role="group" aria-label="Dato-navigation">
-              <button type="button" class="btn btn-outline-secondary flex-fill" (click)="previousDay()">Forrige</button>
-              <button type="button" class="btn btn-outline-secondary flex-fill" (click)="goToToday()">I dag</button>
-              <button type="button" class="btn btn-outline-secondary flex-fill" (click)="nextDay()">Næste</button>
-            </div>
-            <ng-template #t let-date="date" let-currentMonth="currentMonth" let-selected="selected"
-                         let-disabled="disabled" let-focused="focused" let-today="today">
-              <span class="custom-day btn-light"
-                    [class.bg-primary]="selected"
-                    [class.text-white]="selected"
-                    [class.text-muted]="!selected && (date.month !== currentMonth || disabled || ngbUtility.isPast(date))"
-                    [class.outside]="!selected && (date.month !== currentMonth || disabled || ngbUtility.isPast(date))"
-                    [class.active]="focused"
-                    [class.public-day]="isPublicDate(date, publicDates)"
-                    [class.today]="today">
-                {{ date.day }}
-              </span>
-            </ng-template>
-          }
-          <div class="mt-3">
-            <h5>Filter</h5>
-            @if (drivers | async; as driverList) {
-              <div ngbDropdown>
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle w-100 text-truncate" ngbDropdownToggle>
-                  {{ selectedDriver ? selectedDriver.displayName : 'Alle chauffører' }}
-                </button>
-                <div ngbDropdownMenu class="w-100">
-                  <button
-                    ngbDropdownItem
-                    type="button"
-                    class="text-truncate pointer"
-                    [class.active]="!selectedDriver"
-                    (click)="selectedDriver = null">
-                    Alle chauffører
-                  </button>
-                  <div class="dropdown-divider"></div>
-                  @for (driver of driverList; track driver.$key) {
-                    <button
-                      ngbDropdownItem
-                      type="button"
-                      class="text-truncate pointer"
-                      [class.active]="selectedDriver?.$key === driver?.$key"
-                      (click)="selectedDriver = driver">
-                      {{driver.displayName}}
-                    </button>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-        </div>
+<div class="page-layout">
+  <aside class="page-aside no-print">
+    <div class="sidebar-stack">
+      <mat-calendar class="inline-calendar"
+                    [selected]="selectedDate"
+                    (selectedChange)="onDateSelected($event)"
+                    [minDate]="minDate"
+                    [dateClass]="dateClass()">
+      </mat-calendar>
+      <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Dato</mat-label>
+        <input matInput
+               [matDatepicker]="d"
+               [min]="minDate"
+               [ngModel]="selectedDate"
+               (ngModelChange)="onDateSelected($event)">
+        <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
+        <mat-datepicker #d [dateClass]="dateClass()"></mat-datepicker>
+      </mat-form-field>
+      <div class="button-row" role="group" aria-label="Dato-navigation">
+        <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>
+        <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
+        <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
       </div>
-    </aside>
-  </div>
-  <div class="col-12 col-xl-10" style="margin-top: 30px">
-    @if (trips$ | async; as trips) {
-      <main>
-        <div class="row mb-3 d-print-none">
-          <div class="col-12 d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-primary" (click)="create()">Opret tur</button>
-            <div ngbDropdown class="d-inline-block">
-              <button type="button" class="btn btn-primary dropdown-toggle" ngbDropdownToggle>
-                Indsæt skabelon
+      <div>
+        <h5 class="section-title">Filter</h5>
+        @if (drivers | async; as driverList) {
+          <button matButton="outlined" type="button" class="full-width filter-button"
+                  [matMenuTriggerFor]="driverMenu">
+            <span class="ellipsis">{{ selectedDriver ? selectedDriver.displayName : 'Alle chauffører' }}</span>
+            <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+          </button>
+          <mat-menu #driverMenu="matMenu">
+            <button mat-menu-item type="button"
+                    [class.active-item]="!selectedDriver"
+                    (click)="selectedDriver = null">
+              Alle chauffører
+            </button>
+            <mat-divider></mat-divider>
+            @for (driver of driverList; track driver.$key) {
+              <button mat-menu-item type="button"
+                      [class.active-item]="selectedDriver?.$key === driver?.$key"
+                      (click)="selectedDriver = driver">
+                {{driver.displayName}}
               </button>
-              <div ngbDropdownMenu>
-                @for (template of (availableTemplates$ | async) ?? []; track template.id) {
-                  <button ngbDropdownItem
-                          type="button"
-                          mwlConfirmationPopover
-                          [popoverMessage]="'Er du sikker på, at du vil indsætte skabelonen<br>\'' + template.name + '\'?'"
-                          [confirmButtonType]="'success'"
-                          [confirmText]="'Indsæt'"
-                          placement="bottom"
-                          [cancelText]="'Annuller'"
-                          [appendToBody]="true"
-                          (confirm)="insertTemplate(template.id)">
-                    {{ template.name }}
-                  </button>
-                }
-              </div>
-            </div>
-          </div>
-        </div>
-        <app-trips [trips]="filterTripsByDriver(trips)"
-                   [rowClickToEdit]="true"
-                   [reportable]="true"
-                   (edit)="edit($event)"
-                   (remove)="removeTrip($event)"
-                   (report)="openTripReport($event)">
-        </app-trips>
-      </main>
+            }
+          </mat-menu>
+        }
+      </div>
+    </div>
+  </aside>
+  <main class="page-main">
+    @if (trips$ | async; as trips) {
+      <div class="toolbar-row no-print">
+        <button matButton="filled" type="button" (click)="create()">Opret tur</button>
+        <button matButton="filled" type="button" [matMenuTriggerFor]="templateMenu">
+          Indsæt skabelon
+          <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #templateMenu="matMenu">
+          @for (template of (availableTemplates$ | async) ?? []; track template.id) {
+            <button mat-menu-item type="button" [matMenuTriggerFor]="insertConfirm">{{ template.name }}</button>
+            <mat-menu #insertConfirm="matMenu">
+              <p class="confirm-message">
+                Er du sikker på, at du vil indsætte skabelonen<br>'{{ template.name }}'?
+              </p>
+              <button mat-menu-item type="button" (click)="insertTemplate(template.id)">Indsæt</button>
+              <button mat-menu-item type="button">Annuller</button>
+            </mat-menu>
+          }
+        </mat-menu>
+      </div>
+      <app-trips [trips]="filterTripsByDriver(trips)"
+                 [rowClickToEdit]="true"
+                 [reportable]="true"
+                 (edit)="edit($event)"
+                 (remove)="removeTrip($event)"
+                 (report)="openTripReport($event)">
+      </app-trips>
     }
-  </div>
+  </main>
 </div>

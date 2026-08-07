@@ -1,8 +1,14 @@
 import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
 import {AsyncPipe} from '@angular/common';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {NgbModal, NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
-import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialog} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatIconModule} from '@angular/material/icon';
+import {MatInputModule} from '@angular/material/input';
+import {MatListModule} from '@angular/material/list';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
 import {Template} from '../template';
 import {Observable} from 'rxjs';
@@ -11,19 +17,25 @@ import {NewTrip, Trip} from '../trip';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
 import {TripsComponent} from '../trips/trips.component';
+import {DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
   selector: 'app-templates',
   templateUrl: './templates.component.html',
   styleUrls: ['./templates.component.css'],
-  imports: [ReactiveFormsModule, AsyncPipe, ConfirmationPopoverModule, NgbTooltip, TripsComponent],
+  imports: [
+    ReactiveFormsModule, AsyncPipe,
+    MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatListModule,
+    MatMenuModule, MatTooltipModule,
+    TripsComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TemplatesComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dataStore = inject(DataStore);
-  private readonly modalService = inject(NgbModal);
+  private readonly dialog = inject(MatDialog);
 
   templates$!: Observable<Template[]>;
   trips$!: Observable<Trip[]>;
@@ -54,9 +66,9 @@ export class TemplatesComponent implements OnInit {
 
   create() {
     if (!this.selectedTemplate) return;
-    const modalRef = this.modalService.open(TripCreatorComponent, {size: 'lg'});
-    modalRef.componentInstance.showDate = false;
-    modalRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTripToTemplate(this.selectedTemplate, t));
+    const dialogRef = this.dialog.open(TripCreatorComponent, DIALOG_CONFIG);
+    dialogRef.componentInstance.showDate = false;
+    dialogRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTripToTemplate(this.selectedTemplate, t));
   }
 
   removeTrip(trip: Trip) {
@@ -64,9 +76,9 @@ export class TemplatesComponent implements OnInit {
   }
 
   edit(trip: Trip) {
-    const modalRef = this.modalService.open(TripEditorComponent, {size: 'lg'});
-    modalRef.componentInstance.showDate = false;
-    modalRef.componentInstance.edit(
+    const dialogRef = this.dialog.open(TripEditorComponent, DIALOG_CONFIG);
+    dialogRef.componentInstance.showDate = false;
+    dialogRef.componentInstance.edit(
       trip,
       (t: Trip, u: any) => this.dataStore.updateTripFromTemplate(this.selectedTemplate, t, u),
       (t: Trip) => this.removeTrip(t),

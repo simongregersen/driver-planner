@@ -1,11 +1,17 @@
 <form class="form-signin" (ngSubmit)="login(email.value, password.value)">
-  <h4>Driver Planner</h4>
+  <h4 class="section-title">Driver Planner</h4>
   @if (error()) {
-    <div class="alert alert-danger">{{ error() }}</div>
+    <div class="app-error">{{ error() }}</div>
   }
-  <input type="email" id="inputEmail" #email class="form-control" placeholder="Email" required autofocus>
-  <input type="password" id="inputPassword" #password class="form-control" placeholder="Password" required>
-  <button class="btn btn-secondary w-100" type="submit">
+  <mat-form-field class="full-width">
+    <mat-label>Email</mat-label>
+    <input matInput type="email" id="inputEmail" #email required autofocus>
+  </mat-form-field>
+  <mat-form-field class="full-width">
+    <mat-label>Password</mat-label>
+    <input matInput type="password" id="inputPassword" #password required>
+  </mat-form-field>
+  <button matButton="filled" class="full-width" type="submit">
     Log ind
   </button>
 </form>

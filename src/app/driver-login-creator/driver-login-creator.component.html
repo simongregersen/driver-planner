@@ -1,41 +1,32 @@
-<div class="modal-header">
-  <h4 class="modal-title">
-    Opret login til {{driver.displayName}}
-  </h4>
-  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-</div>
+<h2 mat-dialog-title>Opret login til {{driver.displayName}}</h2>
 
-<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-  <div class="modal-body">
+<mat-dialog-content>
+  <form id="driverLoginForm" class="form-stack" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
     @if (error()) {
-      <div class="alert alert-danger">{{error()}}</div>
+      <div class="app-error">{{error()}}</div>
     }
-    <div class="form-group row"
-         [class.has-danger]="!loginForm.controls['email'].valid && loginForm.controls['email'].dirty">
-      <label for="email" class="col-3 col-form-label">E-mail</label>
-      <div class="col-9">
-        <input class="form-control" type="email" id="email" formControlName="email">
-        @if (!loginForm.controls['email'].valid && loginForm.controls['email'].dirty) {
-          <div class="form-control-feedback">
-            En gyldig e-mail er påkrævet.
-          </div>
-        }
-      </div>
-    </div>
-    <div class="form-group row mt-3"
-         [class.has-danger]="!loginForm.controls['password'].valid && loginForm.controls['password'].dirty">
-      <label for="password" class="col-3 col-form-label">Kodeord</label>
-      <div class="col-9">
-        <input class="form-control" type="password" id="password" formControlName="password">
-        @if (!loginForm.controls['password'].valid && loginForm.controls['password'].dirty) {
-          <div class="form-control-feedback">
-            Kodeordet skal være mindst 6 tegn.
-          </div>
-        }
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button type="submit" class="btn btn-primary float-end" [disabled]="!loginForm.valid || saving()">Opret login</button>
-  </div>
-</form>
+
+    <mat-form-field class="full-width">
+      <mat-label>E-mail</mat-label>
+      <input matInput type="email" formControlName="email">
+      @if (loginForm.controls['email'].invalid) {
+        <mat-error>En gyldig e-mail er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Kodeord</mat-label>
+      <input matInput type="password" formControlName="password">
+      @if (loginForm.controls['password'].invalid) {
+        <mat-error>Kodeordet skal være mindst 6 tegn.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="driverLoginForm"
+          [disabled]="!loginForm.valid || saving()">Opret login
+  </button>
+</mat-dialog-actions>

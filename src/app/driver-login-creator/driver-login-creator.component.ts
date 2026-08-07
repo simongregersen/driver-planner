@@ -1,6 +1,9 @@
 import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
 import {Driver} from '../driver';
 import {UserService} from '../user.service';
 
@@ -9,7 +12,10 @@ import {UserService} from '../user.service';
   selector: 'app-driver-login-creator',
   templateUrl: './driver-login-creator.component.html',
   styleUrls: ['./driver-login-creator.component.css'],
-  imports: [ReactiveFormsModule],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DriverLoginCreatorComponent {
@@ -19,7 +25,7 @@ export class DriverLoginCreatorComponent {
 
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
-  readonly modal = inject(NgbActiveModal);
+  readonly dialogRef = inject(MatDialogRef<DriverLoginCreatorComponent>);
 
   loginForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -31,7 +37,7 @@ export class DriverLoginCreatorComponent {
     this.error.set(null);
     this.saving.set(true);
     this.userService.createDriverLogin(val.email, val.password, this.driver.$key)
-      .then(() => this.modal.close())
+      .then(() => this.dialogRef.close())
       .catch(err => {
         this.error.set(DriverLoginCreatorComponent.mapError(err?.code));
         this.saving.set(false);

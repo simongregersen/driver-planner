@@ -1,7 +1,10 @@
 import {ChangeDetectionStrategy, Component, inject, input, OnInit, output} from '@angular/core';
 import {AsyncPipe, DatePipe} from '@angular/common';
-import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
-import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
+import {MatButtonModule} from '@angular/material/button';
+import {MatIconModule} from '@angular/material/icon';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {Trip} from '../trip';
 import {DataStore} from '../data.service';
 import {Driver} from '../driver';
@@ -15,7 +18,10 @@ import moment from 'moment';
   selector: 'app-trips',
   templateUrl: './trips.component.html',
   styleUrls: ['./trips.component.css'],
-  imports: [AsyncPipe, DatePipe, NgbTooltip, ConfirmationPopoverModule],
+  imports: [
+    AsyncPipe, DatePipe,
+    MatButtonModule, MatIconModule, MatMenuModule, MatProgressSpinnerModule, MatTooltipModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TripsComponent implements OnInit {

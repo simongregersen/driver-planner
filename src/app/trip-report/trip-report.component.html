@@ -1,127 +1,64 @@
-<div class="modal-header">
-  <h4 class="modal-title">
-    Registrer tider
-  </h4>
-  <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
-</div>
+<h2 mat-dialog-title>Registrer tider</h2>
 
-<form [formGroup]="reportForm" (ngSubmit)="onSubmit(); modal.close()">
-  <div class="modal-body">
-    <div class="mb-3">
-      <div><strong>{{ trip.name }}</strong></div>
-      <div class="text-muted">
-        Start: {{ trip.start.toDate() | date:'HH:mm' }}
-        @if (trip.end) {
-          &mdash; Slut: {{ trip.end.toDate() | date:'HH:mm' }}
-        }
-      </div>
+<mat-dialog-content>
+  <div class="trip-summary">
+    <div><strong>{{ trip.name }}</strong></div>
+    <div class="muted">
+      Start: {{ trip.start.toDate() | date:'HH:mm' }}
+      @if (trip.end) {
+        &mdash; Slut: {{ trip.end.toDate() | date:'HH:mm' }}
+      }
     </div>
-    <div class="row form-group align-items-center">
-      <label for="driverSelect" class="col-2 col-form-label">Chauffør</label>
-      <div class="col-10">
-        @if (fixedDriverKey) {
-          <p class="form-control-plaintext">{{ selectedDriverName() }}</p>
-        } @else {
-          <select id="driverSelect"
-                  class="form-select"
-                  [value]="selectedDriverKey()"
-                  (change)="selectDriver($any($event.target).value)">
-            @for (d of availableDrivers(); track d.id) {
-              <option [value]="d.id">{{ d.name }}</option>
-            }
-          </select>
-        }
+  </div>
+
+  <form id="tripReportForm" class="form-stack" [formGroup]="reportForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+    @if (fixedDriverKey) {
+      <div class="field-row">
+        <span class="field-label">Chauffør</span>
+        <span>{{ selectedDriverName() }}</span>
       </div>
-    </div>
-    <div class="row form-group mt-3 align-items-center">
-      <label for="startDate" class="col-2 col-form-label">Startet</label>
-      <div class="col-4 col-md-3">
-        <div class="input-group">
-          <input formControlName="startDate"
-                 ngbDatepicker
-                 #ds="ngbDatepicker"
-                 id="startDate"
-                 class="form-control"
-                 placeholder="yyyy-MM-dd"
-                 [showWeekNumbers]="true"
-                 [minDate]="minDate"
-                 (click)="ds.toggle()">
-          <div class="input-group-text" (click)="ds.toggle()">
-            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
-          </div>
-        </div>
-      </div>
-      <div class="col-3 col-md-2">
-        <ngb-timepicker formControlName="startTime" [spinners]="false"></ngb-timepicker>
-      </div>
-      <div class="col-3 col-md-4 d-flex gap-2">
-        <button type="button" class="btn btn-outline-secondary" (click)="setNow('start')">Nu</button>
-        <button type="button" class="btn btn-outline-secondary" (click)="clear('start')">
-          <i class="fa fa-times"></i>
-        </button>
-      </div>
-    </div>
-    <div class="row form-group mt-3 align-items-center">
-      <label for="garageDate" class="col-2 col-form-label">Retur til garage</label>
-      <div class="col-4 col-md-3">
-        <div class="input-group">
-          <input formControlName="garageDate"
-                 ngbDatepicker
-                 #dg="ngbDatepicker"
-                 id="garageDate"
-                 class="form-control"
-                 placeholder="yyyy-MM-dd"
-                 [showWeekNumbers]="true"
-                 [minDate]="minDate"
-                 (click)="dg.toggle()">
-          <div class="input-group-text" (click)="dg.toggle()">
-            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
-          </div>
-        </div>
-      </div>
-      <div class="col-3 col-md-2">
-        <ngb-timepicker formControlName="garageTime" [spinners]="false"></ngb-timepicker>
-      </div>
-      <div class="col-3 col-md-4 d-flex gap-2">
-        <button type="button" class="btn btn-outline-secondary" (click)="setNow('garage')">Nu</button>
-        <button type="button" class="btn btn-outline-secondary" (click)="clear('garage')">
-          <i class="fa fa-times"></i>
-        </button>
-      </div>
-    </div>
-    <div class="row form-group mt-3 align-items-center">
-      <label for="endDate" class="col-2 col-form-label">Afsluttet</label>
-      <div class="col-4 col-md-3">
-        <div class="input-group">
-          <input formControlName="endDate"
-                 ngbDatepicker
-                 #de="ngbDatepicker"
-                 id="endDate"
-                 class="form-control"
-                 placeholder="yyyy-MM-dd"
-                 [showWeekNumbers]="true"
-                 [minDate]="minDate"
-                 (click)="de.toggle()">
-          <div class="input-group-text" (click)="de.toggle()">
-            <i class="fa fa-calendar" style="width: 1.2rem; height: 1rem; cursor: pointer;"></i>
-          </div>
-        </div>
-      </div>
-      <div class="col-3 col-md-2">
-        <ngb-timepicker formControlName="endTime" [spinners]="false"></ngb-timepicker>
-      </div>
-      <div class="col-3 col-md-4 d-flex gap-2">
-        <button type="button" class="btn btn-outline-secondary" (click)="setNow('end')">Nu</button>
-        <button type="button" class="btn btn-outline-secondary" (click)="clear('end')">
-          <i class="fa fa-times"></i>
-        </button>
-      </div>
-    </div>
-    @if (error()) {
-      <div class="alert alert-danger mt-3 mb-0">{{ error() }}</div>
+    } @else {
+      <mat-form-field class="full-width">
+        <mat-label>Chauffør</mat-label>
+        <mat-select [value]="selectedDriverKey()" (selectionChange)="selectDriver($event.value)">
+          @for (d of availableDrivers(); track d.id) {
+            <mat-option [value]="d.id">{{ d.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
     }
-  </div>
-  <div class="modal-footer">
-    <button type="submit" class="btn btn-primary" [disabled]="!!error()">Gem</button>
-  </div>
-</form>
+
+    @for (field of fields; track field.key) {
+      <div class="datetime-row">
+        <mat-form-field>
+          <mat-label>{{ field.label }} dato</mat-label>
+          <input matInput [formControlName]="field.key + 'Date'" [matDatepicker]="datePicker" [min]="minDate"
+                 placeholder="yyyy-MM-dd">
+          <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
+          <mat-datepicker #datePicker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>{{ field.label }} tid</mat-label>
+          <input matInput [formControlName]="field.key + 'Time'" [matTimepicker]="timePicker">
+          <mat-timepicker-toggle matIconSuffix [for]="timePicker"></mat-timepicker-toggle>
+          <mat-timepicker #timePicker interval="15m"></mat-timepicker>
+        </mat-form-field>
+        <div class="field-actions">
+          <button matButton="outlined" type="button" (click)="setNow(field.key)">Nu</button>
+          <button matIconButton type="button" [attr.aria-label]="'Ryd ' + field.label" (click)="clear(field.key)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (error()) {
+      <div class="app-error">{{ error() }}</div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="tripReportForm" [disabled]="!!error()">Gem</button>
+</mat-dialog-actions>

@@ -6,9 +6,15 @@ import {Utility} from '../utility';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
-import {NgbUtility} from '../ngb-date-utility';
-import {NgbActiveModal, NgbInputDatepicker, NgbDateStruct, NgbTimepicker} from '@ng-bootstrap/ng-bootstrap';
-import {NgSelectModule} from '@ng-select/ng-select';
+import moment, {Moment} from 'moment';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import {MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatSelectModule} from '@angular/material/select';
+import {MatTimepickerModule} from '@angular/material/timepicker';
+import {DateUtility} from '../date-utility';
 import {NewTrip} from '../trip';
 
 @Component({
@@ -16,12 +22,16 @@ import {NewTrip} from '../trip';
   selector: 'app-trip-creator',
   templateUrl: './trip-creator.component.html',
   styleUrls: ['./trip-creator.component.css'],
-  imports: [ReactiveFormsModule, AsyncPipe, NgbInputDatepicker, NgbTimepicker, NgSelectModule],
+  imports: [
+    ReactiveFormsModule, AsyncPipe,
+    MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+    MatSelectModule, MatTimepickerModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TripCreatorComponent implements OnInit {
   create = output<NewTrip>();
-  defaultDate: NgbDateStruct | null = null;
+  defaultDate: Moment | null = null;
   showDate = true;
   availableDrivers$!: Observable<SelectOption[]>;
   availableVehicles$!: Observable<SelectOption[]>;
@@ -29,9 +39,9 @@ export class TripCreatorComponent implements OnInit {
 
   private readonly dataStore = inject(DataStore);
   private readonly fb = inject(FormBuilder);
-  private readonly ngbUtility = inject(NgbUtility);
-  readonly modal = inject(NgbActiveModal);
-  readonly minDate = this.ngbUtility.minDate(5);
+  private readonly dateUtility = inject(DateUtility);
+  readonly dialogRef = inject(MatDialogRef<TripCreatorComponent>);
+  readonly minDate = this.dateUtility.minDate(5);
 
   ngOnInit() {
     this.tripForm = this.fb.group({
@@ -53,8 +63,8 @@ export class TripCreatorComponent implements OnInit {
 
   onSubmit(): void {
     const val = this.tripForm.value;
-    const start = this.ngbUtility.toMoment(val.fromDate || {year: 1970, month: 1, day: 1}, val.fromTime)!;
-    const end = (val.toDate || val.toTime) ? this.ngbUtility.toMoment(val.toDate || this.ngbUtility.getDate(start), val.toTime) : null;
+    const start = this.dateUtility.toMoment(val.fromDate || moment('1970-01-01', 'YYYY-MM-DD'), val.fromTime)!;
+    const end = (val.toDate || val.toTime) ? this.dateUtility.toMoment(val.toDate || this.dateUtility.getDate(start), val.toTime) : null;
 
     const trip: NewTrip = {
       start: start,

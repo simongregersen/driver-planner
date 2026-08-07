@@ -2,27 +2,46 @@ import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@ang
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, FormGroup, ReactiveFormsModule} from '@angular/forms';
 import {DatePipe} from '@angular/common';
-import {NgbActiveModal, NgbInputDatepicker, NgbTimepicker} from '@ng-bootstrap/ng-bootstrap';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import {MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatIconModule} from '@angular/material/icon';
+import {MatInputModule} from '@angular/material/input';
+import {MatSelectModule} from '@angular/material/select';
+import {MatTimepickerModule} from '@angular/material/timepicker';
 import {take} from 'rxjs/operators';
 import moment, {Moment} from 'moment';
 import {Trip, TripReport} from '../trip';
-import {NgbUtility} from '../ngb-date-utility';
+import {DateUtility} from '../date-utility';
 import {DataStore} from '../data.service';
 import {SelectOption} from '../select-option';
 import {Utility} from '../utility';
+
+type ReportField = 'start' | 'garage' | 'end';
 
 @Component({
   standalone: true,
   selector: 'app-trip-report',
   templateUrl: './trip-report.component.html',
   styleUrls: ['./trip-report.component.css'],
-  imports: [ReactiveFormsModule, DatePipe, NgbInputDatepicker, NgbTimepicker],
+  imports: [
+    ReactiveFormsModule, DatePipe,
+    MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatIconModule,
+    MatInputModule, MatSelectModule, MatTimepickerModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TripReportComponent {
   save!: (trip: Trip, driverKey: string, report: TripReport) => void;
   trip!: Trip;
   fixedDriverKey: string | null = null;
+
+  readonly fields: {key: ReportField; label: string}[] = [
+    {key: 'start', label: 'Startet'},
+    {key: 'garage', label: 'Retur til garage'},
+    {key: 'end', label: 'Afsluttet'},
+  ];
 
   readonly selectedDriverKey = signal<string | null>(null);
   readonly availableDrivers = signal<SelectOption[]>([]);
@@ -32,9 +51,9 @@ export class TripReportComponent {
 
   private readonly dataStore = inject(DataStore);
   private readonly fb = inject(FormBuilder);
-  private readonly ngbUtility = inject(NgbUtility);
-  readonly modal = inject(NgbActiveModal);
-  readonly minDate = this.ngbUtility.minDate(5);
+  private readonly dateUtility = inject(DateUtility);
+  readonly dialogRef = inject(MatDialogRef<TripReportComponent>);
+  readonly minDate = this.dateUtility.minDate(5);
 
   reportForm: FormGroup = this.fb.group({
     startDate: null,
@@ -69,24 +88,24 @@ export class TripReportComponent {
     const end = report?.actualEnd ? moment(report.actualEnd) : null;
 
     this.reportForm.patchValue({
-      startDate: start ? this.ngbUtility.getDate(start) : null,
-      startTime: start ? this.ngbUtility.getTime(start) : null,
-      garageDate: garage ? this.ngbUtility.getDate(garage) : null,
-      garageTime: garage ? this.ngbUtility.getTime(garage) : null,
-      endDate: end ? this.ngbUtility.getDate(end) : null,
-      endTime: end ? this.ngbUtility.getTime(end) : null,
+      startDate: start ? this.dateUtility.getDate(start) : null,
+      startTime: start ? this.dateUtility.getTime(start) : null,
+      garageDate: garage ? this.dateUtility.getDate(garage) : null,
+      garageTime: garage ? this.dateUtility.getTime(garage) : null,
+      endDate: end ? this.dateUtility.getDate(end) : null,
+      endTime: end ? this.dateUtility.getTime(end) : null,
     });
   }
 
-  setNow(field: 'start' | 'garage' | 'end') {
+  setNow(field: ReportField) {
     const now = moment();
     this.reportForm.patchValue({
-      [`${field}Date`]: this.ngbUtility.getDate(now),
-      [`${field}Time`]: this.ngbUtility.getTime(now),
+      [`${field}Date`]: this.dateUtility.getDate(now),
+      [`${field}Time`]: this.dateUtility.getTime(now),
     });
   }
 
-  clear(field: 'start' | 'garage' | 'end') {
+  clear(field: ReportField) {
     this.reportForm.patchValue({
       [`${field}Date`]: null,
       [`${field}Time`]: null,
@@ -104,9 +123,9 @@ export class TripReportComponent {
     this.save(this.trip, this.selectedDriverKey()!, {actualStart, garageReturn, actualEnd});
   }
 
-  private toMomentOrNull(date: any, time: any): Moment | null {
+  private toMomentOrNull(date: Moment | null, time: Moment | null): Moment | null {
     if (!date && !time) return null;
-    return this.ngbUtility.toMoment(date || this.ngbUtility.getDate(moment(this.trip.start)), time);
+    return this.dateUtility.toMoment(date || this.dateUtility.getDate(moment(this.trip.start)), time);
   }
 
   private computeError(val: any): string | null {

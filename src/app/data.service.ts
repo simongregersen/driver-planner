@@ -7,8 +7,7 @@ import {AppUser} from './user';
 import {firstValueFrom, Observable} from 'rxjs';
 import {first, map, tap} from 'rxjs/operators';
 import {Vehicle} from './vehicle';
-import {NgbUtility} from './ngb-date-utility';
-import {NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
+import {DateUtility} from './date-utility';
 import {Utility} from './utility';
 import {Template} from './template';
 import {db} from './firebase';
@@ -24,12 +23,12 @@ export class DataStore {
   private daysRef = ref(db, '/days');
   private usersRef = ref(db, '/users');
 
-  constructor(private ngbUtility: NgbUtility) {
+  constructor(private dateUtility: DateUtility) {
   }
 
-  getTrips(from: NgbDateStruct, to?: NgbDateStruct): Observable<Trip[]> {
-    const fromDate = this.ngbUtility.toMoment(from)!;
-    const toDate = (to) ? this.ngbUtility.toMoment(to)! : moment(fromDate);
+  getTrips(from: Moment, to?: Moment): Observable<Trip[]> {
+    const fromDate = this.dateUtility.toMoment(from)!;
+    const toDate = (to) ? this.dateUtility.toMoment(to)! : moment(fromDate);
     toDate.add(1, 'days');
 
     const q = query(this.tripsRef, orderByChild('start'), startAt(fromDate.valueOf()), endAt(toDate.valueOf() - 1));
@@ -88,21 +87,21 @@ export class DataStore {
   }
 
   private isDayPublic(date: Moment): Observable<boolean> {
-    const key = this.ngbUtility.dateKey(date);
+    const key = this.dateUtility.dateKey(date);
     return objectVal<boolean>(child(this.daysRef, `${key}/public`)).pipe(map(v => !!v));
   }
 
-  getDayPublic(date: NgbDateStruct): Observable<boolean> {
-    return this.isDayPublic(this.ngbUtility.toMoment(date)!);
+  getDayPublic(date: Moment): Observable<boolean> {
+    return this.isDayPublic(this.dateUtility.toMoment(date)!);
   }
 
-  setDayPublic(date: NgbDateStruct, isPublic: boolean) {
-    const key = this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!);
+  setDayPublic(date: Moment, isPublic: boolean) {
+    const key = this.dateUtility.dateKey(this.dateUtility.toMoment(date)!);
     return update(child(this.daysRef, key), {public: isPublic});
   }
 
   getPublicDates(): Observable<string[]> {
-    const todayKey = this.ngbUtility.dateKey(moment());
+    const todayKey = this.dateUtility.dateKey(moment());
     const q = query(this.daysRef, orderByKey(), startAt(todayKey));
     return objectVal<Record<string, {public: boolean}> | null>(q).pipe(
       map(days => Object.entries(days || {}).filter(([, v]) => v?.public).map(([key]) => key))
@@ -112,8 +111,8 @@ export class DataStore {
   // Unlike getPublicDates(), which only looks from today onward (for the datepicker's future-day
   // indicator), this covers an arbitrary — including past — range, for reports over past months.
   getPublicDatesInRange(from: Moment, to: Moment): Observable<string[]> {
-    const fromKey = this.ngbUtility.dateKey(from);
-    const toKey = this.ngbUtility.dateKey(to);
+    const fromKey = this.dateUtility.dateKey(from);
+    const toKey = this.dateUtility.dateKey(to);
     const q = query(this.daysRef, orderByKey(), startAt(fromKey), endAt(toKey));
     return objectVal<Record<string, {public: boolean}> | null>(q).pipe(
       map(days => Object.entries(days || {}).filter(([, v]) => v?.public).map(([key]) => key))

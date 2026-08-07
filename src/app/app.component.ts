@@ -1,7 +1,11 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {AsyncPipe} from '@angular/common';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
-import {NgbTooltip} from '@ng-bootstrap/ng-bootstrap';
+import {MatToolbarModule} from '@angular/material/toolbar';
+import {MatButtonModule} from '@angular/material/button';
+import {MatIconModule} from '@angular/material/icon';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AuthenticationService} from './authentication.service';
@@ -12,7 +16,10 @@ import {UserService} from './user.service';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  imports: [AsyncPipe, RouterLink, RouterLinkActive, RouterOutlet, NgbTooltip],
+  imports: [
+    AsyncPipe, RouterLink, RouterLinkActive, RouterOutlet,
+    MatToolbarModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {

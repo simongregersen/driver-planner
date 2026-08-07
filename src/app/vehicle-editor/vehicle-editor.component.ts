@@ -1,16 +1,23 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {NgbActiveModal, NgbInputDatepicker} from '@ng-bootstrap/ng-bootstrap';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import {MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
 import moment from 'moment';
 import {Vehicle} from '../vehicle';
-import {NgbUtility} from '../ngb-date-utility';
+import {DateUtility} from '../date-utility';
 
 @Component({
   standalone: true,
   selector: 'app-vehicle-editor',
   templateUrl: './vehicle-editor.component.html',
   styleUrls: ['./vehicle-editor.component.css'],
-  imports: [ReactiveFormsModule, NgbInputDatepicker],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VehicleEditorComponent {
@@ -18,8 +25,9 @@ export class VehicleEditorComponent {
   vehicle!: Vehicle;
 
   private readonly fb = inject(FormBuilder);
-  private readonly ngbUtility = inject(NgbUtility);
-  readonly modal = inject(NgbActiveModal);
+  private readonly dateUtility = inject(DateUtility);
+  readonly dialogRef = inject(MatDialogRef<VehicleEditorComponent>);
+  readonly minDate = moment('1900-01-01', 'YYYY-MM-DD');
 
   vehicleForm: FormGroup = this.fb.group({
     displayName: ['', Validators.required],
@@ -33,7 +41,7 @@ export class VehicleEditorComponent {
       displayName: this.vehicle.displayName,
       brand: this.vehicle.brand,
       regNo: this.vehicle.regNo,
-      latestInspection: (this.vehicle.latestInspection) ? this.ngbUtility.getDate(moment(this.vehicle.latestInspection)) : null
+      latestInspection: (this.vehicle.latestInspection) ? this.dateUtility.getDate(moment(this.vehicle.latestInspection)) : null
     });
   }
 
@@ -44,7 +52,7 @@ export class VehicleEditorComponent {
       displayName: val.displayName || '',
       brand: val.brand || '',
       regNo: val.regNo || '',
-      latestInspection: this.ngbUtility.toMoment(val.latestInspection)
+      latestInspection: this.dateUtility.toMoment(val.latestInspection)
     });
   }
 

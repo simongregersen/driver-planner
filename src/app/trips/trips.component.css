@@ -1,7 +1,33 @@
+:host {
+  display: block;
+  overflow-x: auto;
+}
+
 .newline {
   white-space: pre-line;
 }
 
 .report-line {
   white-space: nowrap;
+}
+
+.report-start {
+  color: var(--mat-sys-primary);
+}
+
+.report-end {
+  color: var(--mat-sys-error);
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
 }

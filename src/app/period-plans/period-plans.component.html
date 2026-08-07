@@ -1,97 +1,70 @@
-<div class="row mt-4 mb-2 d-print-none">
-  <div class="col-12">
-    <h2 class="fw-bold">
-      Periodeplan
-      <small>
-        {{ ngbUtility.toMoment(from)?.toDate() | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to)?.toDate() | date:'EEEE, d MMMM' }}
-      </small>
-    </h2>
-  </div>
-</div>
-<div class="d-none d-print-block">
-  <h5 class="fw-bold">
+<div class="page-header no-print">
+  <h2 class="page-title">
     Periodeplan
     <small>
-      {{ ngbUtility.toMoment(from)?.toDate() | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to)?.toDate() | date:'EEEE, d MMMM' }}
+      {{ from?.toDate() | date:'EEEE, d MMMM' }} - {{ to?.toDate() | date:'EEEE, d MMMM' }}
+    </small>
+  </h2>
+</div>
+<div class="print-only">
+  <h5 class="page-title">
+    Periodeplan
+    <small>
+      {{ from?.toDate() | date:'EEEE, d MMMM' }} - {{ to?.toDate() | date:'EEEE, d MMMM' }}
     </small>
   </h5>
   @if (selectedDriver) {
-    <h6>
+    <h6 class="page-subtitle">
       Chauffør: {{ selectedDriver.displayName }}
     </h6>
   }
 </div>
-<div class="row">
-  <div class="col-12 col-xl-2 order-xl-2 d-print-none">
-    <aside>
-      <div class="d-flex justify-content-center justify-content-xl-start">
-        <div class="sidebar-stack">
-          <ngb-datepicker #dp
-                          ngModel
-                          (ngModelChange)="onDateChange($event)"
-                          [displayMonths]="1"
-                          [dayTemplate]="t"
-                          [minDate]="minDate"
-                          [showWeekNumbers]="true">
-          </ngb-datepicker>
-          <ng-template #t let-date="date" let-focused="focused" let-today="today">
-            <span class="custom-day"
-                  [class.focused]="focused"
-                  [class.range]="isFrom(date) || isTo(date) || isInside(date) || isHovered(date)"
-                  [class.faded]="isHovered(date) || isInside(date) || ngbUtility.isPast(date)"
-                  [class.today]="today"
-                  (mouseenter)="hovered = date"
-                  (mouseleave)="hovered = null">
-            {{ date.day }}
-            </span>
-          </ng-template>
-          <div class="mt-3">
-            <h5>Filter</h5>
-            @if (drivers$ | async; as driverList) {
-              <div ngbDropdown>
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle w-100 text-truncate" ngbDropdownToggle>
-                  {{ selectedDriver ? selectedDriver.displayName : 'Alle chauffører' }}
-                </button>
-                <div ngbDropdownMenu class="w-100">
-                  <button
-                    ngbDropdownItem
-                    type="button"
-                    class="text-truncate pointer"
-                    [class.active]="!selectedDriver"
+<div class="page-layout">
+  <aside class="page-aside no-print">
+    <div class="sidebar-stack">
+      <mat-calendar class="inline-calendar"
+                    [selected]="selectedRange"
+                    (selectedChange)="onDateChange($event)"
+                    [minDate]="minDate"
+                    [dateClass]="dateClass">
+      </mat-calendar>
+      <div>
+        <h5 class="section-title">Filter</h5>
+        @if (drivers$ | async; as driverList) {
+          <button matButton="outlined" type="button" class="full-width filter-button"
+                  [matMenuTriggerFor]="driverMenu">
+            <span class="ellipsis">{{ selectedDriver ? selectedDriver.displayName : 'Alle chauffører' }}</span>
+            <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+          </button>
+          <mat-menu #driverMenu="matMenu">
+            <button mat-menu-item type="button"
+                    [class.active-item]="!selectedDriver"
                     (click)="selectedDriver = null">
-                    Alle chauffører
-                  </button>
-                  <div class="dropdown-divider"></div>
-                  @for (driver of driverList; track driver.$key) {
-                    <button
-                      ngbDropdownItem
-                      type="button"
-                      class="text-truncate pointer"
-                      [class.active]="selectedDriver?.$key === driver?.$key"
+              Alle chauffører
+            </button>
+            <mat-divider></mat-divider>
+            @for (driver of driverList; track driver.$key) {
+              <button mat-menu-item type="button"
+                      [class.active-item]="selectedDriver?.$key === driver?.$key"
                       (click)="selectedDriver = driver">
-                      {{driver.displayName}}
-                    </button>
-                  }
-                </div>
-              </div>
+                {{driver.displayName}}
+              </button>
             }
-          </div>
-        </div>
-      </div>
-    </aside>
-  </div>
-  <div class="col-12 col-xl-10">
-    @if (trips$ | async; as trips) {
-      <main>
-        @for (date of range; track (date.year * 10000 + date.month * 100 + date.day)) {
-          <div>
-            <h5 class="mt-4 mb-4">{{ ngbUtility?.toMoment(date)?.toDate() | date:'EEEE, d MMMM y'}}</h5>
-            <app-trips [trips]="filterByDate(filterTripsByDriver(trips), date)"
-                       (edit)="edit($event)"
-                       (remove)="removeTrip($event)"></app-trips>
-          </div>
+          </mat-menu>
         }
-      </main>
+      </div>
+    </div>
+  </aside>
+  <main class="page-main">
+    @if (trips$ | async; as trips) {
+      @for (date of range; track dateUtility.dateKey(date)) {
+        <div>
+          <h5 class="day-heading">{{ date.toDate() | date:'EEEE, d MMMM y'}}</h5>
+          <app-trips [trips]="filterByDate(filterTripsByDriver(trips), date)"
+                     (edit)="edit($event)"
+                     (remove)="removeTrip($event)"></app-trips>
+        </div>
+      }
     }
-  </div>
+  </main>
 </div>

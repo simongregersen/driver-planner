@@ -1,37 +1,46 @@
 @if (loggedIn$ | async) {
-  <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark d-print-none">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-            data-bs-target="#topbar" aria-controls="topbar" aria-expanded="false"
-            aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
+  <mat-toolbar class="app-toolbar no-print">
+    <button matIconButton class="nav-toggle" [matMenuTriggerFor]="navMenu" aria-label="Åbn navigation">
+      <mat-icon>menu</mat-icon>
     </button>
-    <a class="navbar-brand" href="#"><i class="fa fa-bus"></i></a>
-    <div class="collapse navbar-collapse" id="topbar">
-      <ul class="navbar-nav me-auto">
-        @if (isDriver$ | async) {
-          <li class="nav-item"><a class="nav-link" routerLink="/my-trips" routerLinkActive="active">Mine ture</a></li>
-          <li class="nav-item"><a class="nav-link"></a></li>
-        }
-        <li class="nav-item"><a class="nav-link" routerLink="/time-report" routerLinkActive="active">Timeseddel</a></li>
-        @if (isAdmin$ | async) {
-          <!--<li class="nav-item"><a class="nav-link" routerLink="/overview" routerLinkActive="active">Oversigt</a></li>-->
-          <li class="nav-item"><a class="nav-link" routerLink="/day-plans" routerLinkActive="active">Dagsplaner</a></li>
-          <li class="nav-item"><a class="nav-link" routerLink="/period-plans" routerLinkActive="active">Periodeplaner</a></li>
-          <li class="nav-item"><a class="nav-link" routerLink="/templates" routerLinkActive="active">Skabeloner</a></li>
-          <li class="nav-item"><a class="nav-link" routerLink="/drivers" routerLinkActive="active">Chauffører</a></li>
-          <li class="nav-item"><a class="nav-link" routerLink="/vehicles" routerLinkActive="active">Køretøjer</a></li>
-        }
-      </ul>
-      <ul class="navbar-nav icons topbar-icons">
-        <li class="nav-item">
-          <a class="nav-link pointer" (click)="print()" ngbTooltip="Print" placement="bottom">Print</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link pointer" (click)="logout()" [ngbTooltip]="'Log ud (' + (email$ | async) + ')'" placement="bottom">Log ud ({{ email$ | async }})</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
+    <a class="brand" routerLink="/" aria-label="Driver Planner">
+      <mat-icon>directions_bus</mat-icon>
+    </a>
+
+    <nav class="nav-links">
+      @if (isDriver$ | async) {
+        <a matButton routerLink="/my-trips" routerLinkActive="active-link">Mine ture</a>
+      }
+      <a matButton routerLink="/time-report" routerLinkActive="active-link">Timeseddel</a>
+      @if (isAdmin$ | async) {
+        <a matButton routerLink="/day-plans" routerLinkActive="active-link">Dagsplaner</a>
+        <a matButton routerLink="/period-plans" routerLinkActive="active-link">Periodeplaner</a>
+        <a matButton routerLink="/templates" routerLinkActive="active-link">Skabeloner</a>
+        <a matButton routerLink="/drivers" routerLinkActive="active-link">Chauffører</a>
+        <a matButton routerLink="/vehicles" routerLinkActive="active-link">Køretøjer</a>
+      }
+    </nav>
+
+    <span class="spacer"></span>
+
+    <a matButton (click)="print()" matTooltip="Print" matTooltipPosition="below" class="pointer">Print</a>
+    <a matButton (click)="logout()" [matTooltip]="'Log ud (' + (email$ | async) + ')'" matTooltipPosition="below"
+       class="pointer">Log ud ({{ email$ | async }})</a>
+  </mat-toolbar>
+
+  <mat-menu #navMenu="matMenu">
+    @if (isDriver$ | async) {
+      <a mat-menu-item routerLink="/my-trips" routerLinkActive="active-link">Mine ture</a>
+    }
+    <a mat-menu-item routerLink="/time-report" routerLinkActive="active-link">Timeseddel</a>
+    @if (isAdmin$ | async) {
+      <a mat-menu-item routerLink="/day-plans" routerLinkActive="active-link">Dagsplaner</a>
+      <a mat-menu-item routerLink="/period-plans" routerLinkActive="active-link">Periodeplaner</a>
+      <a mat-menu-item routerLink="/templates" routerLinkActive="active-link">Skabeloner</a>
+      <a mat-menu-item routerLink="/drivers" routerLinkActive="active-link">Chauffører</a>
+      <a mat-menu-item routerLink="/vehicles" routerLinkActive="active-link">Køretøjer</a>
+    }
+  </mat-menu>
 }
 <div class="container">
   <router-outlet></router-outlet>
