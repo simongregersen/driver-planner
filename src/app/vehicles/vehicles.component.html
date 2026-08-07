@@ -2,6 +2,10 @@
   <h2 class="page-title">Køretøjer</h2>
 </div>
 
+<div class="toolbar-row no-print">
+  <button matButton="filled" type="button" (click)="create()">Opret køretøj</button>
+</div>
+
 <div class="table-scroll">
   <table class="data-table">
     <thead>
@@ -41,38 +45,4 @@
     }
     </tbody>
   </table>
-</div>
-
-<div class="no-print create-section">
-  <h4 class="section-title">Opret køretøj</h4>
-  <form class="form-stack" [formGroup]="vehicleForm" (ngSubmit)="create(); nickname.focus()">
-    <mat-form-field class="full-width">
-      <mat-label>Kaldenavn</mat-label>
-      <input matInput type="text" formControlName="displayName" #nickname>
-      @if (vehicleForm.controls['displayName'].hasError('required')) {
-        <mat-error>Et kaldenavn er påkrævet.</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field class="full-width">
-      <mat-label>Mærke</mat-label>
-      <input matInput type="text" formControlName="brand">
-    </mat-form-field>
-
-    <mat-form-field class="full-width">
-      <mat-label>Reg. nr.</mat-label>
-      <input matInput type="text" formControlName="regNo">
-    </mat-form-field>
-
-    <mat-form-field class="date-field">
-      <mat-label>Sidst synet</mat-label>
-      <input matInput formControlName="latestInspection" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
-      <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-      <mat-datepicker #d></mat-datepicker>
-    </mat-form-field>
-
-    <div class="form-actions">
-      <button matButton="filled" type="submit" [disabled]="!vehicleForm.valid">Opret</button>
-    </div>
-  </form>
 </div>

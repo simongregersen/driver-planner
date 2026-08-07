@@ -2,6 +2,10 @@
   <h2 class="page-title">Chauffører</h2>
 </div>
 
+<div class="toolbar-row no-print">
+  <button matButton="filled" type="button" (click)="create()">Opret chauffør</button>
+</div>
+
 <div class="table-scroll">
   <table class="data-table">
     <thead>
@@ -57,36 +61,4 @@
     }
     </tbody>
   </table>
-</div>
-
-<div class="no-print create-section">
-  <h4 class="section-title">Opret chauffør</h4>
-  <form class="form-stack" [formGroup]="driverForm" (ngSubmit)="create(); nickname.focus()">
-    <mat-form-field class="full-width">
-      <mat-label>Kaldenavn</mat-label>
-      <input matInput type="text" formControlName="displayName" #nickname>
-      @if (driverForm.controls['displayName'].hasError('required')) {
-        <mat-error>Et kaldenavn er påkrævet.</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field class="full-width">
-      <mat-label>Navn</mat-label>
-      <input matInput type="text" formControlName="name">
-      @if (driverForm.controls['name'].hasError('required')) {
-        <mat-error>Et navn er påkrævet.</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field class="date-field">
-      <mat-label>Fødseldag</mat-label>
-      <input matInput formControlName="birthday" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
-      <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-      <mat-datepicker #d startView="multi-year"></mat-datepicker>
-    </mat-form-field>
-
-    <div class="form-actions">
-      <button matButton="filled" type="submit" [disabled]="!driverForm.valid">Opret</button>
-    </div>
-  </form>
 </div>

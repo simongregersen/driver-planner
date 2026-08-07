@@ -9,3 +9,9 @@ export interface Driver extends AngularFireObject {
   uid?: string;
   email?: string;
 }
+
+export interface NewDriver {
+  displayName: string;
+  name: string;
+  birthday: Moment | null;
+}

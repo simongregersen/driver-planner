@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>Opret chauffør</h2>
+
+<mat-dialog-content>
+  <form id="driverCreatorForm" class="form-stack" [formGroup]="driverForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+    <mat-form-field class="full-width">
+      <mat-label>Kaldenavn</mat-label>
+      <input matInput type="text" formControlName="displayName">
+      @if (driverForm.controls['displayName'].hasError('required')) {
+        <mat-error>Et kaldenavn er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Navn</mat-label>
+      <input matInput type="text" formControlName="name">
+      @if (driverForm.controls['name'].hasError('required')) {
+        <mat-error>Et navn er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="date-field">
+      <mat-label>Fødselsdag</mat-label>
+      <input matInput formControlName="birthday" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
+      <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
+      <mat-datepicker #d startView="multi-year"></mat-datepicker>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="driverCreatorForm" [disabled]="!driverForm.valid">Opret</button>
+</mat-dialog-actions>

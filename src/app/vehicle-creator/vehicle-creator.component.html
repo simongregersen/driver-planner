@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>Opret køretøj</h2>
+
+<mat-dialog-content>
+  <form id="vehicleCreatorForm" class="form-stack" [formGroup]="vehicleForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+    <mat-form-field class="full-width">
+      <mat-label>Kaldenavn</mat-label>
+      <input matInput type="text" formControlName="displayName">
+      @if (vehicleForm.controls['displayName'].hasError('required')) {
+        <mat-error>Et kaldenavn er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Mærke</mat-label>
+      <input matInput type="text" formControlName="brand">
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Reg. nr.</mat-label>
+      <input matInput type="text" formControlName="regNo">
+    </mat-form-field>
+
+    <mat-form-field class="date-field">
+      <mat-label>Sidst synet</mat-label>
+      <input matInput formControlName="latestInspection" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
+      <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
+      <mat-datepicker #d></mat-datepicker>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="vehicleCreatorForm" [disabled]="!vehicleForm.valid">Opret</button>
+</mat-dialog-actions>
