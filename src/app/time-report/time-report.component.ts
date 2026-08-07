@@ -28,7 +28,7 @@ interface WeekGroup {
   totalLabel: string;
 }
 
-interface MonthReport {
+interface PeriodReport {
   weeks: WeekGroup[];
   totalLabel: string;
 }
@@ -50,11 +50,13 @@ export class TimeReportComponent implements OnInit {
   isAdmin$!: Observable<boolean>;
   drivers$!: Observable<Driver[]>;
   effectiveDriverKey$!: Observable<string | null>;
-  report$!: Observable<MonthReport | null>;
+  report$!: Observable<PeriodReport | null>;
 
   selectedDriver: Driver | null = null;
 
-  private readonly monthSubject = new BehaviorSubject<Moment>(moment().startOf('month'));
+  // Payroll runs in fixed 14-day periods, two ISO weeks at a time, anchored so the first week
+  // of the pair is always even-numbered (e.g. the period covering today is weeks 32-33 — 32 is even).
+  private readonly periodStartSubject = new BehaviorSubject<Moment>(this.periodStartFor(moment()));
   private readonly driverKeySubject = new BehaviorSubject<string | null>(null);
 
   ngOnInit(): void {
@@ -65,16 +67,15 @@ export class TimeReportComponent implements OnInit {
       map(([isAdmin, driverProfile, pickedKey]) => isAdmin ? pickedKey : (driverProfile?.$key ?? null))
     );
 
-    this.report$ = combineLatest([this.monthSubject, this.effectiveDriverKey$]).pipe(
-      switchMap(([month, driverKey]) => {
+    this.report$ = combineLatest([this.periodStartSubject, this.effectiveDriverKey$]).pipe(
+      switchMap(([periodStart, driverKey]) => {
         if (!driverKey) return of(null);
-        const monthStart = month.clone().startOf('month');
-        const monthEnd = month.clone().endOf('month');
-        const from = this.ngbUtility.getDate(monthStart);
-        const to = this.ngbUtility.getDate(monthEnd);
+        const periodEnd = periodStart.clone().add(13, 'days');
+        const from = this.ngbUtility.getDate(periodStart);
+        const to = this.ngbUtility.getDate(periodEnd);
         return combineLatest([
           this.dataStore.getTrips(from, to),
-          this.dataStore.getPublicDatesInRange(monthStart, monthEnd),
+          this.dataStore.getPublicDatesInRange(periodStart, periodEnd),
         ]).pipe(
           map(([trips, publicDates]) => {
             const publicDateSet = new Set(publicDates);
@@ -91,20 +92,31 @@ export class TimeReportComponent implements OnInit {
     this.driverKeySubject.next(driver.$key);
   }
 
-  get selectedMonth(): Moment {
-    return this.monthSubject.value;
+  get periodStart(): Moment {
+    return this.periodStartSubject.value;
   }
 
-  previousMonth() {
-    this.monthSubject.next(this.monthSubject.value.clone().subtract(1, 'month'));
+  get periodEnd(): Moment {
+    return this.periodStartSubject.value.clone().add(13, 'days');
   }
 
-  nextMonth() {
-    this.monthSubject.next(this.monthSubject.value.clone().add(1, 'month'));
+  previousPeriod() {
+    this.periodStartSubject.next(this.periodStartSubject.value.clone().subtract(14, 'days'));
   }
 
-  goToCurrentMonth() {
-    this.monthSubject.next(moment().startOf('month'));
+  nextPeriod() {
+    this.periodStartSubject.next(this.periodStartSubject.value.clone().add(14, 'days'));
+  }
+
+  goToCurrentPeriod() {
+    this.periodStartSubject.next(this.periodStartFor(moment()));
+  }
+
+  // Monday of the date's own ISO week, pulled back an extra week if that week is odd-numbered,
+  // so the result always lands on the Monday of an even ISO week.
+  private periodStartFor(date: Moment): Moment {
+    const monday = date.clone().startOf('isoWeek');
+    return monday.isoWeek() % 2 === 0 ? monday : monday.subtract(1, 'week');
   }
 
   openTripReport(trip: Trip, driverKey: string) {
@@ -112,7 +124,7 @@ export class TimeReportComponent implements OnInit {
     modalRef.componentInstance.edit(trip, (t: Trip, dKey: string, report: TripReport) => this.dataStore.updateTripReport(t, dKey, report), driverKey);
   }
 
-  private buildReport(trips: Trip[], driverKey: string): MonthReport {
+  private buildReport(trips: Trip[], driverKey: string): PeriodReport {
     const rows = trips
       .filter(t => t.drivers?.includes(driverKey))
       .map(t => this.buildRow(t, driverKey))

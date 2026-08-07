@@ -2,7 +2,7 @@
   <div class="col-12">
     <h2 class="fw-bold">
       Timeseddel
-      <small>{{ selectedMonth.toDate() | date:'MMMM y' }}</small>
+      <small>{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
     </h2>
     @if (isAdmin$ | async) {
       @if (selectedDriver) {
@@ -16,7 +16,7 @@
 <div class="d-none d-print-block">
   <h5 class="fw-bold">
     Timeseddel
-    <small>{{ selectedMonth.toDate() | date:'MMMM y' }}</small>
+    <small>{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
   </h5>
   @if (isAdmin$ | async) {
     @if (selectedDriver) {
@@ -51,11 +51,11 @@
           </div>
         }
       }
-      <h5 class="mt-3">Måned</h5>
-      <div class="btn-group d-flex" role="group" aria-label="Måned-navigation">
-        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="previousMonth()">Forrige</button>
-        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="goToCurrentMonth()">Denne måned</button>
-        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="nextMonth()">Næste</button>
+      <h5 class="mt-3">Periode</h5>
+      <div class="btn-group d-flex" role="group" aria-label="Periode-navigation">
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="previousPeriod()">Forrige</button>
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="goToCurrentPeriod()">Denne periode</button>
+        <button type="button" class="btn btn-outline-secondary flex-fill" (click)="nextPeriod()">Næste</button>
       </div>
     </aside>
   </div>
@@ -106,7 +106,7 @@
             </tfoot>
           </table>
         } @else {
-          <em class="d-print-none">Ingen ture denne måned.</em>
+          <em class="d-print-none">Ingen ture i denne periode.</em>
         }
       }
     } @else {
