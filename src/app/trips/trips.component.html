@@ -26,6 +26,7 @@
             {{trip.start.toDate() | date: 'HH:mm' }}
             </span>
             @for (entry of startReportEntries(trip); track entry.key) {
+              <br>
               <small class="report-line report-start">{{entry.time}}</small>
             }
           </th>
@@ -34,6 +35,7 @@
               {{trip.end?.toDate() | date:'HH:mm' }}
             </span>
             @for (entry of endReportEntries(trip); track entry.key) {
+              <br>
               <small class="report-line report-end">{{entry.time}}</small>
             }
           </td>
