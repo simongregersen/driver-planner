@@ -167,7 +167,7 @@ body {
 
 .data-table th,
 .data-table td {
-  padding: 8px 8px;
+  padding: 4px 8px;
   text-align: left;
   vertical-align: top;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
@@ -199,6 +199,20 @@ body {
 .data-table .cell-actions {
   width: 1%;
   white-space: nowrap;
+}
+
+.data-table mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* The invisible touch target is disabled here too — otherwise it stays at the default
+   48px and adjacent action buttons end up with overlapping hit areas. */
+.data-table .mat-mdc-icon-button {
+  --mat-icon-button-state-layer-size: 26px;
+  --mat-icon-button-icon-size: 16px;
+  --mat-icon-button-touch-target-display: none;
 }
 
 /* Column widths carried over from the previous layout. */
@@ -278,6 +292,7 @@ button.confirm-danger {
   .page-main {
     margin-top: 0;
   }
+
 }
 
 @page {
