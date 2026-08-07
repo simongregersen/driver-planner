@@ -46,7 +46,7 @@ export class TripReportComponent {
   });
 
   private readonly formValue = toSignal(this.reportForm.valueChanges, {initialValue: this.reportForm.value});
-  readonly orderError = computed(() => this.computeOrderError(this.formValue()));
+  readonly error = computed(() => this.computeError(this.formValue()));
 
   public edit(trip: Trip, save: (trip: Trip, driverKey: string, report: TripReport) => void, fixedDriverKey?: string) {
     this.save = save;
@@ -94,7 +94,7 @@ export class TripReportComponent {
   }
 
   onSubmit() {
-    if (this.orderError()) return;
+    if (this.error()) return;
 
     const val = this.reportForm.value;
     const actualStart = this.toMomentOrNull(val.startDate, val.startTime);
@@ -109,12 +109,18 @@ export class TripReportComponent {
     return this.ngbUtility.toMoment(date || this.ngbUtility.getDate(moment(this.trip.start)), time);
   }
 
-  private computeOrderError(val: any): string | null {
+  private computeError(val: any): string | null {
     if (!this.trip) return null;
 
     const start = this.toMomentOrNull(val.startDate, val.startTime);
     const garage = this.toMomentOrNull(val.garageDate, val.garageTime);
     const end = this.toMomentOrNull(val.endDate, val.endTime);
+
+    // Checked before ordering, since comparing an invalid moment doesn't throw — it just silently
+    // reports no ordering violation, which would let a nonsensical date/time (e.g. day 32, hour 25) through.
+    if (start && !start.isValid()) return 'Ugyldig dato eller tid for start.';
+    if (garage && !garage.isValid()) return 'Ugyldig dato eller tid for retur til garage.';
+    if (end && !end.isValid()) return 'Ugyldig dato eller tid for afsluttet.';
 
     if (start && garage && garage.isBefore(start)) {
       return 'Retur til garage kan ikke være før start.';

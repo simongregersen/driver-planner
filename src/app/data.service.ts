@@ -109,6 +109,17 @@ export class DataStore {
     );
   }
 
+  // Unlike getPublicDates(), which only looks from today onward (for the datepicker's future-day
+  // indicator), this covers an arbitrary — including past — range, for reports over past months.
+  getPublicDatesInRange(from: Moment, to: Moment): Observable<string[]> {
+    const fromKey = this.ngbUtility.dateKey(from);
+    const toKey = this.ngbUtility.dateKey(to);
+    const q = query(this.daysRef, orderByKey(), startAt(fromKey), endAt(toKey));
+    return objectVal<Record<string, {public: boolean}> | null>(q).pipe(
+      map(days => Object.entries(days || {}).filter(([, v]) => v?.public).map(([key]) => key))
+    );
+  }
+
   getAllDrivers(): Observable<Driver[]> {
     return listVal<Driver>(this.driversRef, {keyField: '$key'}).pipe(
       map(Utility.filterDeleted),

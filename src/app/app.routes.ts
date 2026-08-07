@@ -24,6 +24,10 @@ export const routes: Routes = [
         loadComponent: () => import('./my-trips/my-trips.component').then(m => m.MyTripsComponent),
       },
       {
+        path: 'time-report',
+        loadComponent: () => import('./time-report/time-report.component').then(m => m.TimeReportComponent),
+      },
+      {
         path: '',
         canActivate: [adminGuard],
         children: [

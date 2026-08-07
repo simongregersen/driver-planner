@@ -117,11 +117,11 @@
         </button>
       </div>
     </div>
-    @if (orderError()) {
-      <div class="alert alert-danger mt-3 mb-0">{{ orderError() }}</div>
+    @if (error()) {
+      <div class="alert alert-danger mt-3 mb-0">{{ error() }}</div>
     }
   </div>
   <div class="modal-footer">
-    <button type="submit" class="btn btn-primary" [disabled]="!!orderError()">Gem</button>
+    <button type="submit" class="btn btn-primary" [disabled]="!!error()">Gem</button>
   </div>
 </form>
