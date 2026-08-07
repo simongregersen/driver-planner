@@ -28,6 +28,7 @@ export class TripsComponent implements OnInit {
   trips = input<Trip[]>([]);
   readonly = input(false);
   highlightModified = input(false);
+  hideDescriptionOnScreen = input(false);
   rowClickToEdit = input(false);
   reportable = input(false);
   currentDriverKey = input<string | null>(null);

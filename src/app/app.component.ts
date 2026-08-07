@@ -3,6 +3,7 @@ import {AsyncPipe} from '@angular/common';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatButtonModule} from '@angular/material/button';
+import {MatDividerModule} from '@angular/material/divider';
 import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
@@ -18,7 +19,7 @@ import {UserService} from './user.service';
   styleUrls: ['./app.component.css'],
   imports: [
     AsyncPipe, RouterLink, RouterLinkActive, RouterOutlet,
-    MatToolbarModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule,
+    MatToolbarModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

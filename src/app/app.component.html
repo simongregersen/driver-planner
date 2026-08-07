@@ -23,9 +23,11 @@
 
     <span class="spacer"></span>
 
-    <a matButton (click)="print()" matTooltip="Print" matTooltipPosition="below" class="pointer">Print</a>
-    <a matButton (click)="logout()" [matTooltip]="'Log ud (' + (email$ | async) + ')'" matTooltipPosition="below"
-       class="pointer">Log ud ({{ email$ | async }})</a>
+    <span class="toolbar-actions">
+      <a matButton (click)="print()" matTooltip="Print" matTooltipPosition="below" class="pointer">Print</a>
+      <a matButton (click)="logout()" [matTooltip]="'Log ud (' + (email$ | async) + ')'" matTooltipPosition="below"
+         class="pointer">Log ud ({{ email$ | async }})</a>
+    </span>
   </mat-toolbar>
 
   <mat-menu #navMenu="matMenu">
@@ -40,6 +42,9 @@
       <a mat-menu-item routerLink="/drivers" routerLinkActive="active-link">Chauffører</a>
       <a mat-menu-item routerLink="/vehicles" routerLinkActive="active-link">Køretøjer</a>
     }
+    <mat-divider class="nav-menu-actions-divider"></mat-divider>
+    <button mat-menu-item type="button" (click)="print()">Print</button>
+    <button mat-menu-item type="button" (click)="logout()">Log ud ({{ email$ | async }})</button>
   </mat-menu>
 }
 <div class="container">

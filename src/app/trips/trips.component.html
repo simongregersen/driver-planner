@@ -41,7 +41,7 @@
           </td>
           <td>
             {{trip.name}}
-            <small class="muted newline"><br>{{trip.description}}</small>
+            <small class="muted newline" [class.print-only]="hideDescriptionOnScreen()"><br>{{trip.description}}</small>
           </td>
           <td [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
             @for (key of trip.drivers; track key; let isLast = $last) {

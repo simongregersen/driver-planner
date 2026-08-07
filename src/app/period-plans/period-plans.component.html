@@ -47,9 +47,10 @@
   <main class="page-main">
     @if (trips$ | async; as trips) {
       @for (date of range; track dateUtility.dateKey(date)) {
-        <div>
+        <div class="day-block">
           <h5 class="day-heading">{{ date.toDate() | date:'EEEE, d MMMM y'}}</h5>
           <app-trips [trips]="filterByDate(filterTripsByDriver(trips), date)"
+                     [hideDescriptionOnScreen]="true"
                      (edit)="edit($event)"
                      (remove)="removeTrip($event)"></app-trips>
         </div>

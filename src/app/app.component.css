@@ -41,12 +41,21 @@
   display: none;
 }
 
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+}
+
 @media (max-width: 767px) {
   .nav-toggle {
     display: inline-flex;
   }
 
   .nav-links {
+    display: none;
+  }
+
+  .toolbar-actions {
     display: none;
   }
 }

@@ -17,3 +17,15 @@
 ::ng-deep .past-day .mat-calendar-body-cell-content {
   opacity: 0.5;
 }
+
+@media print {
+  .day-block {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .day-block:last-child {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
