@@ -33,8 +33,10 @@
 }
 
 /* Below 768px the table becomes a stack of cards, one per trip, with a label
-   before each field standing in for the column headers the cards no longer have. */
-@media (max-width: 767px) {
+   before each field standing in for the column headers the cards no longer have.
+   Screen-only — printing should always use the full table layout regardless of the
+   printing device's reported page width. */
+@media screen and (max-width: 767px) {
   .data-table thead {
     display: none;
   }
