@@ -3,12 +3,12 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
-import {MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
+import {MatCalendar, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {Observable} from 'rxjs';
-import {Moment} from 'moment';
+import moment, {Moment} from 'moment';
 import {Trip, TripReport} from '../trip';
 import {Driver} from '../driver';
 import {DataStore} from '../data.service';
@@ -48,17 +48,17 @@ export class MyTripsComponent implements OnInit {
   private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
   private readonly publicDates = toSignal(this.dataStore.getPublicDates(), {initialValue: [] as string[]});
 
-  readonly dateClass = computed<MatCalendarCellClassFunction<Moment>>(() => {
+  readonly dateFilter = computed<(date: Moment | null) => boolean>(() => {
     const publicDates = this.publicDates();
-    return date => this.isPublicDate(date, publicDates) ? 'public-day' : '';
+    return date => !!date && this.isPublicDate(date, publicDates);
   });
 
   constructor() {
-    // A calendar only rebuilds its cells on an explicit refresh, never on a new dateClass
+    // A calendar only rebuilds its cells on an explicit refresh, never on a new dateFilter
     // alone. This has to run *after* render, so the calendar has already received the new
-    // dateClass binding by the time it re-reads it.
+    // dateFilter binding by the time it re-reads it.
     afterRenderEffect(() => {
-      this.dateClass();
+      this.dateFilter();
       this.calendar()?.updateTodaysDate();
     });
   }
@@ -80,11 +80,32 @@ export class MyTripsComponent implements OnInit {
   }
 
   previousDay() {
-    this.selectedDate = this.dateUtility.addDays(this.selectedDate, -1);
+    const date = this.adjacentPublicDate(-1);
+    if (date) this.selectedDate = date;
   }
 
   nextDay() {
-    this.selectedDate = this.dateUtility.addDays(this.selectedDate, 1);
+    const date = this.adjacentPublicDate(1);
+    if (date) this.selectedDate = date;
+  }
+
+  hasPreviousPublicDate(): boolean {
+    return !!this.adjacentPublicDate(-1);
+  }
+
+  hasNextPublicDate(): boolean {
+    return !!this.adjacentPublicDate(1);
+  }
+
+  // Previous/next skip over non-public gaps rather than landing on a disabled day, so they
+  // always agree with what the datepicker filter allows a user to pick directly.
+  private adjacentPublicDate(direction: 1 | -1): Moment | null {
+    const currentKey = this.dateUtility.dateKey(this.selectedDate);
+    const publicDates = [...this.publicDates()].sort();
+    const key = direction > 0
+      ? publicDates.find(k => k > currentKey)
+      : publicDates.reverse().find(k => k < currentKey);
+    return key ? moment(key, 'YYYY-MM-DD') : null;
   }
 
   goToToday() {

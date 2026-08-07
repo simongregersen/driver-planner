@@ -17,7 +17,7 @@
                     [selected]="selectedDate"
                     (selectedChange)="onDateSelected($event)"
                     [minDate]="minDate"
-                    [dateClass]="dateClass()">
+                    [dateFilter]="dateFilter()">
       </mat-calendar>
       <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Dato</mat-label>
@@ -25,16 +25,17 @@
                readonly
                [matDatepicker]="d"
                [min]="minDate"
+               [matDatepickerFilter]="dateFilter()"
                [ngModel]="selectedDate"
                (ngModelChange)="onDateSelected($event)"
                (click)="d.open()">
         <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-        <mat-datepicker #d [dateClass]="dateClass()"></mat-datepicker>
+        <mat-datepicker #d></mat-datepicker>
       </mat-form-field>
       <div class="button-row" role="group" aria-label="Dato-navigation">
-        <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>
+        <button matButton="outlined" type="button" [disabled]="!hasPreviousPublicDate()" (click)="previousDay()">Forrige</button>
         <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
-        <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
+        <button matButton="outlined" type="button" [disabled]="!hasNextPublicDate()" (click)="nextDay()">Næste</button>
       </div>
     </div>
   </aside>

@@ -54,14 +54,11 @@
       }
     },
 
-    "days": {
+    "public": {
       ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",
       ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$dateKey": {
-        ".validate": "newData.hasChild('public')",
-        "public": {
-          ".validate": "newData.isBoolean()"
-        }
+        ".validate": "newData.isBoolean() && newData.val() === true"
       }
     }
   }

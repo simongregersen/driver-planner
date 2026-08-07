@@ -20,7 +20,7 @@ export class DataStore {
   private vehiclesRef = ref(db, '/vehicles');
   private tripsRef = ref(db, '/trips');
   private templatesRef = ref(db, '/templates');
-  private daysRef = ref(db, '/days');
+  private publicRef = ref(db, '/public');
   private usersRef = ref(db, '/users');
 
   constructor(private dateUtility: DateUtility) {
@@ -88,7 +88,7 @@ export class DataStore {
 
   private isDayPublic(date: Moment): Observable<boolean> {
     const key = this.dateUtility.dateKey(date);
-    return objectVal<boolean>(child(this.daysRef, `${key}/public`)).pipe(map(v => !!v));
+    return objectVal<boolean>(child(this.publicRef, key)).pipe(map(v => !!v));
   }
 
   getDayPublic(date: Moment): Observable<boolean> {
@@ -97,25 +97,22 @@ export class DataStore {
 
   setDayPublic(date: Moment, isPublic: boolean) {
     const key = this.dateUtility.dateKey(this.dateUtility.toMoment(date)!);
-    return update(child(this.daysRef, key), {public: isPublic});
+    if (isPublic) return update(this.publicRef, {[key]: true});
+    return remove(child(this.publicRef, key));
   }
 
   getPublicDates(): Observable<string[]> {
-    const todayKey = this.dateUtility.dateKey(moment());
-    const q = query(this.daysRef, orderByKey(), startAt(todayKey));
-    return objectVal<Record<string, {public: boolean}> | null>(q).pipe(
-      map(days => Object.entries(days || {}).filter(([, v]) => v?.public).map(([key]) => key))
+    return objectVal<Record<string, boolean> | null>(this.publicRef).pipe(
+      map(dates => Object.keys(dates || {}))
     );
   }
 
-  // Unlike getPublicDates(), which only looks from today onward (for the datepicker's future-day
-  // indicator), this covers an arbitrary — including past — range, for reports over past months.
   getPublicDatesInRange(from: Moment, to: Moment): Observable<string[]> {
     const fromKey = this.dateUtility.dateKey(from);
     const toKey = this.dateUtility.dateKey(to);
-    const q = query(this.daysRef, orderByKey(), startAt(fromKey), endAt(toKey));
-    return objectVal<Record<string, {public: boolean}> | null>(q).pipe(
-      map(days => Object.entries(days || {}).filter(([, v]) => v?.public).map(([key]) => key))
+    const q = query(this.publicRef, orderByKey(), startAt(fromKey), endAt(toKey));
+    return objectVal<Record<string, boolean> | null>(q).pipe(
+      map(dates => Object.keys(dates || {}))
     );
   }
 
