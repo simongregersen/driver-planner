@@ -3,15 +3,16 @@ import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {
   NgbCalendar,
+  NgbDate,
   NgbDateStruct,
   NgbDatepicker,
   NgbDropdown,
   NgbDropdownItem,
   NgbDropdownMenu,
   NgbDropdownToggle,
+  NgbInputDatepicker,
   NgbModal,
 } from '@ng-bootstrap/ng-bootstrap';
-import {NgSelectModule} from '@ng-select/ng-select';
 import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
 import {DataStore} from '../data.service';
 import {NewTrip, Trip} from '../trip';
@@ -32,8 +33,8 @@ import {TripsComponent} from '../trips/trips.component';
   styleUrls: ['./day-plans.component.css'],
   imports: [
     FormsModule, AsyncPipe, DatePipe,
-    NgbDatepicker, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu, NgbDropdownItem,
-    NgSelectModule, ConfirmationPopoverModule, TripsComponent,
+    NgbDatepicker, NgbInputDatepicker, NgbDropdown, NgbDropdownToggle, NgbDropdownMenu, NgbDropdownItem,
+    ConfirmationPopoverModule, TripsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -48,7 +49,6 @@ export class DayPlansComponent implements OnInit {
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
   publicDates$!: Observable<string[]>;
-  selectedTemplate!: string;
   readonly minDate = this.ngbUtility.minDate(5);
   private _selectedDriver: Driver | null = null;
   private _selectedDate!: NgbDateStruct;
@@ -65,13 +65,25 @@ export class DayPlansComponent implements OnInit {
     return publicDates.includes(this.ngbUtility.dateKey(this.ngbUtility.toMoment(date)!));
   }
 
+  previousDay() {
+    this.selectedDate = this.calendar.getPrev(NgbDate.from(this.selectedDate)!, 'd');
+  }
+
+  nextDay() {
+    this.selectedDate = this.calendar.getNext(NgbDate.from(this.selectedDate)!, 'd');
+  }
+
+  goToToday() {
+    this.selectedDate = this.calendar.getToday();
+  }
+
   removeTrip(trip: Trip) {
     this.dataStore.removeTrip(trip);
   }
 
   edit(trip: Trip) {
     const modalRef = this.modalService.open(TripEditorComponent, {size: 'lg'});
-    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u));
+    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
   }
 
   create() {
@@ -80,8 +92,8 @@ export class DayPlansComponent implements OnInit {
     modalRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
   }
 
-  insertTemplate() {
-    this.dataStore.insertTemplate(this.ngbUtility.toMoment(this.selectedDate)!, this.selectedTemplate);
+  insertTemplate(templateId: string) {
+    this.dataStore.insertTemplate(this.ngbUtility.toMoment(this.selectedDate)!, templateId);
   }
 
   filterTripsByDriver(trips: Trip[] | null): Trip[] {
@@ -90,8 +102,8 @@ export class DayPlansComponent implements OnInit {
     return trips.filter(t => Utility.isAssigned(this._selectedDriver!, t));
   }
 
-  set selectedDriver(driver: Driver) {
-    this._selectedDriver = (this._selectedDriver && driver.$key === this._selectedDriver.$key) ? null : driver;
+  set selectedDriver(driver: Driver | null) {
+    this._selectedDriver = (driver && this._selectedDriver?.$key === driver.$key) ? null : driver;
   }
 
   get selectedDriver(): Driver | null {

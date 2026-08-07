@@ -101,6 +101,20 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button type="submit" class="btn btn-primary float-end" [disabled]="!tripForm.valid">Gem</button>
+    @if (remove) {
+      <button type="button"
+              class="btn btn-danger"
+              mwlConfirmationPopover
+              [popoverMessage]="'Er du sikker på, at du vil slette turen<br>\'' + trip.name + '\'?'"
+              [confirmButtonType]="'danger'"
+              [confirmText]="'Slet'"
+              [cancelText]="'Annuller'"
+              placement="top"
+              [appendToBody]="true"
+              (confirm)="deleteTrip()">
+        Slet
+      </button>
+    }
+    <button type="submit" class="btn btn-primary" [disabled]="!tripForm.valid">Gem</button>
   </div>
 </form>

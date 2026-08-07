@@ -17,7 +17,9 @@
       </thead>
       <tbody>
       @for (trip of trips(); track trip.$key) {
-        <tr [class.table-primary]="isRecentlyModified(trip)">
+        <tr [class.table-primary]="isRecentlyModified(trip)"
+            [class.pointer]="!readonly() && rowClickToEdit()"
+            (click)="onRowClick(trip)">
           <th>
             <span ngbTooltip="{{trip.start.toDate() | date: 'short'}}" container="'body'">
             {{trip.start.toDate() | date: 'HH:mm' }}
@@ -50,7 +52,7 @@
             <td class="d-print-none">
               <div class="float-end icons">
                 <a class="pointer"
-                   (click)="edit.emit(trip)">
+                   (click)="$event.stopPropagation(); edit.emit(trip)">
                   <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
                 </a>
                 <a mwlConfirmationPopover
@@ -60,6 +62,8 @@
                    [confirmText]="'Slet'"
                    [cancelText]="'Annuller'"
                    placement="left"
+                   [appendToBody]="true"
+                   (click)="$event.stopPropagation()"
                    (confirm)="remove.emit(trip)">
                   <i class="fa fa-trash" ngbTooltip="Slet"></i>
                 </a>

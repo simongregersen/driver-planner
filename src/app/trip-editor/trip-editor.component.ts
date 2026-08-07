@@ -3,6 +3,7 @@ import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {AsyncPipe} from '@angular/common';
 import {NgbActiveModal, NgbCalendar, NgbInputDatepicker, NgbTimepicker} from '@ng-bootstrap/ng-bootstrap';
 import {NgSelectModule} from '@ng-select/ng-select';
+import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
 import moment from 'moment';
 import {SelectOption} from '../select-option';
 import {DataStore} from '../data.service';
@@ -17,12 +18,13 @@ import {NgbUtility} from '../ngb-date-utility';
   selector: 'app-trip-editor',
   templateUrl: './trip-editor.component.html',
   styleUrls: ['./trip-editor.component.css'],
-  imports: [ReactiveFormsModule, AsyncPipe, NgbInputDatepicker, NgbTimepicker, NgSelectModule],
+  imports: [ReactiveFormsModule, AsyncPipe, NgbInputDatepicker, NgbTimepicker, NgSelectModule, ConfirmationPopoverModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TripEditorComponent implements OnInit {
   showDate = true;
   save!: (trip: Trip, updates: any) => void;
+  remove?: (trip: Trip) => void;
   trip!: Trip;
   availableDrivers$!: Observable<SelectOption[]>;
   availableVehicles$!: Observable<SelectOption[]>;
@@ -84,10 +86,16 @@ export class TripEditorComponent implements OnInit {
     });
   }
 
-  public edit(trip: Trip, save: (trip: Trip, updates: any) => void) {
+  public edit(trip: Trip, save: (trip: Trip, updates: any) => void, remove?: (trip: Trip) => void) {
     this.save = save;
+    this.remove = remove;
     this.trip = trip;
 
     this.update();
+  }
+
+  deleteTrip() {
+    this.remove?.(this.trip);
+    this.modal.close();
   }
 }

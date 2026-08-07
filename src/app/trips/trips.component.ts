@@ -22,6 +22,7 @@ export class TripsComponent implements OnInit {
   trips = input<Trip[]>([]);
   readonly = input(false);
   highlightModified = input(false);
+  rowClickToEdit = input(false);
   edit = output<Trip>();
   remove = output<Trip>();
 
@@ -45,5 +46,11 @@ export class TripsComponent implements OnInit {
 
   isRecentlyModified(trip: Trip): boolean {
     return this.highlightModified() && !!trip.modified && trip.modified.isAfter(moment().subtract(24, 'hours'));
+  }
+
+  onRowClick(trip: Trip): void {
+    if (!this.readonly() && this.rowClickToEdit()) {
+      this.edit.emit(trip);
+    }
   }
 }

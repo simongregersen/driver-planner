@@ -79,7 +79,7 @@ export class PeriodPlansComponent implements OnInit {
 
   edit(trip: Trip) {
     const modalRef = this.modalService.open(TripEditorComponent, {size: 'lg'});
-    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u));
+    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
   }
 
   fetchTrips(): void {
@@ -101,8 +101,8 @@ export class PeriodPlansComponent implements OnInit {
     return trips.filter(t => Utility.isAssigned(this._selectedDriver!, t));
   }
 
-  set selectedDriver(driver: Driver) {
-    this._selectedDriver = (this._selectedDriver && driver.$key === this._selectedDriver.$key) ? null : driver;
+  set selectedDriver(driver: Driver | null) {
+    this._selectedDriver = (driver && this._selectedDriver?.$key === driver.$key) ? null : driver;
   }
 
   get selectedDriver(): Driver | null {

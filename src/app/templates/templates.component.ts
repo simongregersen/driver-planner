@@ -66,7 +66,11 @@ export class TemplatesComponent implements OnInit {
   edit(trip: Trip) {
     const modalRef = this.modalService.open(TripEditorComponent, {size: 'lg'});
     modalRef.componentInstance.showDate = false;
-    modalRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTripFromTemplate(this.selectedTemplate, t, u));
+    modalRef.componentInstance.edit(
+      trip,
+      (t: Trip, u: any) => this.dataStore.updateTripFromTemplate(this.selectedTemplate, t, u),
+      (t: Trip) => this.removeTrip(t),
+    );
   }
 
 
