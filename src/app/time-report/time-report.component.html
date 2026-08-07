@@ -31,20 +31,15 @@
         <div>
           <h5 class="section-title">Chauffør</h5>
           @if (drivers$ | async; as driverList) {
-            <button matButton="outlined" type="button" class="full-width filter-button"
-                    [matMenuTriggerFor]="driverMenu">
-              <span class="ellipsis">{{ selectedDriver ? selectedDriver.displayName : 'Vælg chauffør' }}</span>
-              <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
-            </button>
-            <mat-menu #driverMenu="matMenu">
-              @for (driver of driverList; track driver.$key) {
-                <button mat-menu-item type="button"
-                        [class.active-item]="selectedDriver?.$key === driver.$key"
-                        (click)="selectDriver(driver)">
-                  {{ driver.displayName }}
-                </button>
-              }
-            </mat-menu>
+            <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
+              <mat-label>Vælg chauffør</mat-label>
+              <mat-select [value]="selectedDriver" [compareWith]="compareDrivers"
+                          (selectionChange)="selectDriver($event.value)">
+                @for (driver of driverList; track driver.$key) {
+                  <mat-option [value]="driver">{{ driver.displayName }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           }
         </div>
       }

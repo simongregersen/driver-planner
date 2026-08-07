@@ -2,9 +2,10 @@ import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core'
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
-import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatSelectModule} from '@angular/material/select';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BehaviorSubject, combineLatest, Observable, of} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
@@ -46,7 +47,7 @@ interface PeriodReport {
   styleUrls: ['./time-report.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatIconModule, MatMenuModule, MatProgressSpinnerModule, MatTooltipModule,
+    MatButtonModule, MatFormFieldModule, MatIconModule, MatProgressSpinnerModule, MatSelectModule, MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -99,6 +100,10 @@ export class TimeReportComponent implements OnInit {
   selectDriver(driver: Driver) {
     this.selectedDriver = driver;
     this.driverKeySubject.next(driver.$key);
+  }
+
+  compareDrivers(a: Driver | null, b: Driver | null): boolean {
+    return a?.$key === b?.$key;
   }
 
   get periodStart(): Moment {

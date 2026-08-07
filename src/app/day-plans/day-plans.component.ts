@@ -5,11 +5,11 @@ import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
-import {MatDividerModule} from '@angular/material/divider';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
+import {MatSelectModule} from '@angular/material/select';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {DataStore} from '../data.service';
 import {NewTrip, Trip, TripReport} from '../trip';
@@ -33,8 +33,8 @@ import {DIALOG_CONFIG} from '../dialog-config';
   styleUrls: ['./day-plans.component.css'],
   imports: [
     FormsModule, AsyncPipe, DatePipe,
-    MatButtonModule, MatDatepickerModule, MatDividerModule, MatFormFieldModule, MatIconModule,
-    MatInputModule, MatMenuModule, MatSlideToggleModule,
+    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatIconModule,
+    MatInputModule, MatMenuModule, MatSelectModule, MatSlideToggleModule,
     TripsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -129,6 +129,10 @@ export class DayPlansComponent implements OnInit {
 
   get selectedDriver(): Driver | null {
     return this._selectedDriver;
+  }
+
+  compareDrivers(a: Driver | null, b: Driver | null): boolean {
+    return a?.$key === b?.$key;
   }
 
   /** The calendar and the date input both hand back null when a selection is cleared. */

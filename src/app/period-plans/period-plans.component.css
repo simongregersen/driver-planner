@@ -4,11 +4,9 @@
   border-radius: var(--mat-sys-corner-medium);
 }
 
-.filter-button .ellipsis {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.reset-option {
+  font-weight: 600;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
 .day-heading {

@@ -3,9 +3,8 @@ import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {DateRange, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
-import {MatDividerModule} from '@angular/material/divider';
-import {MatIconModule} from '@angular/material/icon';
-import {MatMenuModule} from '@angular/material/menu';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatSelectModule} from '@angular/material/select';
 import {Moment} from 'moment';
 import {DateUtility} from '../date-utility';
 import {DataStore} from '../data.service';
@@ -24,7 +23,7 @@ import {DIALOG_CONFIG} from '../dialog-config';
   styleUrls: ['./period-plans.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatDatepickerModule, MatDividerModule, MatIconModule, MatMenuModule,
+    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatSelectModule,
     TripsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -106,6 +105,10 @@ export class PeriodPlansComponent implements OnInit {
 
   get selectedDriver(): Driver | null {
     return this._selectedDriver;
+  }
+
+  compareDrivers(a: Driver | null, b: Driver | null): boolean {
+    return a?.$key === b?.$key;
   }
 
   private updateRange(): void {

@@ -7,13 +7,6 @@
   flex: 1 1 0;
 }
 
-.filter-button .ellipsis {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .loading {
   display: flex;
   justify-content: center;
