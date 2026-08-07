@@ -6,6 +6,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
+import {MatTabsModule} from '@angular/material/tabs';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
@@ -19,7 +20,8 @@ import {UserService} from './user.service';
   styleUrls: ['./app.component.css'],
   imports: [
     AsyncPipe, RouterLink, RouterLinkActive, RouterOutlet,
-    MatToolbarModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatTooltipModule,
+    MatToolbarModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatTabsModule,
+    MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

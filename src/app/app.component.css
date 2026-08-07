@@ -20,11 +20,28 @@
   margin-right: 8px;
 }
 
+/* The tab bar's default M3 tokens resolve against on-surface/primary, which read fine on a
+   light surface but disappear against this toolbar's dark inverse-surface background. */
 .nav-links {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  overflow: hidden;
+  --mat-tab-divider-height: 0;
+  --mat-tab-active-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-hover-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-focus-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-inactive-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-inactive-hover-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-inactive-focus-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-indicator-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-hover-indicator-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-focus-indicator-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-ripple-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-inactive-ripple-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-pagination-icon-color: var(--mat-sys-inverse-on-surface);
+}
+
+/* Text color alone doesn't distinguish the active tab since both share inverse-on-surface;
+   the ink bar plus bold weight together do the job the old underline+bold link style did. */
+.nav-links .mat-mdc-tab-link.mdc-tab--active .mdc-tab__text-label {
+  font-weight: 700;
 }
 
 .spacer {

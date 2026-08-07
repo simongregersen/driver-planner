@@ -16,6 +16,9 @@ body {
 }
 
 .container {
+  /* mat-tab-nav-panel (which now carries this class) has no display style of its own and
+     defaults to inline, which breaks the width/margin/padding below. */
+  display: block;
   width: 98%;
   margin: 0 auto;
   padding: 0 12px;
