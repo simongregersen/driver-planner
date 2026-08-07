@@ -67,9 +67,16 @@
   <div class="col-12 col-xl-10" style="margin-top: 30px">
     @if (dayPublic$ | async) {
       @if (trips$ | async; as trips) {
-        <main>
-          <app-trips [trips]="filterMyTrips(trips, userService.driverProfile$ | async)" [readonly]="true" [highlightModified]="true"></app-trips>
-        </main>
+        @if (userService.driverProfile$ | async; as driver) {
+          <main>
+            <app-trips [trips]="filterMyTrips(trips, driver)"
+                       [readonly]="true"
+                       [highlightModified]="true"
+                       [reportable]="true"
+                       [currentDriverKey]="driver.$key"
+                       (report)="openTripReport($event, driver.$key)"></app-trips>
+          </main>
+        }
       }
     } @else {
       <p class="text-muted">Denne dag er endnu ikke gjort synlig af en administrator.</p>

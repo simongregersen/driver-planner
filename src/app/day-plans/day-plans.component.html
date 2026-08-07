@@ -138,8 +138,10 @@
         </div>
         <app-trips [trips]="filterTripsByDriver(trips)"
                    [rowClickToEdit]="true"
+                   [reportable]="true"
                    (edit)="edit($event)"
-                   (remove)="removeTrip($event)">
+                   (remove)="removeTrip($event)"
+                   (report)="openTripReport($event)">
         </app-trips>
       </main>
     }

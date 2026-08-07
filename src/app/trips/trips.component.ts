@@ -23,8 +23,11 @@ export class TripsComponent implements OnInit {
   readonly = input(false);
   highlightModified = input(false);
   rowClickToEdit = input(false);
+  reportable = input(false);
+  currentDriverKey = input<string | null>(null);
   edit = output<Trip>();
   remove = output<Trip>();
+  report = output<Trip>();
 
   readonly dataStore = inject(DataStore);
 
@@ -48,9 +51,34 @@ export class TripsComponent implements OnInit {
     return this.highlightModified() && !!trip.modified && trip.modified.isAfter(moment().subtract(24, 'hours'));
   }
 
+  // Both columns iterate the same driver-key order, so a given line index always refers to
+  // the same driver in the Start and Slut columns — even if that driver has only one side reported.
+  startReportEntries(trip: Trip): {key: string; time: string}[] {
+    return this.reportKeys(trip).map(key => {
+      const r = trip.reports![key];
+      return {key, time: r.actualStart ? r.actualStart.format('HH:mm') : '—'};
+    });
+  }
+
+  endReportEntries(trip: Trip): {key: string; time: string}[] {
+    return this.reportKeys(trip).map(key => {
+      const r = trip.reports![key];
+      const time = r.actualEnd ? r.actualEnd.format('HH:mm') + (r.garageReturn ? ` (${r.garageReturn.format('HH:mm')})` : '') : '—';
+      return {key, time};
+    });
+  }
+
+  private reportKeys(trip: Trip): string[] {
+    if (!trip.reports) return [];
+    const currentDriverKey = this.currentDriverKey();
+    return Object.keys(trip.reports).filter(key => !currentDriverKey || key === currentDriverKey);
+  }
+
   onRowClick(trip: Trip): void {
     if (!this.readonly() && this.rowClickToEdit()) {
       this.edit.emit(trip);
+    } else if (this.reportable()) {
+      this.report.emit(trip);
     }
   }
 }

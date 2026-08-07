@@ -15,7 +15,7 @@ import {
 } from '@ng-bootstrap/ng-bootstrap';
 import {ConfirmationPopoverModule} from 'angular-confirmation-popover';
 import {DataStore} from '../data.service';
-import {NewTrip, Trip} from '../trip';
+import {NewTrip, Trip, TripReport} from '../trip';
 import {Driver} from '../driver';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
@@ -24,6 +24,7 @@ import {Utility} from '../utility';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {SelectOption} from '../select-option';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
+import {TripReportComponent} from '../trip-report/trip-report.component';
 import {TripsComponent} from '../trips/trips.component';
 
 @Component({
@@ -90,6 +91,11 @@ export class DayPlansComponent implements OnInit {
     const modalRef = this.modalService.open(TripCreatorComponent, {size: 'lg'});
     modalRef.componentInstance.defaultDate = this.selectedDate;
     modalRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
+  }
+
+  openTripReport(trip: Trip) {
+    const modalRef = this.modalService.open(TripReportComponent, {size: 'lg'});
+    modalRef.componentInstance.edit(trip, (t: Trip, driverKey: string, report: TripReport) => this.dataStore.updateTripReport(t, driverKey, report));
   }
 
   insertTemplate(templateId: string) {

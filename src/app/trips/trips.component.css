@@ -1,3 +1,7 @@
 .newline {
   white-space: pre-line;
 }
+
+.report-line {
+  white-space: nowrap;
+}

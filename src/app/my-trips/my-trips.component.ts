@@ -2,9 +2,9 @@ import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit} from '@a
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {NgbCalendar, NgbDate, NgbDatepicker, NgbInputDatepicker, NgbDateStruct} from '@ng-bootstrap/ng-bootstrap';
+import {NgbCalendar, NgbDate, NgbDatepicker, NgbInputDatepicker, NgbDateStruct, NgbModal} from '@ng-bootstrap/ng-bootstrap';
 import {Observable} from 'rxjs';
-import {Trip} from '../trip';
+import {Trip, TripReport} from '../trip';
 import {Driver} from '../driver';
 import {DataStore} from '../data.service';
 import {UserService} from '../user.service';
@@ -12,6 +12,7 @@ import {AuthenticationService} from '../authentication.service';
 import {Utility} from '../utility';
 import {NgbUtility} from '../ngb-date-utility';
 import {TripsComponent} from '../trips/trips.component';
+import {TripReportComponent} from '../trip-report/trip-report.component';
 
 @Component({
   standalone: true,
@@ -28,6 +29,7 @@ export class MyTripsComponent implements OnInit {
   private readonly authService = inject(AuthenticationService);
   private readonly calendar = inject(NgbCalendar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly modalService = inject(NgbModal);
 
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
@@ -67,6 +69,11 @@ export class MyTripsComponent implements OnInit {
   filterMyTrips(trips: Trip[] | null, driver: Driver | null): Trip[] {
     if (!trips || !driver) return [];
     return trips.filter(t => Utility.isAssigned(driver, t));
+  }
+
+  openTripReport(trip: Trip, driverKey: string) {
+    const modalRef = this.modalService.open(TripReportComponent, {size: 'lg'});
+    modalRef.componentInstance.edit(trip, (t: Trip, dKey: string, report: TripReport) => this.dataStore.updateTripReport(t, dKey, report), driverKey);
   }
 
   set selectedDate(date: NgbDateStruct) {

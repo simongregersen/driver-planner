@@ -10,8 +10,8 @@
         <th>Tur</th>
         <th class="w-15">Chauffører</th>
         <th class="w-15">Køretøjer</th>
-        @if (!readonly()) {
-          <th class="w-5 d-print-none"></th>
+        @if (!readonly() || reportable()) {
+          <th class="d-print-none"></th>
         }
       </tr>
       </thead>
@@ -24,11 +24,19 @@
             <span ngbTooltip="{{trip.start.toDate() | date: 'short'}}" container="'body'">
             {{trip.start.toDate() | date: 'HH:mm' }}
             </span>
+            @for (entry of startReportEntries(trip); track entry.key) {
+              <br>
+              <small class="report-line text-success">{{entry.time}}</small>
+            }
           </th>
           <td class="text-muted">
             <span ngbTooltip="{{trip.end?.toDate() | date: 'short'}}" container="'body'">
               {{trip.end?.toDate() | date:'HH:mm' }}
             </span>
+            @for (entry of endReportEntries(trip); track entry.key) {
+              <br>
+              <small class="report-line text-danger">{{entry.time}}</small>
+            }
           </td>
           <td>
             {{trip.name}}
@@ -48,25 +56,33 @@
               </span>
             }
           </td>
-          @if (!readonly()) {
-            <td class="d-print-none">
-              <div class="float-end icons">
-                <a class="pointer"
-                   (click)="$event.stopPropagation(); edit.emit(trip)">
-                  <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
-                </a>
-                <a mwlConfirmationPopover
-                   class="pointer"
-                   [popoverMessage]="'Er du sikker på, at du vil slette turen<br>\'' + trip.name + '\'?'"
-                   [confirmButtonType]="'danger'"
-                   [confirmText]="'Slet'"
-                   [cancelText]="'Annuller'"
-                   placement="left"
-                   [appendToBody]="true"
-                   (click)="$event.stopPropagation()"
-                   (confirm)="remove.emit(trip)">
-                  <i class="fa fa-trash" ngbTooltip="Slet"></i>
-                </a>
+          @if (!readonly() || reportable()) {
+            <td class="d-print-none text-nowrap">
+              <div class="d-flex gap-2 justify-content-end icons">
+                @if (reportable()) {
+                  <a class="pointer"
+                     (click)="$event.stopPropagation(); report.emit(trip)">
+                    <i class="fa fa-stopwatch" ngbTooltip="Registrer tider"></i>
+                  </a>
+                }
+                @if (!readonly()) {
+                  <a class="pointer"
+                     (click)="$event.stopPropagation(); edit.emit(trip)">
+                    <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
+                  </a>
+                  <a mwlConfirmationPopover
+                     class="pointer"
+                     [popoverMessage]="'Er du sikker på, at du vil slette turen<br>\'' + trip.name + '\'?'"
+                     [confirmButtonType]="'danger'"
+                     [confirmText]="'Slet'"
+                     [cancelText]="'Annuller'"
+                     placement="left"
+                     [appendToBody]="true"
+                     (click)="$event.stopPropagation()"
+                     (confirm)="remove.emit(trip)">
+                    <i class="fa fa-trash" ngbTooltip="Slet"></i>
+                  </a>
+                }
               </div>
             </td>
           }

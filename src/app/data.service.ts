@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {child, endAt, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
-import {NewTrip, Trip} from './trip';
+import {NewTrip, Trip, TripReport} from './trip';
 import {Driver} from './driver';
 import {AppUser} from './user';
 import {firstValueFrom, Observable} from 'rxjs';
@@ -38,6 +38,13 @@ export class DataStore {
         t.start = moment(t.start as any);
         t.end = (t.end) ? moment(t.end as any) : null;
         t.modified = (t.modified) ? moment(t.modified as any) : undefined;
+        if (t.reports) {
+          Object.values(t.reports).forEach((r: any) => {
+            r.actualStart = (r.actualStart) ? moment(r.actualStart as any) : undefined;
+            r.garageReturn = (r.garageReturn) ? moment(r.garageReturn as any) : undefined;
+            r.actualEnd = (r.actualEnd) ? moment(r.actualEnd as any) : undefined;
+          });
+        }
       }))
     );
   }
@@ -63,6 +70,17 @@ export class DataStore {
       if (isPublic) updates.modified = moment().valueOf();
       return update(child(this.tripsRef, trip.$key), updates);
     });
+  }
+
+  // Not tracked as a "modification" (doesn't touch trip.modified) — a driver logging their own
+  // times shouldn't highlight the trip as recently changed by someone else.
+  updateTripReport(trip: Trip, driverKey: string, report: TripReport) {
+    const serialized = {
+      actualStart: (report.actualStart) ? report.actualStart.valueOf() : null,
+      garageReturn: (report.garageReturn) ? report.garageReturn.valueOf() : null,
+      actualEnd: (report.actualEnd) ? report.actualEnd.valueOf() : null,
+    };
+    return update(child(this.tripsRef, trip.$key), {[`reports/${driverKey}`]: serialized});
   }
 
   removeTrip(trip: Trip) {
