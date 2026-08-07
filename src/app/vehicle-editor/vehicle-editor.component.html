@@ -24,7 +24,7 @@
       <mat-label>Sidst synet</mat-label>
       <input matInput formControlName="latestInspection" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
       <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-      <mat-datepicker #d></mat-datepicker>
+      <mat-datepicker #d touchUi></mat-datepicker>
     </mat-form-field>
   </form>
 </mat-dialog-content>
