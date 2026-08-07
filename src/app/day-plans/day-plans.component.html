@@ -3,11 +3,6 @@
     Dagsplan
     <small>{{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
   </h2>
-  <mat-slide-toggle class="day-public-toggle"
-                    [checked]="(dayPublic$ | async) ?? false"
-                    (change)="setDayPublic($event.checked)">
-    Synlig for chauffører
-  </mat-slide-toggle>
 </div>
 <div class="print-only">
   <h5 class="page-title">
@@ -63,6 +58,13 @@
     </div>
   </aside>
   <main class="page-main">
+    <div class="toolbar-row no-print">
+      <mat-slide-toggle class="day-public-toggle"
+                  [checked]="(dayPublic$ | async) ?? false"
+                  (change)="setDayPublic($event.checked)">
+        Synlig for chauffører
+      </mat-slide-toggle>
+    </div>
     @if (trips$ | async; as trips) {
       <div class="toolbar-row no-print">
         <button matButton="filled" type="button" (click)="create()">Opret tur</button>
