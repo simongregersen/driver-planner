@@ -16,7 +16,7 @@
           <mat-label>Fra dato</mat-label>
           <input matInput formControlName="fromDate" [matDatepicker]="d1" [min]="minDate" placeholder="yyyy-MM-dd">
           <mat-datepicker-toggle matIconSuffix [for]="d1"></mat-datepicker-toggle>
-          <mat-datepicker #d1 touchUi></mat-datepicker>
+          <mat-datepicker #d1></mat-datepicker>
           @if (tripForm.controls['fromDate'].hasError('required')) {
             <mat-error>Dato påkrævet.</mat-error>
           }
@@ -36,7 +36,7 @@
           <mat-label>Til dato</mat-label>
           <input matInput formControlName="toDate" [matDatepicker]="d2" [min]="minDate" placeholder="yyyy-MM-dd">
           <mat-datepicker-toggle matIconSuffix [for]="d2"></mat-datepicker-toggle>
-          <mat-datepicker #d2 touchUi></mat-datepicker>
+          <mat-datepicker #d2></mat-datepicker>
         </mat-form-field>
       }
       <mat-form-field>

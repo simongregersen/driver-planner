@@ -39,7 +39,7 @@
                (ngModelChange)="onDateSelected($event)"
                (click)="d.open()">
         <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-        <mat-datepicker #d touchUi [dateClass]="dateClass()"></mat-datepicker>
+        <mat-datepicker #d [dateClass]="dateClass()"></mat-datepicker>
       </mat-form-field>
       <div class="button-row" role="group" aria-label="Dato-navigation">
         <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>

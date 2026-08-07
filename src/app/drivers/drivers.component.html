@@ -82,7 +82,7 @@
       <mat-label>Fødseldag</mat-label>
       <input matInput formControlName="birthday" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
       <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-      <mat-datepicker #d touchUi startView="multi-year"></mat-datepicker>
+      <mat-datepicker #d startView="multi-year"></mat-datepicker>
     </mat-form-field>
 
     <div class="form-actions">

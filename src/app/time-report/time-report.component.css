@@ -13,3 +13,18 @@
   align-items: center;
   padding: 48px 0;
 }
+
+.week-heading {
+  margin: 24px 0 8px;
+  font: var(--mat-sys-title-large);
+}
+
+.week-heading:first-child {
+  margin-top: 0;
+}
+
+.period-total {
+  margin-top: 16px;
+  text-align: right;
+  font-weight: 600;
+}

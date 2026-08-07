@@ -22,6 +22,7 @@ interface TimeReportRow {
   key: string;
   trip: Trip;
   date: Moment;
+  plannedStart: string;
   name: string;
   start: string;
   end: string;
@@ -180,6 +181,7 @@ export class TimeReportComponent implements OnInit {
       key: trip.$key,
       trip,
       date: trip.start,
+      plannedStart: trip.start.format('HH:mm'),
       name: trip.name,
       start: start ? start.format('HH:mm') : '—',
       end: end ? end.format('HH:mm') : '—',
