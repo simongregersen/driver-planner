@@ -130,7 +130,6 @@
   .data-table tbody tr > .trip-cell {
     order: -1;
     grid-column: 1 / -1;
-    font-weight: 600;
   }
 
   .data-table tbody tr > .cell-actions {

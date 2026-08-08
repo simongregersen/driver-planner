@@ -21,39 +21,39 @@
             [class.row-highlight]="isRecentlyModified(trip)"
             [class.pointer]="!readonly() && rowClickToEdit()"
             (click)="onRowClick(trip)">
-          <th data-label="Start">
+          <td data-label="Start">
             <span [matTooltip]="(trip.start.toDate() | date: 'short') ?? ''">
             {{trip.start.toDate() | date: 'HH:mm' }}
             </span>
             @for (entry of startReportEntries(trip); track entry.key) {
               <br>
-              <small class="report-line report-start" [matTooltip]="(entry.time?.toDate() | date: 'short') ?? ''">
+              <span class="report-line report-start" [matTooltip]="(entry.time?.toDate() | date: 'short') ?? ''">
                 {{ entry.time ? (entry.time.toDate() | date: 'HH:mm') : '—' }}
-              </small>
+              </span>
             }
-          </th>
+          </td>
           <td class="muted" data-label="Slut">
             <span [matTooltip]="(trip.end?.toDate() | date: 'short') ?? ''">
               {{trip.end?.toDate() | date:'HH:mm' }}
             </span>
             @for (entry of endReportEntries(trip); track entry.key) {
               <br>
-              <small class="report-line report-end" [matTooltip]="(entry.end?.toDate() | date: 'short') ?? ''">
+              <span class="report-line report-end" [matTooltip]="(entry.end?.toDate() | date: 'short') ?? ''">
                 {{ entry.end ? (entry.end.toDate() | date: 'HH:mm') : '—' }}
-              </small>
+              </span>
               @if (entry.garage; as garage) {
                 <!-- A real, breakable space — Angular strips the plain whitespace that would
                      otherwise sit here, which left "report-end" and "report-garage" (both
                      nowrap) glued into one unbreakable run that could overflow the column. -->
-                {{ ' ' }}<small class="report-line report-garage" [matTooltip]="(garage.toDate() | date: 'short') ?? ''">
+                {{ ' ' }}<span class="report-line report-garage" [matTooltip]="(garage.toDate() | date: 'short') ?? ''">
                   ({{ garage.toDate() | date: 'HH:mm' }})
-                </small>
+                </span>
               }
             }
           </td>
           <td class="trip-cell">
-            {{trip.name}}
-            <small class="muted newline" [class.print-only]="hideDescriptionOnScreen()"><br>{{trip.description}}</small>
+            <strong>{{trip.name}}</strong>
+            <span class="muted newline" [class.print-only]="hideDescriptionOnScreen()"><br>{{trip.description}}</span>
           </td>
           <td data-label="Chauffører" [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
             @for (key of trip.drivers; track key; let isLast = $last) {
