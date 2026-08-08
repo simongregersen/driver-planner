@@ -30,6 +30,13 @@
   align-items: center;
 }
 
+/* Tur has no fixed column width, so — unlike Start/Slut's percentage hints — it's the column
+   the table shrinks first when a nowrap value (e.g. a finish time plus a garage time) needs
+   more room; this guarantees it can still wrap even for an unusually long, unbroken name. */
+.trip-cell {
+  word-break: break-word;
+}
+
 /* Quick-log buttons (and their validation error) are a small-screen-only shortcut for the
    assigned driver — on a wide table there's already ample room to open the report dialog,
    so they'd just add clutter. */
@@ -102,8 +109,13 @@
   .data-table tbody tr > th,
   .data-table tbody tr > td {
     width: auto;
+    min-width: 0;
     padding: 0;
     border-bottom: none;
+    /* Grid items otherwise refuse to shrink below their content's natural width — nowrap
+       report-line text (e.g. a finish time plus a garage time) would then push past its
+       column into the next one instead of wrapping within it. */
+    overflow-wrap: break-word;
   }
 
   .data-table tbody tr > [data-label]::before {

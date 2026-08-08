@@ -42,7 +42,10 @@
                 {{ entry.end ? (entry.end.toDate() | date: 'HH:mm') : '—' }}
               </small>
               @if (entry.garage; as garage) {
-                <small class="report-line report-garage" [matTooltip]="(garage.toDate() | date: 'short') ?? ''">
+                <!-- A real, breakable space — Angular strips the plain whitespace that would
+                     otherwise sit here, which left "report-end" and "report-garage" (both
+                     nowrap) glued into one unbreakable run that could overflow the column. -->
+                {{ ' ' }}<small class="report-line report-garage" [matTooltip]="(garage.toDate() | date: 'short') ?? ''">
                   ({{ garage.toDate() | date: 'HH:mm' }})
                 </small>
               }
