@@ -75,7 +75,10 @@
   align-items: center;
 }
 
-@media (max-width: 767px) {
+/* This breakpoint is intentionally wider than the app's usual 767px mobile cutoff — with
+   Chauffører/Køretøjer/Skabeloner etc. now in the nav, the full link row overflows well before
+   phone width, e.g. on iPad portrait/landscape (768-1024px). */
+@media (max-width: 1024px) {
   .nav-toggle {
     display: inline-flex;
   }

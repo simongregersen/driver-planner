@@ -48,16 +48,19 @@
 .log-garage { --log-color: #ef6c00; }
 .log-end { --log-color: var(--mat-sys-error); }
 
+/* Not yet logged: filled solid in the checkpoint's color, drawing the eye to the action still
+   needed. */
 .quick-log-actions .log-btn {
-  color: var(--log-color);
-  border-color: var(--log-color);
-}
-
-/* Filled in once pressed, so the driver can see at a glance which checkpoints are already
-   logged without opening the report dialog. */
-.quick-log-actions .log-btn.logged {
   background-color: var(--log-color);
   color: var(--mat-sys-on-primary, #fff);
+}
+
+/* Logged: outlined instead, same color, so the driver can see at a glance which checkpoints
+   are already recorded without opening the report dialog. */
+.quick-log-actions .log-btn.logged {
+  background-color: transparent;
+  color: var(--log-color);
+  border-color: var(--log-color);
 }
 
 /* Same styling as the report dialog's own error banner, just smaller — this sits under three

@@ -33,7 +33,7 @@
         <h5 class="section-title">Periode</h5>
         <div class="button-row" role="group" aria-label="Periode-navigation">
           <button matButton="outlined" type="button" (click)="previousPeriod()">Forrige</button>
-          <button matButton="outlined" type="button" (click)="goToCurrentPeriod()">Denne periode</button>
+          <button matButton="outlined" type="button" (click)="goToCurrentPeriod()">Indeværende periode</button>
           <button matButton="outlined" type="button" (click)="nextPeriod()">Næste</button>
         </div>
       </div>
@@ -50,11 +50,10 @@
                 <thead>
                 <tr>
                   <th>Dato</th>
-                  <th>Planlagt</th>
                   <th>Tur</th>
                   <th>Start</th>
                   <th>Slut</th>
-                  <th class="no-print"></th>
+                  <th class="no-print" style="width: 20px"></th>
                   <th class="col-computed">Tid</th>
                 </tr>
                 </thead>
@@ -65,9 +64,6 @@
                         @if (row.showDate) {
                           {{ row.date.toDate() | date:'EEE d/M' }}
                         }
-                      </td>
-                      <td [matTooltip]="(row.date.toDate() | date: 'short') ?? ''">
-                        {{ row.date.toDate() | date:'HH:mm' }}
                       </td>
                       <td>{{ row.name }}</td>
                       <td [class.reported]="row.startIsReported" [matTooltip]="(row.start.toDate() | date: 'short') ?? ''">
@@ -91,7 +87,7 @@
                 </tbody>
                 <tfoot>
                 <tr class="row-total">
-                  <td colspan="5">Total (uge {{ week.weekNumber }})</td>
+                  <td colspan="4">Total (uge {{ week.weekNumber }})</td>
                   <td class="no-print"></td>
                   <td class="col-computed">{{ week.totalLabel }}</td>
                 </tr>

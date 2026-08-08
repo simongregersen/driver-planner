@@ -75,7 +75,7 @@
                 @if (reportable() && currentDriverKey(); as driverKey) {
                   <div class="quick-log-group">
                     <div class="quick-log-actions" role="group" aria-label="Registrer tidspunkt">
-                      <button [matButton]="hasReport(trip, driverKey, 'actualStart') ? 'filled' : 'outlined'"
+                      <button [matButton]="hasReport(trip, driverKey, 'actualStart') ? 'outlined' : 'filled'"
                               type="button" class="log-btn log-start"
                               [class.logged]="hasReport(trip, driverKey, 'actualStart')"
                               [matTooltip]="quickLogTooltip(trip, driverKey, 'actualStart', 'Start')"
@@ -83,7 +83,7 @@
                         <mat-icon>play_arrow</mat-icon>
                         Start
                       </button>
-                      <button [matButton]="hasReport(trip, driverKey, 'garageReturn') ? 'filled' : 'outlined'"
+                      <button [matButton]="hasReport(trip, driverKey, 'garageReturn') ? 'outlined' : 'filled'"
                               type="button" class="log-btn log-garage"
                               [class.logged]="hasReport(trip, driverKey, 'garageReturn')"
                               [matTooltip]="quickLogTooltip(trip, driverKey, 'garageReturn', 'Garage')"
@@ -91,7 +91,7 @@
                         <mat-icon>garage</mat-icon>
                         Garage
                       </button>
-                      <button [matButton]="hasReport(trip, driverKey, 'actualEnd') ? 'filled' : 'outlined'"
+                      <button [matButton]="hasReport(trip, driverKey, 'actualEnd') ? 'outlined' : 'filled'"
                               type="button" class="log-btn log-end"
                               [class.logged]="hasReport(trip, driverKey, 'actualEnd')"
                               [matTooltip]="quickLogTooltip(trip, driverKey, 'actualEnd', 'Slut')"
