@@ -114,19 +114,9 @@
                     <mat-icon>edit</mat-icon>
                   </button>
                   <button matIconButton type="button" matTooltip="Slet"
-                          [matMenuTriggerFor]="removeMenu"
-                          (click)="$event.stopPropagation()">
+                          (click)="$event.stopPropagation(); confirmRemove(trip)">
                     <mat-icon>delete</mat-icon>
                   </button>
-                  <mat-menu #removeMenu="matMenu" xPosition="before">
-                    <p class="confirm-message">
-                      Er du sikker på, at du vil slette turen<br>'{{ trip.name }}'?
-                    </p>
-                    <button mat-menu-item type="button" class="confirm-danger"
-                            (click)="$event.stopPropagation(); remove.emit(trip)">Slet
-                    </button>
-                    <button mat-menu-item type="button" (click)="$event.stopPropagation()">Annuller</button>
-                  </mat-menu>
                 }
               </div>
             </td>

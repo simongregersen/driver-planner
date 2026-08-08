@@ -3,10 +3,9 @@ import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/
 import {AsyncPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDatepickerModule} from '@angular/material/datepicker';
-import {MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
 import {MatTimepickerModule} from '@angular/material/timepicker';
 import moment from 'moment';
@@ -17,6 +16,8 @@ import {Trip} from '../trip';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {DateUtility} from '../date-utility';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
+import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -26,7 +27,7 @@ import {DateUtility} from '../date-utility';
   imports: [
     ReactiveFormsModule, AsyncPipe,
     MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule,
-    MatMenuModule, MatSelectModule, MatTimepickerModule,
+    MatSelectModule, MatTimepickerModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -41,6 +42,7 @@ export class TripEditorComponent implements OnInit {
   private readonly dataStore = inject(DataStore);
   private readonly fb = inject(FormBuilder);
   private readonly dateUtility = inject(DateUtility);
+  private readonly dialog = inject(MatDialog);
   readonly dialogRef = inject(MatDialogRef<TripEditorComponent>);
   readonly minDate = this.dateUtility.minDate(5);
 
@@ -103,7 +105,19 @@ export class TripEditorComponent implements OnInit {
   }
 
   deleteTrip() {
-    this.remove?.(this.trip);
-    this.dialogRef.close();
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...SMALL_DIALOG_CONFIG,
+      data: {
+        message: `Er du sikker på, at du vil slette turen\n'${this.trip.name}'?`,
+        confirmLabel: 'Slet',
+        danger: true,
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.remove?.(this.trip);
+        this.dialogRef.close();
+      }
+    });
   }
 }

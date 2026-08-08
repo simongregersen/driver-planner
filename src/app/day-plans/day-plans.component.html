@@ -59,21 +59,17 @@
       @if (trips$ | async; as trips) {
       <div>
         <h5 class="section-title">Operationer</h5>
-        <button matButton="filled" type="button" (click)="create()">Opret tur</button>
-        <button matButton="filled" type="button" [matMenuTriggerFor]="templateMenu">
-          Indsæt skabelon
-          <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
-        </button>
+        <div class="toolbar-row">
+          <button matButton="filled" type="button" (click)="create()">Opret tur</button>
+          <button matButton="outlined" type="button" [matMenuTriggerFor]="templateMenu">
+            Indsæt skabelon
+            <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+          </button>
+        </div>
         <mat-menu #templateMenu="matMenu">
           @for (template of (availableTemplates$ | async) ?? []; track template.id) {
-            <button mat-menu-item type="button" [matMenuTriggerFor]="insertConfirm">{{ template.name }}</button>
-            <mat-menu #insertConfirm="matMenu">
-              <p class="confirm-message">
-                Er du sikker på, at du vil indsætte skabelonen<br>'{{ template.name }}'?
-              </p>
-              <button mat-menu-item type="button" (click)="insertTemplate(template.id)">Indsæt</button>
-              <button mat-menu-item type="button">Annuller</button>
-            </mat-menu>
+            <button mat-menu-item type="button"
+                    (click)="insertTemplateWithConfirm(template.id, template.name)">{{ template.name }}</button>
           }
         </mat-menu>
       </div>

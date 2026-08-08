@@ -12,19 +12,10 @@
               <button matListItemTitle type="button" class="template-name"
                       (click)="selectedTemplate = template">{{template.name}}</button>
               <button matIconButton matListItemMeta type="button" matTooltip="Slet"
-                      [matMenuTriggerFor]="removeMenu">
+                      (click)="removeTemplate(template)">
                 <mat-icon>delete</mat-icon>
               </button>
             </mat-list-item>
-            <mat-menu #removeMenu="matMenu" xPosition="before">
-              <p class="confirm-message">
-                Er du sikker på, at du vil slette skabelonen<br>'{{ template.name }}'?
-              </p>
-              <button mat-menu-item type="button" class="confirm-danger"
-                      (click)="removeTemplate(template)">Slet
-              </button>
-              <button mat-menu-item type="button">Annuller</button>
-            </mat-menu>
           }
         </mat-list>
       </div>

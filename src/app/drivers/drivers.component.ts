@@ -4,7 +4,6 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
-import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
 import {Driver, NewDriver} from '../driver';
@@ -13,6 +12,7 @@ import {Observable} from 'rxjs';
 import {DriverEditorComponent} from '../driver-editor/driver-editor.component';
 import {DriverCreatorComponent} from '../driver-creator/driver-creator.component';
 import {DriverLoginCreatorComponent} from '../driver-login-creator/driver-login-creator.component';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
@@ -22,7 +22,7 @@ import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
   styleUrls: ['./drivers.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatCheckboxModule, MatIconModule, MatMenuModule, MatTooltipModule,
+    MatButtonModule, MatCheckboxModule, MatIconModule, MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -48,7 +48,17 @@ export class DriversComponent implements OnInit {
   }
 
   removeDriver(driver: Driver) {
-    this.dataStore.deleteDriver(driver);
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...SMALL_DIALOG_CONFIG,
+      data: {
+        message: `Er du sikker på, at du vil slette chaufføren\n'${driver.displayName}'?`,
+        confirmLabel: 'Slet',
+        danger: true,
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) this.dataStore.deleteDriver(driver);
+    });
   }
 
   setDriverAdmin(driver: Driver, isAdmin: boolean) {

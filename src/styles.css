@@ -244,6 +244,13 @@ button.confirm-danger {
   --mat-button-text-label-text-color: var(--mat-sys-error);
 }
 
+/* The text-button token above has no effect on a filled button — Material reads a different
+   token for that appearance, so the confirm dialog's filled "Slet" button is overridden directly. */
+button.confirm-danger.mat-mdc-unelevated-button {
+  background-color: var(--mat-sys-error);
+  color: var(--mat-sys-on-error);
+}
+
 /* Datepicker: mark days already published to drivers. */
 .public-day .mat-calendar-body-cell-content:not(.mat-calendar-body-selected) {
   background: #d4edda;

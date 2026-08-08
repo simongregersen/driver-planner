@@ -7,7 +7,6 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatListModule} from '@angular/material/list';
-import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
 import {Template} from '../template';
@@ -17,7 +16,8 @@ import {NewTrip, Trip} from '../trip';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
 import {TripsComponent} from '../trips/trips.component';
-import {DIALOG_CONFIG} from '../dialog-config';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
+import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -27,7 +27,7 @@ import {DIALOG_CONFIG} from '../dialog-config';
   imports: [
     ReactiveFormsModule, AsyncPipe,
     MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatListModule,
-    MatMenuModule, MatTooltipModule,
+    MatTooltipModule,
     TripsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,7 +61,17 @@ export class TemplatesComponent implements OnInit {
   }
 
   removeTemplate(template: Template) {
-    this.dataStore.removeTemplate(template);
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...SMALL_DIALOG_CONFIG,
+      data: {
+        message: `Er du sikker på, at du vil slette skabelonen\n'${template.name}'?`,
+        confirmLabel: 'Slet',
+        danger: true,
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) this.dataStore.removeTemplate(template);
+    });
   }
 
   create() {

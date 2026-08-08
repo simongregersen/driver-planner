@@ -3,7 +3,6 @@ import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
-import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {Utility} from '../utility';
 import {NewVehicle, Vehicle} from '../vehicle';
@@ -12,7 +11,8 @@ import {map} from 'rxjs/operators';
 import {DataStore} from '../data.service';
 import {VehicleEditorComponent} from '../vehicle-editor/vehicle-editor.component';
 import {VehicleCreatorComponent} from '../vehicle-creator/vehicle-creator.component';
-import {DIALOG_CONFIG} from '../dialog-config';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
+import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -21,7 +21,7 @@ import {DIALOG_CONFIG} from '../dialog-config';
   styleUrls: ['./vehicles.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule,
+    MatButtonModule, MatIconModule, MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -41,7 +41,17 @@ export class VehiclesComponent implements OnInit {
   }
 
   removeVehicle(vehicle: Vehicle) {
-    this.dataStore.deleteVehicle(vehicle);
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...SMALL_DIALOG_CONFIG,
+      data: {
+        message: `Er du sikker på, at du vil slette køretøjet\n'${vehicle.displayName}'?`,
+        confirmLabel: 'Slet',
+        danger: true,
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) this.dataStore.deleteVehicle(vehicle);
+    });
   }
 
   edit(vehicle: Vehicle) {

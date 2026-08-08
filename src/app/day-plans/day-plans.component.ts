@@ -24,7 +24,8 @@ import {SelectOption} from '../select-option';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
 import {TripReportComponent} from '../trip-report/trip-report.component';
 import {TripsComponent} from '../trips/trips.component';
-import {DIALOG_CONFIG} from '../dialog-config';
+import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: true,
@@ -113,8 +114,18 @@ export class DayPlansComponent implements OnInit {
     dialogRef.componentInstance.edit(trip, (t: Trip, driverKey: string, report: TripReport) => this.dataStore.updateTripReport(t, driverKey, report));
   }
 
-  insertTemplate(templateId: string) {
-    this.dataStore.insertTemplate(this.selectedDate, templateId);
+  insertTemplateWithConfirm(templateId: string, templateName: string) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...SMALL_DIALOG_CONFIG,
+      data: {
+        title: 'Indsæt skabelon',
+        message: `Er du sikker på, at du vil indsætte skabelonen\n'${templateName}'?`,
+        confirmLabel: 'Indsæt',
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) this.dataStore.insertTemplate(this.selectedDate, templateId);
+    });
   }
 
   filterTripsByDriver(trips: Trip[] | null): Trip[] {

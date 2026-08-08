@@ -44,16 +44,9 @@
               <button matIconButton type="button" matTooltip="Rediger" (click)="edit(driver)">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button matIconButton type="button" matTooltip="Slet" [matMenuTriggerFor]="removeMenu">
+              <button matIconButton type="button" matTooltip="Slet" (click)="removeDriver(driver)">
                 <mat-icon>delete</mat-icon>
               </button>
-              <mat-menu #removeMenu="matMenu" xPosition="before">
-                <p class="confirm-message">
-                  Er du sikker på, at du vil slette chaufføren<br>'{{ driver.displayName }}'?
-                </p>
-                <button mat-menu-item type="button" class="confirm-danger" (click)="removeDriver(driver)">Slet</button>
-                <button mat-menu-item type="button">Annuller</button>
-              </mat-menu>
             </div>
           </td>
         </tr>

@@ -1,8 +1,8 @@
 import {ChangeDetectionStrategy, Component, inject, input, OnInit, output} from '@angular/core';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
+import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
-import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {Trip, TripReport} from '../trip';
@@ -12,6 +12,8 @@ import {Vehicle} from '../vehicle';
 import {combineLatest, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import moment, {Moment} from 'moment';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
+import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -20,7 +22,7 @@ import moment, {Moment} from 'moment';
   styleUrls: ['./trips.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatIconModule, MatMenuModule, MatProgressSpinnerModule, MatTooltipModule,
+    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,6 +39,7 @@ export class TripsComponent implements OnInit {
   report = output<Trip>();
 
   readonly dataStore = inject(DataStore);
+  private readonly dialog = inject(MatDialog);
 
   viewModel$!: Observable<{drivers: Driver[]; vehicles: Vehicle[]}>;
 
@@ -85,6 +88,20 @@ export class TripsComponent implements OnInit {
     } else if (this.reportable()) {
       this.report.emit(trip);
     }
+  }
+
+  confirmRemove(trip: Trip) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...SMALL_DIALOG_CONFIG,
+      data: {
+        message: `Er du sikker på, at du vil slette turen\n'${trip.name}'?`,
+        confirmLabel: 'Slet',
+        danger: true,
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) this.remove.emit(trip);
+    });
   }
 
   // Tapping an unset field logs "now"; tapping an already-logged one clears it again, so the

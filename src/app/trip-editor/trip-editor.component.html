@@ -74,14 +74,7 @@
 
 <mat-dialog-actions align="end">
   @if (remove) {
-    <button matButton type="button" class="confirm-danger" [matMenuTriggerFor]="removeMenu">Slet</button>
-    <mat-menu #removeMenu="matMenu">
-      <p class="confirm-message">
-        Er du sikker på, at du vil slette turen<br>'{{ trip.name }}'?
-      </p>
-      <button mat-menu-item type="button" class="confirm-danger" (click)="deleteTrip()">Slet</button>
-      <button mat-menu-item type="button">Annuller</button>
-    </mat-menu>
+    <button matButton type="button" class="confirm-danger" (click)="deleteTrip()">Slet</button>
   }
   <button matButton type="button" mat-dialog-close>Annuller</button>
   <button matButton="filled" type="submit" form="tripEditorForm" [disabled]="!tripForm.valid">Gem</button>

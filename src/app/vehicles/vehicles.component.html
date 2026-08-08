@@ -29,16 +29,9 @@
             <button matIconButton type="button" matTooltip="Rediger" (click)="edit(vehicle)">
               <mat-icon>edit</mat-icon>
             </button>
-            <button matIconButton type="button" matTooltip="Slet" [matMenuTriggerFor]="removeMenu">
+            <button matIconButton type="button" matTooltip="Slet" (click)="removeVehicle(vehicle)">
               <mat-icon>delete</mat-icon>
             </button>
-            <mat-menu #removeMenu="matMenu" xPosition="before">
-              <p class="confirm-message">
-                Er du sikker på, at du vil slette køretøjet<br>'{{ vehicle.displayName }}'?
-              </p>
-              <button mat-menu-item type="button" class="confirm-danger" (click)="removeVehicle(vehicle)">Slet</button>
-              <button mat-menu-item type="button">Annuller</button>
-            </mat-menu>
           </div>
         </td>
       </tr>
