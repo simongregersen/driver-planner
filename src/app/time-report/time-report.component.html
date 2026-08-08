@@ -49,12 +49,12 @@
               <table class="data-table">
                 <thead>
                 <tr>
-                  <th>Dato</th>
-                  <th>Tur</th>
-                  <th>Start</th>
-                  <th>Slut</th>
+                  <th class="col-date">Dato</th>
+                  <th class="col-name">Tur</th>
+                  <th class="col-time">Start</th>
+                  <th class="col-time">Slut</th>
                   <th class="no-print" style="width: 20px"></th>
-                  <th class="col-computed">Tid</th>
+                  <th class="col-computed col-time">Tid</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -65,7 +65,7 @@
                           {{ row.date.toDate() | date:'EEE d/M' }}
                         }
                       </td>
-                      <td>{{ row.name }}</td>
+                      <td class="col-name">{{ row.name }}</td>
                       <td [class.reported]="row.startIsReported" [matTooltip]="(row.start.toDate() | date: 'short') ?? ''">
                         {{ row.start.toDate() | date:'HH:mm' }}
                       </td>

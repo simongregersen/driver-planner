@@ -35,6 +35,22 @@
   border-left: 1px solid var(--mat-sys-outline-variant);
 }
 
+/* Each week renders its own <table>, so without a fixed layout their columns can
+   drift out of alignment depending on how much text lands in a given week's rows.
+   Fixing the layout and giving every column but Tur (which wraps) an explicit
+   width keeps the tables lined up. */
+.data-table {
+  table-layout: fixed;
+}
+
+.col-date {
+  width: 13%;
+}
+
+.col-time {
+  width: 9%;
+}
+
 /* Start falls back to the scheduled time (default text color) until a driver actually reports
    one — green marks it as the real, driver-reported time, matching My Trips' report colors. */
 .reported {
