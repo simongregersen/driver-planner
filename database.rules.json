@@ -60,6 +60,21 @@
       "$dateKey": {
         ".validate": "newData.isBoolean() && newData.val() === true"
       }
+    },
+
+    "fcmTokens": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "notificationQueue": {
+      ".read": false,
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$pushId": {
+        ".validate": "newData.hasChildren(['uids', 'title', 'body', 'createdAt'])"
+      }
     }
   }
 }

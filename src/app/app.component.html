@@ -31,6 +31,9 @@
     <span class="spacer"></span>
 
     <span class="toolbar-actions">
+      <button matIconButton (click)="enableNotifications()" matTooltip="Slå notifikationer til" matTooltipPosition="below">
+        <mat-icon>notifications</mat-icon>
+      </button>
       <a matButton (click)="print()" matTooltip="Print" matTooltipPosition="below" class="pointer">Print</a>
       <a matButton (click)="logout()" [matTooltip]="'Log ud (' + (email$ | async) + ')'" matTooltipPosition="below"
          class="pointer">Log ud ({{ email$ | async }})</a>
@@ -50,6 +53,7 @@
       <a mat-menu-item routerLink="/vehicles" routerLinkActive="active-link">Køretøjer</a>
     }
     <mat-divider class="nav-menu-actions-divider"></mat-divider>
+    <button mat-menu-item type="button" (click)="enableNotifications()">Slå notifikationer til</button>
     <button mat-menu-item type="button" (click)="print()">Print</button>
     <button mat-menu-item type="button" (click)="logout()">Log ud ({{ email$ | async }})</button>
   </mat-menu>

@@ -13,6 +13,7 @@ import {Template} from './template';
 import {db} from './firebase';
 import {Moment} from 'moment';
 import moment from 'moment';
+import {NotificationDispatchService} from './notification-dispatch.service';
 
 @Injectable({providedIn: 'root'})
 export class DataStore {
@@ -22,8 +23,9 @@ export class DataStore {
   private templatesRef = ref(db, '/templates');
   private publicRef = ref(db, '/public');
   private usersRef = ref(db, '/users');
+  private notificationQueueRef = ref(db, '/notificationQueue');
 
-  constructor(private dateUtility: DateUtility) {
+  constructor(private dateUtility: DateUtility, private notificationDispatch: NotificationDispatchService) {
   }
 
   getTrips(from: Moment, to?: Moment): Observable<Trip[]> {
@@ -67,8 +69,34 @@ export class DataStore {
     if (updates.end) updates.end = updates.end.valueOf();
     return firstValueFrom(this.isDayPublic(effectiveStart)).then(isPublic => {
       if (isPublic) updates.modified = moment().valueOf();
-      return update(child(this.tripsRef, trip.$key), updates);
+      return update(child(this.tripsRef, trip.$key), updates).then(() => {
+        if (isPublic) {
+          this.enqueueTripChangeNotification(updates.drivers || trip.drivers, trip.name);
+        }
+      });
     });
+  }
+
+  // Best-effort: a notification failing to enqueue shouldn't fail the trip save itself.
+  private async enqueueTripChangeNotification(driverIds: string[], tripName: string): Promise<void> {
+    if (!driverIds?.length) return;
+    try {
+      const users = await firstValueFrom(this.getAllUsers());
+      const uids = Object.entries(users)
+        .filter(([, user]) => user.driverId && driverIds.includes(user.driverId))
+        .map(([uid]) => uid);
+      if (!uids.length) return;
+
+      await push(this.notificationQueueRef, {
+        uids,
+        title: 'Din tur er blevet opdateret',
+        body: tripName,
+        createdAt: Date.now(),
+      });
+      this.notificationDispatch.trigger();
+    } catch (err) {
+      console.warn('Could not enqueue trip-change notification', err);
+    }
   }
 
   // Not tracked as a "modification" (doesn't touch trip.modified) — a driver logging their own

@@ -1,4 +1,4 @@
-import {ApplicationConfig, LOCALE_ID, provideZoneChangeDetection} from '@angular/core';
+import {ApplicationConfig, LOCALE_ID, provideZoneChangeDetection, isDevMode} from '@angular/core';
 import {provideRouter} from '@angular/router';
 import {registerLocaleData} from '@angular/common';
 import localeDa from '@angular/common/locales/da';
@@ -8,6 +8,7 @@ import {provideMomentDateAdapter} from '@angular/material-moment-adapter';
 // date adapter reads for the calendar header.
 import 'moment/locale/da';
 import {routes} from './app.routes';
+import { provideServiceWorker } from '@angular/service-worker';
 
 registerLocaleData(localeDa);
 
@@ -34,5 +35,9 @@ export const appConfig: ApplicationConfig = {
     {provide: LOCALE_ID, useValue: 'da-DK'},
     {provide: MAT_DATE_LOCALE, useValue: 'da-DK'},
     provideMomentDateAdapter(DATE_FORMATS),
+    provideServiceWorker('combined-sw.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
   ],
 };
