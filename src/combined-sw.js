@@ -9,13 +9,13 @@ firebase.initializeApp({
   databaseURL: 'https://driver-planner.firebaseio.com',
   projectId: 'driver-planner',
   messagingSenderId: '825139309337',
-  appId: 'TODO-fill-in-from-firebase-console',
+  appId: '1:825139309337:web:0b867a5ad14d9110e4b388',
 });
 
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  self.registration.showNotification(payload.notification?.title ?? 'Driver Planner', {
+  self.registration.showNotification(payload.notification?.title ?? 'Planner', {
     body: payload.notification?.body,
     icon: 'icons/icon-192x192.png',
     data: payload.data,

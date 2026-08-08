@@ -1,6 +1,6 @@
 {
-  "name": "Driver Planner",
-  "short_name": "Driver Planner",
+  "name": "Planner",
+  "short_name": "Planner",
   "description": "Plan and track driver trips and schedules.",
   "display": "standalone",
   "theme_color": "#005cbb",

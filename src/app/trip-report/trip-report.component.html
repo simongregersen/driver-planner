@@ -2,19 +2,14 @@
 
 <mat-dialog-content>
   <div class="trip-summary">
-    <div><strong>{{ trip.name }}</strong></div>
-    <div class="muted">
-      Start: {{ trip.start.toDate() | date:'yyyy-MM-dd HH:mm' }}
-      @if (trip.end) {
-        &mdash; Slut: {{ trip.end.toDate() | date:'HH:mm' }}
-      }
-    </div>
+    <h3>{{ trip.name }}</h3>
+    Planlagt: {{ trip.start.toDate() | date:'yyyy-MM-dd HH:mm' }}
+    @if (trip.end) { &mdash;  {{ trip.end.toDate() | date:'HH:mm' }} }
+    <br>
     @if (fixedDriverKey) {
-      <div class="field-row">
-        <span class="field-label">Chauffør</span>
-        <span>{{ selectedDriverName() }}</span>
-      </div>
+      Chauffør: {{ selectedDriverName() }}
     } @else {
+      <br>
       <mat-form-field class="full-width" subscriptSizing="dynamic">
         <mat-label>Chauffør</mat-label>
         <mat-select [value]="selectedDriverKey()" (selectionChange)="selectDriver($event.value)">
