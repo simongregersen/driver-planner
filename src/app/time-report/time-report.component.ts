@@ -29,6 +29,7 @@ interface TimeReportRow {
   end: Moment | null;
   durationMinutes: number | null;
   durationLabel: string;
+  hasTimeError: boolean;
 }
 
 interface WeekGroup {
@@ -182,9 +183,11 @@ export class TimeReportComponent implements OnInit {
     const report = trip.reports?.[driverKey];
     const reportedStart = report?.actualStart ?? null;
     const end = report?.actualEnd ?? null;
-    // Duration is worked time, so it's only ever computed from actual reports — never from the
-    // scheduled start the Start column falls back to display when nothing's been reported yet.
-    const durationMinutes = (reportedStart && end && end.isAfter(reportedStart)) ? end.diff(reportedStart, 'minutes') : null;
+    // Duration falls back to the scheduled start the same way the Start column's display does,
+    // so a driver who only reports when they finish still gets a computed duration for the day.
+    const start = reportedStart ?? trip.start;
+    const durationMinutes = (end && end.isAfter(start)) ? end.diff(start, 'minutes') : null;
+    const hasTimeError = !!(end && end.isBefore(start));
 
     return {
       key: trip.$key,
@@ -192,11 +195,12 @@ export class TimeReportComponent implements OnInit {
       date: trip.start,
       showDate: true,
       name: trip.name,
-      start: reportedStart ?? trip.start,
+      start,
       startIsReported: !!reportedStart,
       end,
       durationMinutes,
-      durationLabel: durationMinutes !== null ? this.formatDuration(durationMinutes) : '—',
+      durationLabel: hasTimeError ? 'Fejl' : (durationMinutes !== null ? this.formatDuration(durationMinutes) : '—'),
+      hasTimeError,
     };
   }
 

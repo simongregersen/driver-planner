@@ -31,9 +31,10 @@
   align-items: center;
 }
 
-/* Quick-log buttons are a small-screen-only shortcut for the assigned driver — on a wide
-   table there's already ample room to open the report dialog, so they'd just add clutter. */
-.quick-log-actions {
+/* Quick-log buttons (and their validation error) are a small-screen-only shortcut for the
+   assigned driver — on a wide table there's already ample room to open the report dialog,
+   so they'd just add clutter. */
+.quick-log-group {
   display: none;
 }
 
@@ -51,6 +52,13 @@
 .quick-log-actions .log-btn.logged {
   background-color: var(--log-color);
   color: var(--mat-sys-on-primary, #fff);
+}
+
+/* Same styling as the report dialog's own error banner, just smaller — this sits under three
+   compact buttons rather than a full form. */
+.quick-log-error {
+  padding: 6px 10px;
+  font: var(--mat-sys-body-small);
 }
 
 .loading {
@@ -75,10 +83,13 @@
     width: 100%;
   }
 
+  /* A 2-column grid rather than one field per line: Start/Slut share a row and
+     Chauffører/Køretøjer share a row, so the card takes noticeably less vertical space.
+     The name and the actions cell each explicitly span both columns to stay full-width. */
   .data-table tbody tr {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
     margin-bottom: 12px;
     padding: 12px;
     border: 1px solid var(--mat-sys-outline-variant);
@@ -104,10 +115,12 @@
 
   .data-table tbody tr > .trip-cell {
     order: -1;
+    grid-column: 1 / -1;
     font-weight: 600;
   }
 
   .data-table tbody tr > .cell-actions {
+    grid-column: 1 / -1;
     width: auto;
     margin-top: 4px;
     padding-top: 8px;
@@ -116,11 +129,17 @@
 
   /* Its own full-width line above the report/edit/delete icons, rather than squeezed into
      the same row — .row-actions already wraps, so a 100%-basis item claims the whole line. */
+  .quick-log-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 100%;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
   .quick-log-actions {
     display: flex;
-    flex: 1 1 100%;
     gap: 8px;
-    margin-bottom: 8px;
   }
 
   .quick-log-actions .log-btn {

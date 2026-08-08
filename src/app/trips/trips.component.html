@@ -70,31 +70,36 @@
             <td class="no-print cell-actions">
               <div class="row-actions">
                 @if (reportable() && currentDriverKey(); as driverKey) {
-                  <div class="quick-log-actions" role="group" aria-label="Registrer tidspunkt">
-                    <button [matButton]="hasReport(trip, driverKey, 'actualStart') ? 'filled' : 'outlined'"
-                            type="button" class="log-btn log-start"
-                            [class.logged]="hasReport(trip, driverKey, 'actualStart')"
-                            [matTooltip]="quickLogTooltip(trip, driverKey, 'actualStart', 'Start')"
-                            (click)="$event.stopPropagation(); logNow(trip, driverKey, 'actualStart')">
-                      <mat-icon>play_arrow</mat-icon>
-                      Start
-                    </button>
-                    <button [matButton]="hasReport(trip, driverKey, 'garageReturn') ? 'filled' : 'outlined'"
-                            type="button" class="log-btn log-garage"
-                            [class.logged]="hasReport(trip, driverKey, 'garageReturn')"
-                            [matTooltip]="quickLogTooltip(trip, driverKey, 'garageReturn', 'Garage')"
-                            (click)="$event.stopPropagation(); logNow(trip, driverKey, 'garageReturn')">
-                      <mat-icon>garage</mat-icon>
-                      Garage
-                    </button>
-                    <button [matButton]="hasReport(trip, driverKey, 'actualEnd') ? 'filled' : 'outlined'"
-                            type="button" class="log-btn log-end"
-                            [class.logged]="hasReport(trip, driverKey, 'actualEnd')"
-                            [matTooltip]="quickLogTooltip(trip, driverKey, 'actualEnd', 'Slut')"
-                            (click)="$event.stopPropagation(); logNow(trip, driverKey, 'actualEnd')">
-                      <mat-icon>stop</mat-icon>
-                      Slut
-                    </button>
+                  <div class="quick-log-group">
+                    <div class="quick-log-actions" role="group" aria-label="Registrer tidspunkt">
+                      <button [matButton]="hasReport(trip, driverKey, 'actualStart') ? 'filled' : 'outlined'"
+                              type="button" class="log-btn log-start"
+                              [class.logged]="hasReport(trip, driverKey, 'actualStart')"
+                              [matTooltip]="quickLogTooltip(trip, driverKey, 'actualStart', 'Start')"
+                              (click)="$event.stopPropagation(); toggleLog(trip, driverKey, 'actualStart')">
+                        <mat-icon>play_arrow</mat-icon>
+                        Start
+                      </button>
+                      <button [matButton]="hasReport(trip, driverKey, 'garageReturn') ? 'filled' : 'outlined'"
+                              type="button" class="log-btn log-garage"
+                              [class.logged]="hasReport(trip, driverKey, 'garageReturn')"
+                              [matTooltip]="quickLogTooltip(trip, driverKey, 'garageReturn', 'Garage')"
+                              (click)="$event.stopPropagation(); toggleLog(trip, driverKey, 'garageReturn')">
+                        <mat-icon>garage</mat-icon>
+                        Garage
+                      </button>
+                      <button [matButton]="hasReport(trip, driverKey, 'actualEnd') ? 'filled' : 'outlined'"
+                              type="button" class="log-btn log-end"
+                              [class.logged]="hasReport(trip, driverKey, 'actualEnd')"
+                              [matTooltip]="quickLogTooltip(trip, driverKey, 'actualEnd', 'Slut')"
+                              (click)="$event.stopPropagation(); toggleLog(trip, driverKey, 'actualEnd')">
+                        <mat-icon>stop</mat-icon>
+                        Slut
+                      </button>
+                    </div>
+                    @if (quickLogError(trip, driverKey); as quickLogErrorMsg) {
+                      <div class="app-error quick-log-error">{{ quickLogErrorMsg }}</div>
+                    }
                   </div>
                 }
                 @if (reportable()) {

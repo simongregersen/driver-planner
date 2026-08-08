@@ -87,11 +87,13 @@ export class TripsComponent implements OnInit {
     }
   }
 
-  // Only the modal "Nu" button and this quick-log path write reports — both replace the whole
-  // reports/{driverKey} node, so the other two fields have to be read back and preserved here.
-  logNow(trip: Trip, driverKey: string, field: keyof TripReport) {
+  // Tapping an unset field logs "now"; tapping an already-logged one clears it again, so the
+  // same button both sets and undoes a mistaken tap. Both write the whole reports/{driverKey}
+  // node, so the other two fields have to be read back and preserved here.
+  toggleLog(trip: Trip, driverKey: string, field: keyof TripReport) {
     const existing = trip.reports?.[driverKey] ?? {};
-    this.dataStore.updateTripReport(trip, driverKey, {...existing, [field]: moment()});
+    const isSet = !!existing[field];
+    this.dataStore.updateTripReport(trip, driverKey, {...existing, [field]: isSet ? null : moment()});
   }
 
   hasReport(trip: Trip, driverKey: string, field: keyof TripReport): boolean {
@@ -101,5 +103,27 @@ export class TripsComponent implements OnInit {
   quickLogTooltip(trip: Trip, driverKey: string, field: keyof TripReport, label: string): string {
     const value = trip.reports?.[driverKey]?.[field];
     return value ? `${label}: ${value.format('HH:mm')}` : label;
+  }
+
+  // Same ordering rules as the report dialog's own validation, applied to whatever's
+  // already been quick-logged for this driver.
+  quickLogError(trip: Trip, driverKey: string): string | null {
+    const report = trip.reports?.[driverKey];
+    if (!report) return null;
+
+    const start = report.actualStart ?? null;
+    const garage = report.garageReturn ?? null;
+    const end = report.actualEnd ?? null;
+
+    if (start && garage && garage.isBefore(start)) {
+      return '"Retur til garage" kan ikke være før "startet".';
+    }
+    if (start && end && end.isBefore(start)) {
+      return '"Afsluttet" kan ikke være før "startet".';
+    }
+    if (garage && end && end.isBefore(garage)) {
+      return '"Afsluttet" kan ikke være før "retur til garage".';
+    }
+    return null;
   }
 }

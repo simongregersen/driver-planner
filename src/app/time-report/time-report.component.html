@@ -82,7 +82,10 @@
                           <mat-icon>timer</mat-icon>
                         </button>
                       </td>
-                      <td class="col-computed">{{ row.durationLabel }}</td>
+                      <td class="col-computed" [class.cell-warning]="row.hasTimeError"
+                          [matTooltip]="row.hasTimeError ? 'Afsluttet er registreret før start' : ''">
+                        {{ row.durationLabel }}
+                      </td>
                     </tr>
                   }
                 </tbody>

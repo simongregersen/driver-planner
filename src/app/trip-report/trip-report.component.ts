@@ -129,18 +129,18 @@ export class TripReportComponent {
 
     // Checked before ordering, since comparing an invalid moment doesn't throw — it just silently
     // reports no ordering violation, which would let a nonsensical date/time (e.g. day 32, hour 25) through.
-    if (start && !start.isValid()) return 'Ugyldig dato eller tid for start.';
-    if (garage && !garage.isValid()) return 'Ugyldig dato eller tid for retur til garage.';
-    if (end && !end.isValid()) return 'Ugyldig dato eller tid for afsluttet.';
+    if (start && !start.isValid()) return 'Ugyldig dato eller tid for "startet".';
+    if (garage && !garage.isValid()) return 'Ugyldig dato eller tid for "retur til garage".';
+    if (end && !end.isValid()) return 'Ugyldig dato eller tid for "afsluttet".';
 
     if (start && garage && garage.isBefore(start)) {
-      return 'Retur til garage kan ikke være før start.';
+      return '"Retur til garage" kan ikke være før "startet".';
+    }
+    if (start && end && end.isBefore(start)) {
+      return '"Afsluttet" kan ikke være før "startet".';
     }
     if (garage && end && end.isBefore(garage)) {
-      return 'Afsluttet kan ikke være før retur til garage.';
-    }
-    if (!garage && start && end && end.isBefore(start)) {
-      return 'Afsluttet kan ikke være før start.';
+      return '"Afsluttet" kan ikke være før "retur til garage".';
     }
     return null;
   }
