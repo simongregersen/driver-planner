@@ -11,8 +11,13 @@
   white-space: nowrap;
 }
 
+/* Matches the Start/Garage/Slut quick-log buttons and the report dialog's field colors. */
 .report-start {
-  color: var(--mat-sys-primary);
+  color: #2e7d32;
+}
+
+.report-garage {
+  color: #ef6c00;
 }
 
 .report-end {
@@ -21,8 +26,31 @@
 
 .row-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
+}
+
+/* Quick-log buttons are a small-screen-only shortcut for the assigned driver — on a wide
+   table there's already ample room to open the report dialog, so they'd just add clutter. */
+.quick-log-actions {
+  display: none;
+}
+
+.log-start { --log-color: #2e7d32; }
+.log-garage { --log-color: #ef6c00; }
+.log-end { --log-color: var(--mat-sys-error); }
+
+.quick-log-actions .log-btn {
+  color: var(--log-color);
+  border-color: var(--log-color);
+}
+
+/* Filled in once pressed, so the driver can see at a glance which checkpoints are already
+   logged without opening the report dialog. */
+.quick-log-actions .log-btn.logged {
+  background-color: var(--log-color);
+  color: var(--mat-sys-on-primary, #fff);
 }
 
 .loading {
@@ -84,5 +112,18 @@
     margin-top: 4px;
     padding-top: 8px;
     border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  /* Its own full-width line above the report/edit/delete icons, rather than squeezed into
+     the same row — .row-actions already wraps, so a 100%-basis item claims the whole line. */
+  .quick-log-actions {
+    display: flex;
+    flex: 1 1 100%;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .quick-log-actions .log-btn {
+    flex: 1 1 0;
   }
 }

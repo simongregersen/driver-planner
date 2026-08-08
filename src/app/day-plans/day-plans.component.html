@@ -18,7 +18,6 @@
 <div class="page-layout">
   <aside class="page-aside no-print">
     <div class="sidebar-stack">
-      <h5 class="section-title">Dato</h5>
       <mat-calendar class="inline-calendar"
                     [selected]="selectedDate"
                     (selectedChange)="onDateSelected($event)"
@@ -43,7 +42,7 @@
         <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
       </div>
       <div>
-        <h5 class="section-title">Filtrer</h5>
+        <h5 class="section-title">Filter</h5>
         @if (drivers | async; as driverList) {
           <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
             <mat-label>Chauffør</mat-label>

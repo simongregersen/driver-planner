@@ -27,7 +27,9 @@
             </span>
             @for (entry of startReportEntries(trip); track entry.key) {
               <br>
-              <small class="report-line report-start">{{entry.time}}</small>
+              <small class="report-line report-start" [matTooltip]="(entry.time?.toDate() | date: 'short') ?? ''">
+                {{ entry.time ? (entry.time.toDate() | date: 'HH:mm') : '—' }}
+              </small>
             }
           </th>
           <td class="muted" data-label="Slut">
@@ -36,7 +38,14 @@
             </span>
             @for (entry of endReportEntries(trip); track entry.key) {
               <br>
-              <small class="report-line report-end">{{entry.time}}</small>
+              <small class="report-line report-end" [matTooltip]="(entry.end?.toDate() | date: 'short') ?? ''">
+                {{ entry.end ? (entry.end.toDate() | date: 'HH:mm') : '—' }}
+              </small>
+              @if (entry.garage; as garage) {
+                <small class="report-line report-garage" [matTooltip]="(garage.toDate() | date: 'short') ?? ''">
+                  ({{ garage.toDate() | date: 'HH:mm' }})
+                </small>
+              }
             }
           </td>
           <td class="trip-cell">
@@ -60,6 +69,34 @@
           @if (!readonly() || reportable()) {
             <td class="no-print cell-actions">
               <div class="row-actions">
+                @if (reportable() && currentDriverKey(); as driverKey) {
+                  <div class="quick-log-actions" role="group" aria-label="Registrer tidspunkt">
+                    <button [matButton]="hasReport(trip, driverKey, 'actualStart') ? 'filled' : 'outlined'"
+                            type="button" class="log-btn log-start"
+                            [class.logged]="hasReport(trip, driverKey, 'actualStart')"
+                            [matTooltip]="quickLogTooltip(trip, driverKey, 'actualStart', 'Start')"
+                            (click)="$event.stopPropagation(); logNow(trip, driverKey, 'actualStart')">
+                      <mat-icon>play_arrow</mat-icon>
+                      Start
+                    </button>
+                    <button [matButton]="hasReport(trip, driverKey, 'garageReturn') ? 'filled' : 'outlined'"
+                            type="button" class="log-btn log-garage"
+                            [class.logged]="hasReport(trip, driverKey, 'garageReturn')"
+                            [matTooltip]="quickLogTooltip(trip, driverKey, 'garageReturn', 'Garage')"
+                            (click)="$event.stopPropagation(); logNow(trip, driverKey, 'garageReturn')">
+                      <mat-icon>garage</mat-icon>
+                      Garage
+                    </button>
+                    <button [matButton]="hasReport(trip, driverKey, 'actualEnd') ? 'filled' : 'outlined'"
+                            type="button" class="log-btn log-end"
+                            [class.logged]="hasReport(trip, driverKey, 'actualEnd')"
+                            [matTooltip]="quickLogTooltip(trip, driverKey, 'actualEnd', 'Slut')"
+                            (click)="$event.stopPropagation(); logNow(trip, driverKey, 'actualEnd')">
+                      <mat-icon>stop</mat-icon>
+                      Slut
+                    </button>
+                  </div>
+                }
                 @if (reportable()) {
                   <button matIconButton type="button" matTooltip="Registrer tider"
                           (click)="$event.stopPropagation(); report.emit(trip)">

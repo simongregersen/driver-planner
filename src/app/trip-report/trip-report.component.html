@@ -4,21 +4,18 @@
   <div class="trip-summary">
     <div><strong>{{ trip.name }}</strong></div>
     <div class="muted">
-      Start: {{ trip.start.toDate() | date:'HH:mm' }}
+      Start: {{ trip.start.toDate() | date:'yyyy-MM-dd HH:mm' }}
       @if (trip.end) {
         &mdash; Slut: {{ trip.end.toDate() | date:'HH:mm' }}
       }
     </div>
-  </div>
-
-  <form id="tripReportForm" class="form-stack" [formGroup]="reportForm" (ngSubmit)="onSubmit(); dialogRef.close()">
     @if (fixedDriverKey) {
       <div class="field-row">
         <span class="field-label">Chauffør</span>
         <span>{{ selectedDriverName() }}</span>
       </div>
     } @else {
-      <mat-form-field class="full-width">
+      <mat-form-field class="full-width" subscriptSizing="dynamic">
         <mat-label>Chauffør</mat-label>
         <mat-select [value]="selectedDriverKey()" (selectionChange)="selectDriver($event.value)">
           @for (d of availableDrivers(); track d.id) {
@@ -27,27 +24,31 @@
         </mat-select>
       </mat-form-field>
     }
+  </div>
 
+  <form id="tripReportForm" class="form-stack" [formGroup]="reportForm" (ngSubmit)="onSubmit(); dialogRef.close()">
     @for (field of fields; track field.key) {
-      <div class="datetime-row">
-        <mat-form-field>
-          <mat-label>{{ field.label }} dato</mat-label>
-          <input matInput [formControlName]="field.key + 'Date'" [matDatepicker]="datePicker" [min]="minDate"
-                 placeholder="yyyy-MM-dd">
-          <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
-          <mat-datepicker #datePicker></mat-datepicker>
-        </mat-form-field>
-        <mat-form-field>
-          <mat-label>{{ field.label }} tid</mat-label>
-          <input matInput [formControlName]="field.key + 'Time'" [matTimepicker]="timePicker">
-          <mat-timepicker-toggle matIconSuffix [for]="timePicker"></mat-timepicker-toggle>
-          <mat-timepicker #timePicker interval="15m"></mat-timepicker>
-        </mat-form-field>
-        <div class="field-actions">
-          <button matButton="outlined" type="button" (click)="setNow(field.key)">Nu</button>
+      <div class="field-group {{ field.colorClass }}">
+        <div class="field-group-header">
+          <span class="field-group-title">{{ field.label }}</span>
           <button matIconButton type="button" [attr.aria-label]="'Ryd ' + field.label" (click)="clear(field.key)">
             <mat-icon>close</mat-icon>
           </button>
+        </div>
+        <div class="datetime-row">
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Dato</mat-label>
+            <input matInput readonly [formControlName]="field.key + 'Date'" [matDatepicker]="datePicker" [min]="minDate"
+                   placeholder="yyyy-MM-dd" (click)="datePicker.open()">
+            <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
+            <mat-datepicker #datePicker></mat-datepicker>
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Tid</mat-label>
+            <input matInput [formControlName]="field.key + 'Time'" [matTimepicker]="timePicker">
+            <mat-timepicker-toggle matIconSuffix [for]="timePicker"></mat-timepicker-toggle>
+            <mat-timepicker #timePicker interval="15m"></mat-timepicker>
+          </mat-form-field>
         </div>
       </div>
     }

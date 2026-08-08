@@ -22,16 +22,17 @@ interface TimeReportRow {
   key: string;
   trip: Trip;
   date: Moment;
-  plannedStart: string;
+  showDate: boolean;
   name: string;
-  start: string;
-  end: string;
+  start: Moment;
+  startIsReported: boolean;
+  end: Moment | null;
   durationMinutes: number | null;
   durationLabel: string;
 }
 
 interface WeekGroup {
-  weekLabel: string;
+  weekNumber: number;
   rows: TimeReportRow[];
   totalLabel: string;
 }
@@ -145,6 +146,12 @@ export class TimeReportComponent implements OnInit {
       .map(t => this.buildRow(t, driverKey))
       .sort((a, b) => a.date.valueOf() - b.date.valueOf());
 
+    // A calendar day never spans two ISO weeks, so this holds regardless of the week
+    // grouping below — each week's own first row always starts a new date group too.
+    rows.forEach((row, i) => {
+      row.showDate = i === 0 || !row.date.isSame(rows[i - 1].date, 'day');
+    });
+
     const weekMap = new Map<string, TimeReportRow[]>();
     for (const row of rows) {
       const weekKey = `${row.date.isoWeekYear()}-${row.date.isoWeek()}`;
@@ -161,7 +168,7 @@ export class TimeReportComponent implements OnInit {
       .map(([, weekRows]) => {
         const totalMinutes = weekRows.reduce((sum, r) => sum + (r.durationMinutes ?? 0), 0);
         return {
-          weekLabel: `Uge ${weekRows[0].date.isoWeek()}`,
+          weekNumber: weekRows[0].date.isoWeek(),
           rows: weekRows,
           totalLabel: this.formatDuration(totalMinutes),
         };
@@ -173,18 +180,21 @@ export class TimeReportComponent implements OnInit {
 
   private buildRow(trip: Trip, driverKey: string): TimeReportRow {
     const report = trip.reports?.[driverKey];
-    const start = report?.actualStart ?? null;
+    const reportedStart = report?.actualStart ?? null;
     const end = report?.actualEnd ?? null;
-    const durationMinutes = (start && end && end.isAfter(start)) ? end.diff(start, 'minutes') : null;
+    // Duration is worked time, so it's only ever computed from actual reports — never from the
+    // scheduled start the Start column falls back to display when nothing's been reported yet.
+    const durationMinutes = (reportedStart && end && end.isAfter(reportedStart)) ? end.diff(reportedStart, 'minutes') : null;
 
     return {
       key: trip.$key,
       trip,
       date: trip.start,
-      plannedStart: trip.start.format('HH:mm'),
+      showDate: true,
       name: trip.name,
-      start: start ? start.format('HH:mm') : '—',
-      end: end ? end.format('HH:mm') : '—',
+      start: reportedStart ?? trip.start,
+      startIsReported: !!reportedStart,
+      end,
       durationMinutes,
       durationLabel: durationMinutes !== null ? this.formatDuration(durationMinutes) : '—',
     };

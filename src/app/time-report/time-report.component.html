@@ -43,42 +43,54 @@
     @if (effectiveDriverKey$ | async; as driverKey) {
       @if (report$ | async; as report) {
         @if (report.weeks.length > 0) {
-          @for (week of report.weeks; track week.weekLabel) {
-            <h3 class="week-heading">{{ week.weekLabel }}</h3>
+          @for (week of report.weeks; track week.weekNumber) {
+            <h3 class="week-heading">Uge {{ week.weekNumber }}</h3>
             <div class="table-scroll">
               <table class="data-table">
                 <thead>
                 <tr>
                   <th>Dato</th>
+                  <th>Planlagt</th>
                   <th>Tur</th>
                   <th>Start</th>
                   <th>Slut</th>
-                  <th>Tid</th>
                   <th class="no-print"></th>
+                  <th class="col-computed">Tid</th>
                 </tr>
                 </thead>
                 <tbody>
                   @for (row of week.rows; track row.key) {
-                    <tr class="hoverable">
-                      <td>{{ row.date.toDate() | date:'EEE d/M' }} &middot; {{ row.plannedStart }}</td>
+                    <tr class="hoverable" [class.day-start]="row.showDate">
+                      <td [matTooltip]="row.showDate ? ((row.date.toDate() | date: 'short') ?? '') : ''">
+                        @if (row.showDate) {
+                          {{ row.date.toDate() | date:'EEE d/M' }}
+                        }
+                      </td>
+                      <td [matTooltip]="(row.date.toDate() | date: 'short') ?? ''">
+                        {{ row.date.toDate() | date:'HH:mm' }}
+                      </td>
                       <td>{{ row.name }}</td>
-                      <td>{{ row.start }}</td>
-                      <td>{{ row.end }}</td>
-                      <td>{{ row.durationLabel }}</td>
+                      <td [class.reported]="row.startIsReported" [matTooltip]="(row.start.toDate() | date: 'short') ?? ''">
+                        {{ row.start.toDate() | date:'HH:mm' }}
+                      </td>
+                      <td [class.reported-end]="row.end" [matTooltip]="(row.end?.toDate() | date: 'short') ?? ''">
+                        {{ row.end ? (row.end.toDate() | date:'HH:mm') : '—' }}
+                      </td>
                       <td class="no-print cell-actions">
                         <button matIconButton type="button" matTooltip="Registrer tider"
                                 (click)="openTripReport(row.trip, driverKey)">
                           <mat-icon>timer</mat-icon>
                         </button>
                       </td>
+                      <td class="col-computed">{{ row.durationLabel }}</td>
                     </tr>
                   }
                 </tbody>
                 <tfoot>
                 <tr class="row-total">
-                  <td colspan="4">Ugetotal</td>
-                  <td>{{ week.totalLabel }}</td>
+                  <td colspan="5">Total (uge {{ week.weekNumber }})</td>
                   <td class="no-print"></td>
+                  <td class="col-computed">{{ week.totalLabel }}</td>
                 </tr>
                 </tfoot>
               </table>

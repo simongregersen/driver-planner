@@ -5,13 +5,13 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {Trip} from '../trip';
+import {Trip, TripReport} from '../trip';
 import {DataStore} from '../data.service';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {combineLatest, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
-import moment from 'moment';
+import moment, {Moment} from 'moment';
 
 @Component({
   standalone: true,
@@ -60,18 +60,16 @@ export class TripsComponent implements OnInit {
 
   // Both columns iterate the same driver-key order, so a given line index always refers to
   // the same driver in the Start and Slut columns — even if that driver has only one side reported.
-  startReportEntries(trip: Trip): {key: string; time: string}[] {
-    return this.reportKeys(trip).map(key => {
-      const r = trip.reports![key];
-      return {key, time: r.actualStart ? r.actualStart.format('HH:mm') : '—'};
-    });
+  // Raw Moments are returned, not pre-formatted strings — the template formats them, same as
+  // it already does for the scheduled trip.start/trip.end times.
+  startReportEntries(trip: Trip): {key: string; time: Moment | null}[] {
+    return this.reportKeys(trip).map(key => ({key, time: trip.reports![key].actualStart ?? null}));
   }
 
-  endReportEntries(trip: Trip): {key: string; time: string}[] {
+  endReportEntries(trip: Trip): {key: string; end: Moment | null; garage: Moment | null}[] {
     return this.reportKeys(trip).map(key => {
       const r = trip.reports![key];
-      const time = r.actualEnd ? r.actualEnd.format('HH:mm') + (r.garageReturn ? ` (${r.garageReturn.format('HH:mm')})` : '') : '—';
-      return {key, time};
+      return {key, end: r.actualEnd ?? null, garage: r.garageReturn ?? null};
     });
   }
 
@@ -87,5 +85,21 @@ export class TripsComponent implements OnInit {
     } else if (this.reportable()) {
       this.report.emit(trip);
     }
+  }
+
+  // Only the modal "Nu" button and this quick-log path write reports — both replace the whole
+  // reports/{driverKey} node, so the other two fields have to be read back and preserved here.
+  logNow(trip: Trip, driverKey: string, field: keyof TripReport) {
+    const existing = trip.reports?.[driverKey] ?? {};
+    this.dataStore.updateTripReport(trip, driverKey, {...existing, [field]: moment()});
+  }
+
+  hasReport(trip: Trip, driverKey: string, field: keyof TripReport): boolean {
+    return !!trip.reports?.[driverKey]?.[field];
+  }
+
+  quickLogTooltip(trip: Trip, driverKey: string, field: keyof TripReport, label: string): string {
+    const value = trip.reports?.[driverKey]?.[field];
+    return value ? `${label}: ${value.format('HH:mm')}` : label;
   }
 }

@@ -37,10 +37,10 @@ export class TripReportComponent {
   trip!: Trip;
   fixedDriverKey: string | null = null;
 
-  readonly fields: {key: ReportField; label: string}[] = [
-    {key: 'start', label: 'Startet'},
-    {key: 'garage', label: 'Retur til garage'},
-    {key: 'end', label: 'Afsluttet'},
+  readonly fields: {key: ReportField; label: string; colorClass: string}[] = [
+    {key: 'start', label: 'Startet', colorClass: 'field-start'},
+    {key: 'garage', label: 'Retur til garage', colorClass: 'field-garage'},
+    {key: 'end', label: 'Afsluttet', colorClass: 'field-end'},
   ];
 
   readonly selectedDriverKey = signal<string | null>(null);
@@ -94,14 +94,6 @@ export class TripReportComponent {
       garageTime: garage ? this.dateUtility.getTime(garage) : null,
       endDate: end ? this.dateUtility.getDate(end) : null,
       endTime: end ? this.dateUtility.getTime(end) : null,
-    });
-  }
-
-  setNow(field: ReportField) {
-    const now = moment();
-    this.reportForm.patchValue({
-      [`${field}Date`]: this.dateUtility.getDate(now),
-      [`${field}Time`]: this.dateUtility.getTime(now),
     });
   }
 

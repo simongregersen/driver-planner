@@ -2,21 +2,53 @@
   margin-bottom: 16px;
 }
 
+/* Same green/orange/red used for the Start/Garage/Slut quick-log buttons on the trips list,
+   so a field here is visually tied to the button that would otherwise have set it. */
+.field-group {
+  --field-color: var(--mat-sys-outline-variant);
+  margin-bottom: 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--field-color);
+}
+
+.field-start { --field-color: #2e7d32; }
+.field-garage { --field-color: #ef6c00; }
+.field-end { --field-color: var(--mat-sys-error); }
+
+.field-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field-group-title {
+  font: var(--mat-sys-title-medium);
+  color: var(--field-color);
+}
+
 .datetime-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 12px;
 }
 
 .datetime-row > mat-form-field {
-  flex: 1 1 150px;
-  min-width: 130px;
+  flex: 1 1 140px;
+  min-width: 120px;
 }
 
-.field-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 20px;
+/* Below this, a date field and a time field side by side get too cramped to read comfortably. */
+@media (max-width: 480px) {
+  .datetime-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .datetime-row > mat-form-field {
+    /* flex-basis tracks the main axis, which is now height (flex-direction: column) rather
+       than width — reset it, or the 140px meant for width becomes a 140px-tall field. */
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+  }
 }
