@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <clipPath id="bodyClip">
+      <rect x="96" y="180" width="320" height="140" rx="28"/>
+    </clipPath>
+  </defs>
+
+  <rect width="512" height="512" fill="#005cbb"/>
+  <rect x="96" y="180" width="320" height="140" rx="28" fill="#FFC633" stroke="#1F2937" stroke-width="6"/>
+
+  <g clip-path="url(#bodyClip)">
+    <polygon points="96,216 336,280 336,300 96,236" fill="#1F3A93"/>
+    <polygon points="96,242 336,306 336,326 96,262" fill="#E1261C"/>
+    <rect x="380" y="184" width="40" height="76" fill="#FFFFFF"/>
+  </g>
+
+  <rect x="96" y="296" width="320" height="24" fill="#1F2937"/>
+  <rect x="116" y="196" width="60" height="56" rx="8" fill="#FFFFFF"/>
+  <rect x="196" y="196" width="60" height="56" rx="8" fill="#FFFFFF"/>
+  <rect x="276" y="196" width="52" height="56" rx="8" fill="#FFFFFF"/>
+  <circle cx="404" cy="300" r="8" fill="#FFF3C4"/>
+  <circle cx="176" cy="320" r="34" fill="#1F2937"/>
+  <circle cx="176" cy="320" r="14" fill="#CBD5E1"/>
+  <circle cx="336" cy="320" r="34" fill="#1F2937"/>
+  <circle cx="336" cy="320" r="14" fill="#CBD5E1"/>
+</svg>

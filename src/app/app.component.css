@@ -14,10 +14,22 @@
   color: inherit;
 }
 
+/* mat-icon-button doesn't follow the toolbar's inherited text color on its own -
+   it resolves its icon color against its own theme tokens instead. */
+.app-toolbar .mat-mdc-icon-button {
+  color: var(--mat-sys-inverse-on-surface);
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
   margin-right: 8px;
+}
+
+.brand svg {
+  height: 28px;
+  width: auto;
+  display: block;
 }
 
 /* The tab bar's default M3 tokens resolve against on-surface/primary, which read fine on a
@@ -74,5 +86,14 @@
 
   .toolbar-actions {
     display: none;
+  }
+
+  /* Taken out of flex flow so it centers on the bar itself, independent of the
+     hamburger button's width on the left. */
+  .brand {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-right: 0;
   }
 }
