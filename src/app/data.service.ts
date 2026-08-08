@@ -71,14 +71,14 @@ export class DataStore {
       if (isPublic) updates.modified = moment().valueOf();
       return update(child(this.tripsRef, trip.$key), updates).then(() => {
         if (isPublic) {
-          this.enqueueTripChangeNotification(updates.drivers || trip.drivers, trip.name);
+          this.enqueueTripChangeNotification(updates.drivers || trip.drivers, trip.name, trip.start);
         }
       });
     });
   }
 
   // Best-effort: a notification failing to enqueue shouldn't fail the trip save itself.
-  private async enqueueTripChangeNotification(driverIds: string[], tripName: string): Promise<void> {
+  private async enqueueTripChangeNotification(driverIds: string[], tripName: string, start: Moment): Promise<void> {
     if (!driverIds?.length) return;
     try {
       const users = await firstValueFrom(this.getAllUsers());
@@ -90,7 +90,7 @@ export class DataStore {
       await push(this.notificationQueueRef, {
         uids,
         title: 'Din tur er blevet opdateret',
-        body: tripName,
+        body: `${tripName} ${start.format('[d.] D. MMMM [kl.] HH:mm')}`,
         createdAt: Date.now(),
       });
       this.notificationDispatch.trigger();
