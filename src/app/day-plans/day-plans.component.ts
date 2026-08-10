@@ -12,7 +12,7 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatSelectModule} from '@angular/material/select';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {DataStore} from '../data.service';
-import {NewTrip, Trip, TripReport} from '../trip';
+import {NewTrip, Trip} from '../trip';
 import {Driver} from '../driver';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
@@ -22,7 +22,6 @@ import {Utility} from '../utility';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {SelectOption} from '../select-option';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
-import {TripReportComponent} from '../trip-report/trip-report.component';
 import {TripsComponent} from '../trips/trips.component';
 import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
@@ -98,6 +97,14 @@ export class DayPlansComponent implements OnInit {
     this.dataStore.removeTrip(trip);
   }
 
+  removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
+    this.dataStore.updateTrip(trip, {drivers: trip.drivers.filter(k => k !== driverKey)});
+  }
+
+  removeVehicleFromTrip({trip, vehicleKey}: {trip: Trip; vehicleKey: string}) {
+    this.dataStore.updateTrip(trip, {vehicles: trip.vehicles.filter(k => k !== vehicleKey)});
+  }
+
   edit(trip: Trip) {
     const dialogRef = this.dialog.open(TripEditorComponent, DIALOG_CONFIG);
     dialogRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
@@ -107,11 +114,6 @@ export class DayPlansComponent implements OnInit {
     const dialogRef = this.dialog.open(TripCreatorComponent, DIALOG_CONFIG);
     dialogRef.componentInstance.defaultDate = this.selectedDate;
     dialogRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
-  }
-
-  openTripReport(trip: Trip) {
-    const dialogRef = this.dialog.open(TripReportComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(trip, (t: Trip, driverKey: string, report: TripReport) => this.dataStore.updateTripReport(t, driverKey, report));
   }
 
   insertTemplateWithConfirm(templateId: string, templateName: string) {

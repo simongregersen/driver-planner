@@ -71,4 +71,23 @@ export class DateUtility {
     return res;
   }
 
+  // Native <input type=date>/<input type=time> hold plain "YYYY-MM-DD"/"HH:mm" strings rather
+  // than Moments — these bridge that gap for the mobile side of a date/time field that also
+  // has a Material-picker desktop side bound to Moments directly.
+  toDateInputValue(date: Moment | null): string {
+    return date ? date.format('YYYY-MM-DD') : '';
+  }
+
+  toTimeInputValue(date: Moment | null): string {
+    return date ? date.format('HH:mm') : '';
+  }
+
+  parseDateInputValue(value: string): Moment | null {
+    return value ? moment(value, 'YYYY-MM-DD') : null;
+  }
+
+  parseTimeInputValue(value: string): Moment | null {
+    return value ? moment(value, 'HH:mm') : null;
+  }
+
 }

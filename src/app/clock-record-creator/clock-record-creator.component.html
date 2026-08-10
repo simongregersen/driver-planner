@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Start Tidsregistrering</h2>
+
+<mat-dialog-content>
+  <form id="clockRecordCreatorForm" class="form-stack" (ngSubmit)="onSubmit(); dialogRef.close()">
+    <app-date-time-field [value]="clockIn" (valueChange)="clockIn = $event"></app-date-time-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Bemærkning</mat-label>
+      <input matInput [(ngModel)]="note" name="note" placeholder="Fx kunde eller destination">
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="clockRecordCreatorForm" class="start-btn" [disabled]="!clockIn">Start</button>
+</mat-dialog-actions>

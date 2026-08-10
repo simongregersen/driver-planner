@@ -4,12 +4,11 @@ import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCalendar, MatDatepickerModule} from '@angular/material/datepicker';
-import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {Observable} from 'rxjs';
 import moment, {Moment} from 'moment';
-import {Trip, TripReport} from '../trip';
+import {Trip} from '../trip';
 import {Driver} from '../driver';
 import {DataStore} from '../data.service';
 import {UserService} from '../user.service';
@@ -17,32 +16,32 @@ import {AuthenticationService} from '../authentication.service';
 import {Utility} from '../utility';
 import {DateUtility} from '../date-utility';
 import {TripsComponent} from '../trips/trips.component';
-import {TripReportComponent} from '../trip-report/trip-report.component';
-import {DIALOG_CONFIG} from '../dialog-config';
+import {ClockPunchComponent} from '../clock-punch/clock-punch.component';
+import {TimeReportingComponent} from '../time-reporting/time-reporting.component';
 
 @Component({
   standalone: true,
-  selector: 'app-my-trips',
-  templateUrl: './my-trips.component.html',
-  styleUrls: ['./my-trips.component.css'],
+  selector: 'app-my-day',
+  templateUrl: './my-day.component.html',
+  styleUrls: ['./my-day.component.css'],
   imports: [
     FormsModule, AsyncPipe, DatePipe,
     MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule,
-    TripsComponent,
+    TripsComponent, ClockPunchComponent, TimeReportingComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MyTripsComponent implements OnInit {
+export class MyDayComponent implements OnInit {
   readonly dataStore = inject(DataStore);
   readonly userService = inject(UserService);
   readonly dateUtility = inject(DateUtility);
   private readonly authService = inject(AuthenticationService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly dialog = inject(MatDialog);
 
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
   readonly minDate = this.dateUtility.minDate(5);
+  readonly recordsWindowStart = this.dateUtility.today().subtract(14, 'days');
   private _selectedDate: Moment = this.dateUtility.today();
 
   private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
@@ -115,11 +114,6 @@ export class MyTripsComponent implements OnInit {
   filterMyTrips(trips: Trip[] | null, driver: Driver | null): Trip[] {
     if (!trips || !driver) return [];
     return trips.filter(t => Utility.isAssigned(driver, t));
-  }
-
-  openTripReport(trip: Trip, driverKey: string) {
-    const dialogRef = this.dialog.open(TripReportComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(trip, (t: Trip, dKey: string, report: TripReport) => this.dataStore.updateTripReport(t, dKey, report), driverKey);
   }
 
   /** The calendar and the date input both hand back null when a selection is cleared. */

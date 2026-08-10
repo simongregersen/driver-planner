@@ -121,6 +121,10 @@ body {
 
 .form-stack {
   display: grid;
+  /* minmax(0, 1fr) rather than the implicit auto: an auto track's minimum size is based on its
+     widest child's content, which lets that child (and the grid) grow past the dialog's own
+     width instead of shrinking to fit it. 0 removes that content-based floor. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
 }
 

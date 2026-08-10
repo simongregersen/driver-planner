@@ -32,8 +32,7 @@
   </aside>
   <main class="page-main">
     <app-trips [trips]="(trips$ | async) ?? []"
-               (edit)="edit($event)"
-               (remove)="removeTrip($event)">
+               (edit)="edit($event)">
     </app-trips>
     <div class="toolbar-row no-print">
       <button matButton="filled" type="button" (click)="create()">Opret tur</button>

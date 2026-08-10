@@ -1,0 +1,114 @@
+.section-heading {
+  margin: 24px 0 8px;
+  font: var(--mat-sys-title-large);
+}
+
+.section-heading:first-of-type {
+  margin-top: 0;
+}
+
+/* One grid for both layouts — named areas are re-mapped per breakpoint so the same elements
+   (no duplication, no extra component instances) can sit in a single stacked column on
+   mobile or split across a main column + sidebar on larger screens. */
+.day-grid {
+  display: grid;
+  gap: 8px 24px;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "tr-heading"
+    "punch"
+    "tr-table"
+    "mt-heading"
+    "date-nav"
+    "trips";
+}
+
+.gc-tr-heading {
+  grid-area: tr-heading;
+}
+
+.gc-punch {
+  grid-area: punch;
+  justify-self: center;
+}
+
+.gc-tr-table {
+  grid-area: tr-table;
+}
+
+.gc-mt-heading {
+  grid-area: mt-heading;
+}
+
+.gc-date-nav {
+  grid-area: date-nav;
+  justify-self: center;
+}
+
+.gc-trips {
+  grid-area: trips;
+  min-width: 0;
+}
+
+/* Matches the sidebar breakpoint the rest of the app uses (Day Plans, Time Report, …). The
+   punch button stays in the main column under "Tidsregistrering" at every width — only the
+   datepicker moves into the sidebar, aligned with the "Mine ture" table. */
+@media (min-width: 1200px) {
+  .day-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+    grid-template-areas:
+      "tr-heading ."
+      "punch      ."
+      "tr-table   ."
+      "mt-heading ."
+      "trips      date-nav";
+  }
+
+  .gc-punch {
+    justify-self: start;
+  }
+
+  .gc-date-nav {
+    justify-self: stretch;
+  }
+}
+
+@media print {
+  .day-grid {
+    display: block;
+  }
+}
+
+.inline-calendar {
+  width: 296px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+/* The inline calendar is dropped for the compact date field only once the screen is too
+   narrow to comfortably fit it — no longer tied to the sidebar breakpoint, since the sidebar
+   now switches at 1200px while the calendar itself just needs enough width to render. */
+.compact-date-field {
+  display: none;
+  width: 296px;
+}
+
+@media (max-width: 767px) {
+  .inline-calendar {
+    display: none;
+  }
+
+  .compact-date-field {
+    display: block;
+  }
+}
+
+.button-row {
+  display: flex;
+  gap: 4px;
+}
+
+.button-row > button {
+  flex: 1 1 0;
+}

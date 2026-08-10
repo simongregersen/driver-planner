@@ -86,12 +86,10 @@
   <main class="page-main">
     @if (trips$ | async; as trips) {
       <app-trips [trips]="filterTripsByDriver(trips)"
-                 [rowClickToEdit]="true"
-                 [reportable]="true"
                  [hideDescriptionOnScreen]="true"
                  (edit)="edit($event)"
-                 (remove)="removeTrip($event)"
-                 (report)="openTripReport($event)">
+                 (removeDriver)="removeDriverFromTrip($event)"
+                 (removeVehicle)="removeVehicleFromTrip($event)">
       </app-trips>
     }
   </main>

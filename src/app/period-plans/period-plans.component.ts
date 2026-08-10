@@ -75,6 +75,14 @@ export class PeriodPlansComponent implements OnInit {
     this.dataStore.removeTrip(trip);
   }
 
+  removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
+    this.dataStore.updateTrip(trip, {drivers: trip.drivers.filter(k => k !== driverKey)});
+  }
+
+  removeVehicleFromTrip({trip, vehicleKey}: {trip: Trip; vehicleKey: string}) {
+    this.dataStore.updateTrip(trip, {vehicles: trip.vehicles.filter(k => k !== vehicleKey)});
+  }
+
   edit(trip: Trip) {
     const dialogRef = this.dialog.open(TripEditorComponent, DIALOG_CONFIG);
     dialogRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));

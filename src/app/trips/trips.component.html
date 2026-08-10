@@ -10,120 +10,89 @@
         <th>Tur</th>
         <th class="col-w-15">Chauffører</th>
         <th class="col-w-15">Køretøjer</th>
-        @if (!readonly() || reportable()) {
-          <th class="no-print"></th>
-        }
       </tr>
       </thead>
       <tbody>
       @for (trip of trips(); track trip.$key) {
+        <ng-template #vehicleChips>
+          <mat-chip-set class="no-print">
+            @for (key of trip.vehicles; track key) {
+              <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
+                        (removed)="removeVehicle.emit({trip, vehicleKey: key})">
+                {{ getVehicle(vehicles, key)?.displayName }}
+                @if (!readonly()) {
+                  <button matChipRemove aria-label="Fjern køretøj" (click)="$event.stopPropagation()">
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                }
+              </mat-chip>
+            }
+          </mat-chip-set>
+          <span class="print-only">
+            @for (key of trip.vehicles; track key; let isLast = $last) {
+              {{ getVehicle(vehicles, key)?.displayName }}{{ isLast ? '' : ', ' }}
+            }
+          </span>
+        </ng-template>
+
+        <ng-template #driverChips>
+          @if (!hideSingleDriver() || trip.drivers.length > 1) {
+            <mat-chip-set class="no-print">
+              @for (key of trip.drivers; track key) {
+                <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
+                          (removed)="removeDriver.emit({trip, driverKey: key})">
+                  {{ getDriver(drivers, key)?.displayName }}
+                  @if (!readonly()) {
+                    <button matChipRemove aria-label="Fjern chauffør" (click)="$event.stopPropagation()">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  }
+                </mat-chip>
+              }
+            </mat-chip-set>
+            <span class="print-only">
+              @for (key of trip.drivers; track key; let isLast = $last) {
+                {{ getDriver(drivers, key)?.displayName }}{{ isLast ? '' : ', ' }}
+              }
+            </span>
+          }
+        </ng-template>
+
         <tr class="hoverable"
             [class.row-highlight]="isRecentlyModified(trip)"
-            [class.pointer]="!readonly() && rowClickToEdit()"
+            [class.pointer]="!readonly()"
             (click)="onRowClick(trip)">
           <td data-label="Start">
             <span [matTooltip]="(trip.start.toDate() | date: 'short') ?? ''">
             {{trip.start.toDate() | date: 'HH:mm' }}
             </span>
-            @for (entry of startReportEntries(trip); track entry.key) {
-              <br>
-              <span class="report-line report-start" [matTooltip]="(entry.time?.toDate() | date: 'short') ?? ''">
-                {{ entry.time ? (entry.time.toDate() | date: 'HH:mm') : '—' }}
-              </span>
-            }
           </td>
           <td class="muted" data-label="Slut">
             <span [matTooltip]="(trip.end?.toDate() | date: 'short') ?? ''">
               {{trip.end?.toDate() | date:'HH:mm' }}
             </span>
-            @for (entry of endReportEntries(trip); track entry.key) {
-              <br>
-              <span class="report-line report-end" [matTooltip]="(entry.end?.toDate() | date: 'short') ?? ''">
-                {{ entry.end ? (entry.end.toDate() | date: 'HH:mm') : '—' }}
-              </span>
-              @if (entry.garage; as garage) {
-                <!-- A real, breakable space — Angular strips the plain whitespace that would
-                     otherwise sit here, which left "report-end" and "report-garage" (both
-                     nowrap) glued into one unbreakable run that could overflow the column. -->
-                {{ ' ' }}<span class="report-line report-garage" [matTooltip]="(garage.toDate() | date: 'short') ?? ''">
-                  ({{ garage.toDate() | date: 'HH:mm' }})
-                </span>
-              }
-            }
           </td>
           <td class="trip-cell">
-            <strong>{{trip.name}}</strong>
-            <span class="muted newline" [class.print-only]="hideDescriptionOnScreen()"><br>{{trip.description}}</span>
+            <div class="desktop-trip-info">
+              {{trip.name}}
+              <span class="muted newline" [class.print-only]="hideDescriptionOnScreen()">@if (!hideDescriptionOnScreen()) {<br>}{{trip.description}}</span>
+            </div>
+            <div class="mobile-trip-info">
+              <strong>
+                <span class="mobile-trip-time">{{ trip.start.toDate() | date:'HH:mm' }} @if (trip.end) {(&ndash;{{ trip.end.toDate() | date:'HH:mm' }})}</span>
+                <span class="mobile-trip-name">{{ trip.name }}</span>
+              </strong>
+              <div class="mobile-line"><ng-container [ngTemplateOutlet]="vehicleChips"></ng-container></div>
+              <div class="mobile-line"><ng-container [ngTemplateOutlet]="driverChips"></ng-container></div>
+              <div class="mobile-line newline muted" [class.print-only]="hideDescriptionOnScreen()">{{trip.description}}</div>
+            </div>
           </td>
           <td data-label="Chauffører" [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
-            @for (key of trip.drivers; track key; let isLast = $last) {
-              <span>
-              {{ getDriver(drivers, key)?.displayName }}{{isLast ? '' : ', '}}
-              </span>
-            }
+            <ng-container [ngTemplateOutlet]="driverChips"></ng-container>
           </td>
           <td data-label="Køretøjer" [class.cell-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
-            @for (key of trip.vehicles; track key; let isLast = $last) {
-              <span>
-              {{ getVehicle(vehicles, key)?.displayName }}{{isLast ? '' : ', '}}
-              </span>
-            }
+            <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
           </td>
-          @if (!readonly() || reportable()) {
-            <td class="no-print cell-actions">
-              <div class="row-actions">
-                @if (reportable() && currentDriverKey(); as driverKey) {
-                  <div class="quick-log-group">
-                    <div class="quick-log-actions" role="group" aria-label="Registrer tidspunkt">
-                      <button [matButton]="hasReport(trip, driverKey, 'actualStart') ? 'outlined' : 'filled'"
-                              type="button" class="log-btn log-start"
-                              [class.logged]="hasReport(trip, driverKey, 'actualStart')"
-                              [matTooltip]="quickLogTooltip(trip, driverKey, 'actualStart', 'Start')"
-                              (click)="$event.stopPropagation(); toggleLog(trip, driverKey, 'actualStart')">
-                        <mat-icon>play_arrow</mat-icon>
-                        Start
-                      </button>
-                      <button [matButton]="hasReport(trip, driverKey, 'garageReturn') ? 'outlined' : 'filled'"
-                              type="button" class="log-btn log-garage"
-                              [class.logged]="hasReport(trip, driverKey, 'garageReturn')"
-                              [matTooltip]="quickLogTooltip(trip, driverKey, 'garageReturn', 'Garage')"
-                              (click)="$event.stopPropagation(); toggleLog(trip, driverKey, 'garageReturn')">
-                        <mat-icon>garage</mat-icon>
-                        Garage
-                      </button>
-                      <button [matButton]="hasReport(trip, driverKey, 'actualEnd') ? 'outlined' : 'filled'"
-                              type="button" class="log-btn log-end"
-                              [class.logged]="hasReport(trip, driverKey, 'actualEnd')"
-                              [matTooltip]="quickLogTooltip(trip, driverKey, 'actualEnd', 'Slut')"
-                              (click)="$event.stopPropagation(); toggleLog(trip, driverKey, 'actualEnd')">
-                        <mat-icon>stop</mat-icon>
-                        Slut
-                      </button>
-                    </div>
-                    @if (quickLogError(trip, driverKey); as quickLogErrorMsg) {
-                      <div class="app-error quick-log-error">{{ quickLogErrorMsg }}</div>
-                    }
-                  </div>
-                }
-                @if (reportable()) {
-                  <button matIconButton type="button" matTooltip="Registrer tider"
-                          (click)="$event.stopPropagation(); report.emit(trip)">
-                    <mat-icon>timer</mat-icon>
-                  </button>
-                }
-                @if (!readonly()) {
-                  <button matIconButton type="button" matTooltip="Rediger"
-                          (click)="$event.stopPropagation(); edit.emit(trip)">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                  <button matIconButton type="button" matTooltip="Slet"
-                          (click)="$event.stopPropagation(); confirmRemove(trip)">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                }
-              </div>
-            </td>
-          }
         </tr>
       }
       </tbody>

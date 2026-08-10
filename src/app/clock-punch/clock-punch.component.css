@@ -1,0 +1,8 @@
+.punch-btn {
+  background-color: #2e7d32;
+}
+
+.punch-btn.punch-stop {
+  background-color: var(--mat-sys-error);
+  color: var(--mat-sys-on-error);
+}

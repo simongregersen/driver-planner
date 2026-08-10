@@ -14,27 +14,37 @@ import {DataStore} from '../data.service';
 import {UserService} from '../user.service';
 import {DateUtility} from '../date-utility';
 import {Driver} from '../driver';
-import {Trip, TripReport} from '../trip';
-import {TripReportComponent} from '../trip-report/trip-report.component';
-import {DIALOG_CONFIG} from '../dialog-config';
+import {Trip} from '../trip';
+import {ClockRecord} from '../clock-record';
+import {ClockRecordEditorComponent, ClockRecordUpdates} from '../clock-record-editor/clock-record-editor.component';
+import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 
-interface TimeReportRow {
+interface DayTrip {
   key: string;
-  trip: Trip;
-  date: Moment;
-  showDate: boolean;
   name: string;
   start: Moment;
-  startIsReported: boolean;
   end: Moment | null;
-  durationMinutes: number | null;
+}
+
+interface DayRecord {
+  record: ClockRecord;
+  durationMinutes: number;
   durationLabel: string;
-  hasTimeError: boolean;
+  hasError: boolean;
+  crossesDay: boolean;
+}
+
+interface DayReport {
+  date: Moment;
+  trips: DayTrip[];
+  records: DayRecord[];
+  totalMinutes: number;
+  totalLabel: string;
 }
 
 interface WeekGroup {
   weekNumber: number;
-  rows: TimeReportRow[];
+  days: DayReport[];
   totalLabel: string;
 }
 
@@ -88,12 +98,13 @@ export class TimeReportComponent implements OnInit {
         const to = this.dateUtility.getDate(periodEnd);
         return combineLatest([
           this.dataStore.getTrips(from, to),
+          this.dataStore.getClockRecords(driverKey, from, to),
           this.dataStore.getPublicDatesInRange(periodStart, periodEnd),
         ]).pipe(
-          map(([trips, publicDates]) => {
+          map(([trips, records, publicDates]) => {
             const publicDateSet = new Set(publicDates);
-            const publicTrips = trips.filter(t => publicDateSet.has(this.dateUtility.dateKey(t.start)));
-            return this.buildReport(publicTrips, driverKey);
+            const publicTrips = trips.filter(t => t.drivers?.includes(driverKey) && publicDateSet.has(this.dateUtility.dateKey(t.start)));
+            return this.buildReport(publicTrips, records, periodStart, periodEnd);
           })
         );
       })
@@ -136,72 +147,70 @@ export class TimeReportComponent implements OnInit {
     return monday.isoWeek() % 2 === 0 ? monday : monday.subtract(1, 'week');
   }
 
-  openTripReport(trip: Trip, driverKey: string) {
-    const dialogRef = this.dialog.open(TripReportComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(trip, (t: Trip, dKey: string, report: TripReport) => this.dataStore.updateTripReport(t, dKey, report), driverKey);
+  editClockRecord(record: ClockRecord, driverKey: string) {
+    const dialogRef = this.dialog.open(ClockRecordEditorComponent, SMALL_DIALOG_CONFIG);
+    dialogRef.componentInstance.edit(
+      record,
+      (r: ClockRecord, updates: ClockRecordUpdates) => this.dataStore.updateClockRecord(driverKey, r, updates),
+      (r: ClockRecord) => this.dataStore.removeClockRecord(driverKey, r),
+    );
   }
 
-  private buildReport(trips: Trip[], driverKey: string): PeriodReport {
-    const rows = trips
-      .filter(t => t.drivers?.includes(driverKey))
-      .map(t => this.buildRow(t, driverKey))
-      .sort((a, b) => a.date.valueOf() - b.date.valueOf());
+  private buildReport(trips: Trip[], records: ClockRecord[], periodStart: Moment, periodEnd: Moment): PeriodReport {
+    const days = this.dateUtility.range(periodStart, periodEnd)
+      .map(date => this.buildDay(date, trips, records))
+      .filter(d => d.trips.length > 0 || d.records.length > 0);
 
-    // A calendar day never spans two ISO weeks, so this holds regardless of the week
-    // grouping below — each week's own first row always starts a new date group too.
-    rows.forEach((row, i) => {
-      row.showDate = i === 0 || !row.date.isSame(rows[i - 1].date, 'day');
-    });
-
-    const weekMap = new Map<string, TimeReportRow[]>();
-    for (const row of rows) {
-      const weekKey = `${row.date.isoWeekYear()}-${row.date.isoWeek()}`;
-      const weekRows = weekMap.get(weekKey);
-      if (weekRows) {
-        weekRows.push(row);
+    const weekMap = new Map<string, DayReport[]>();
+    for (const day of days) {
+      const weekKey = `${day.date.isoWeekYear()}-${day.date.isoWeek()}`;
+      const weekDays = weekMap.get(weekKey);
+      if (weekDays) {
+        weekDays.push(day);
       } else {
-        weekMap.set(weekKey, [row]);
+        weekMap.set(weekKey, [day]);
       }
     }
 
     const weeks: WeekGroup[] = Array.from(weekMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([, weekRows]) => {
-        const totalMinutes = weekRows.reduce((sum, r) => sum + (r.durationMinutes ?? 0), 0);
+      .map(([, weekDays]) => {
+        const totalMinutes = weekDays.reduce((sum, d) => sum + d.totalMinutes, 0);
         return {
-          weekNumber: weekRows[0].date.isoWeek(),
-          rows: weekRows,
+          weekNumber: weekDays[0].date.isoWeek(),
+          days: weekDays,
           totalLabel: this.formatDuration(totalMinutes),
         };
       });
 
-    const totalMinutes = rows.reduce((sum, r) => sum + (r.durationMinutes ?? 0), 0);
+    const totalMinutes = days.reduce((sum, d) => sum + d.totalMinutes, 0);
     return {weeks, totalLabel: this.formatDuration(totalMinutes)};
   }
 
-  private buildRow(trip: Trip, driverKey: string): TimeReportRow {
-    const report = trip.reports?.[driverKey];
-    const reportedStart = report?.actualStart ?? null;
-    const end = report?.actualEnd ?? null;
-    // Duration falls back to the scheduled start the same way the Start column's display does,
-    // so a driver who only reports when they finish still gets a computed duration for the day.
-    const start = reportedStart ?? trip.start;
-    const durationMinutes = (end && end.isAfter(start)) ? end.diff(start, 'minutes') : null;
-    const hasTimeError = !!(end && end.isBefore(start));
+  // Records are bucketed by their clock-in date — a record that runs past midnight (a
+  // multi-day trip) is attached to the day it started, not the day it ended.
+  private buildDay(date: Moment, trips: Trip[], records: ClockRecord[]): DayReport {
+    const dayTrips: DayTrip[] = trips
+      .filter(t => this.dateUtility.equals(t.start, date))
+      .map(t => ({key: t.$key, name: t.name, start: t.start, end: t.end}));
 
-    return {
-      key: trip.$key,
-      trip,
-      date: trip.start,
-      showDate: true,
-      name: trip.name,
-      start,
-      startIsReported: !!reportedStart,
-      end,
-      durationMinutes,
-      durationLabel: hasTimeError ? 'Fejl' : (durationMinutes !== null ? this.formatDuration(durationMinutes) : '—'),
-      hasTimeError,
-    };
+    const dayRecords: DayRecord[] = records
+      .filter(r => this.dateUtility.equals(r.clockIn, date))
+      .map(record => {
+        const hasError = !!(record.clockOut && record.clockOut.isBefore(record.clockIn));
+        const durationMinutes = (record.clockOut && record.clockOut.isAfter(record.clockIn))
+          ? record.clockOut.diff(record.clockIn, 'minutes') : 0;
+        return {
+          record,
+          durationMinutes,
+          durationLabel: hasError ? 'Fejl' : (record.clockOut ? this.formatDuration(durationMinutes) : '—'),
+          hasError,
+          crossesDay: !!(record.clockOut && !this.dateUtility.equals(record.clockIn, record.clockOut)),
+        };
+      });
+
+    const totalMinutes = dayRecords.reduce((sum, r) => sum + r.durationMinutes, 0);
+    return {date, trips: dayTrips, records: dayRecords, totalMinutes, totalLabel: this.formatDuration(totalMinutes)};
   }
 
   private formatDuration(totalMinutes: number): string {

@@ -5,7 +5,7 @@
     "ghcr.io/devcontainers/features/java:1": {"version": "21"},
     "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
   },
-  "forwardPorts": [4200, 9099, 9000, 5001, 4001],
+  "forwardPorts": [4200, 9099, 9000, 5002, 4002],
   "portsAttributes": {
     "4200": {"label": "Angular dev server"},
     "9099": {"label": "Auth Emulator"},

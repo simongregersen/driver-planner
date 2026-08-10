@@ -1,0 +1,78 @@
+:host {
+  display: block;
+  overflow-x: auto;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0;
+}
+
+.in-progress {
+  color: #2e7d32;
+  font-style: italic;
+}
+
+.report-start {
+  color: #2e7d32;
+}
+
+.report-end {
+  color: var(--mat-sys-error);
+}
+
+/* Stays a real table at every width — Dato/Start/Slut are just wide enough for their content,
+   Bemærkning absorbs whatever's left, truncating with an ellipsis instead of wrapping or
+   forcing horizontal scroll. */
+.time-reporting-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.col-date {
+  width: 6.5em;
+}
+
+.col-time {
+  width: 4.5em;
+}
+
+.col-actions {
+  width: 40px;
+}
+
+.time-reporting-table td {
+  white-space: nowrap;
+}
+
+.note-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The currently-open record — started but not yet stopped. */
+.latest-row {
+  background-color: rgba(46, 125, 50, 0.12);
+}
+
+.show-all-cell {
+  text-align: center;
+  white-space: normal;
+  padding: 8px 0 0;
+}
+
+.pulsing-dots {
+  display: inline-block;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}

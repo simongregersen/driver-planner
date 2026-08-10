@@ -31,7 +31,7 @@
     <nav mat-tab-nav-bar class="nav-links" disableRipple [tabPanel]="tabPanel">
       @if (isDriver$ | async) {
         <a mat-tab-link routerLink="/my-trips" routerLinkActive #rlaMyTrips="routerLinkActive"
-           [active]="rlaMyTrips.isActive">Mine ture</a>
+           [active]="rlaMyTrips.isActive">Min dag</a>
       }
       <a mat-tab-link routerLink="/time-report" routerLinkActive #rlaTimeReport="routerLinkActive"
          [active]="rlaTimeReport.isActive">Timeseddel</a>
@@ -63,7 +63,7 @@
 
   <mat-menu #navMenu="matMenu">
     @if (isDriver$ | async) {
-      <a mat-menu-item routerLink="/my-trips" routerLinkActive="active-link">Mine ture</a>
+      <a mat-menu-item routerLink="/my-trips" routerLinkActive="active-link">Min dag</a>
     }
     <a mat-menu-item routerLink="/time-report" routerLinkActive="active-link">Timeseddel</a>
     @if (isAdmin$ | async) {

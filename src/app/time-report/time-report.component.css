@@ -23,48 +23,65 @@
   margin-top: 0;
 }
 
+.day-block {
+  margin-bottom: 16px;
+}
+
+.day-heading {
+  margin: 0 0 4px;
+  font: var(--mat-sys-title-medium);
+  text-transform: capitalize;
+}
+
+.day-trips {
+  margin: 0 0 6px;
+  padding-left: 18px;
+  font: var(--mat-sys-body-small);
+}
+
+.week-total {
+  margin: 4px 0 0;
+  text-align: right;
+  font-weight: 600;
+}
+
 .period-total {
   margin-top: 16px;
   text-align: right;
   font-weight: 600;
 }
 
+.in-progress {
+  color: #2e7d32;
+  font-style: italic;
+}
+
+.report-start {
+  color: #2e7d32;
+}
+
+.report-end {
+  color: var(--mat-sys-error);
+}
+
 /* Marks off Tid, the one column that's computed from the others, from the reported
-   Dato/Tur/Start/Slut data (and the action button) to its left. */
+   Start/Slut/Bemærkning data (and the action button) to its left. */
 .col-computed {
   border-left: 1px solid var(--mat-sys-outline-variant);
 }
 
-/* Each week renders its own <table>, so without a fixed layout their columns can
-   drift out of alignment depending on how much text lands in a given week's rows.
-   Fixing the layout and giving every column but Tur (which wraps) an explicit
-   width keeps the tables lined up. */
+/* Each day renders its own <table>, so without a fixed layout their columns can
+   drift out of alignment depending on how much text lands in a given day's rows. Start/Slut/Tid
+   are just wide enough for their content (matching the Tidsregistrering widget's table),
+   Bemærkning absorbs whatever's left. */
 .data-table {
   table-layout: fixed;
 }
 
-.col-date {
-  width: 13%;
-}
-
 .col-time {
-  width: 9%;
+  width: 4.5em;
 }
 
-/* Start falls back to the scheduled time (default text color) until a driver actually reports
-   one — green marks it as the real, driver-reported time, matching My Trips' report colors. */
-.reported {
-  color: #2e7d32;
-}
-
-/* Slut has no scheduled fallback to distinguish from, but red still marks it as reported data,
-   matching the Slut color used everywhere else (quick-log buttons, report dialog, My Trips). */
-.reported-end {
-  color: var(--mat-sys-error);
-}
-
-/* A thicker line where a new day's rows start, so consecutive trips on the same day read as one
-   visual group. Skipped on the first row of each table — the header border already separates it. */
-.data-table tbody tr.day-start:not(:first-child) > td {
-  border-top: 2px solid var(--mat-sys-outline);
+.col-actions {
+  width: 40px;
 }

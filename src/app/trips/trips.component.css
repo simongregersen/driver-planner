@@ -7,29 +7,6 @@
   white-space: pre-line;
 }
 
-.report-line {
-  white-space: nowrap;
-}
-
-/* Matches the Start/Garage/Slut quick-log buttons and the report dialog's field colors. */
-.report-start {
-  color: #2e7d32;
-}
-
-.report-garage {
-  color: #ef6c00;
-}
-
-.report-end {
-  color: var(--mat-sys-error);
-}
-
-.row-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
 /* Tur has no fixed column width, so — unlike Start/Slut's percentage hints — it's the column
    the table shrinks first when a nowrap value (e.g. a finish time plus a garage time) needs
    more room; this guarantees it can still wrap even for an unusually long, unbroken name. */
@@ -37,37 +14,40 @@
   word-break: break-word;
 }
 
-/* Quick-log buttons (and their validation error) are a small-screen-only shortcut for the
-   assigned driver — on a wide table there's already ample room to open the report dialog,
-   so they'd just add clutter. */
-.quick-log-group {
+/* The composed mobile summary (time range + name, vehicle, drivers, description) is only
+   shown below the card breakpoint — see .desktop-trip-info below and the media query. */
+.mobile-trip-info {
   display: none;
 }
 
-.log-start { --log-color: #2e7d32; }
-.log-garage { --log-color: #ef6c00; }
-.log-end { --log-color: var(--mat-sys-error); }
-
-/* Not yet logged: filled solid in the checkpoint's color, drawing the eye to the action still
-   needed. */
-.quick-log-actions .log-btn {
-  background-color: var(--log-color);
-  color: var(--mat-sys-on-primary, #fff);
+.mobile-line {
+  margin-top: 2px;
 }
 
-/* Logged: outlined instead, same color, so the driver can see at a glance which checkpoints
-   are already recorded without opening the report dialog. */
-.quick-log-actions .log-btn.logged {
-  background-color: transparent;
-  color: var(--log-color);
-  border-color: var(--log-color);
+.mobile-trip-time {
+  margin-right: 6px;
 }
 
-/* Same styling as the report dialog's own error banner, just smaller — this sits under three
-   compact buttons rather than a full form. */
-.quick-log-error {
-  padding: 6px 10px;
-  font: var(--mat-sys-body-small);
+/* Chips for assigned vehicles/drivers — used both in the desktop Chauffører/Køretøjer columns
+   and the mobile composed block, via the same #vehicleChips/#driverChips templates. Plain
+   (no color-coding), a pale outline instead of a filled background, and denser than Material's
+   defaults — there's no official token for the label padding or the inter-chip margin, so
+   those go through ::ng-deep. */
+mat-chip-set {
+  margin: 0;
+}
+
+.trip-chip {
+  --mat-chip-container-height: 22px;
+  --mat-chip-outline-color: var(--mat-sys-outline-variant);
+  /* !important: Material's own default chip margin (4px) otherwise wins the cascade despite
+     this being more specific — CSS custom properties above cascade fine without it since
+     Material just reads whatever value is set, but a literal margin has to out-fight theirs. */
+  margin: 0 2px !important;
+}
+
+.trip-chip ::ng-deep .mat-mdc-chip-action-label {
+  padding: 0 6px;
 }
 
 .loading {
@@ -77,10 +57,10 @@
   padding: 48px 0;
 }
 
-/* Below 768px the table becomes a stack of cards, one per trip, with a label
-   before each field standing in for the column headers the cards no longer have.
-   Screen-only — printing should always use the full table layout regardless of the
-   printing device's reported page width. */
+/* Below 768px the table becomes a stack of cards, one per trip. Start/Slut/Chauffører/Køretøjer
+   fold into the single composed .mobile-trip-info block instead of remaining separate fields —
+   screen-only, printing always uses the full table layout regardless of the printing device's
+   reported page width. */
 @media screen and (max-width: 767px) {
   .data-table thead {
     display: none;
@@ -92,15 +72,10 @@
     width: 100%;
   }
 
-  /* A 2-column grid rather than one field per line: Start/Slut share a row and
-     Chauffører/Køretøjer share a row, so the card takes noticeably less vertical space.
-     The name and the actions cell each explicitly span both columns to stay full-width. */
   .data-table tbody tr {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 12px;
-    margin-bottom: 12px;
-    padding: 12px;
+    display: block;
+    margin-bottom: 8px;
+    padding: 8px 10px;
     border: 1px solid var(--mat-sys-outline-variant);
     border-radius: var(--mat-sys-corner-medium);
   }
@@ -109,59 +84,26 @@
     margin-bottom: 0;
   }
 
-  .data-table tbody tr > th,
   .data-table tbody tr > td {
     width: auto;
     min-width: 0;
     padding: 0;
     border-bottom: none;
-    /* Grid items otherwise refuse to shrink below their content's natural width — nowrap
-       report-line text (e.g. a finish time plus a garage time) would then push past its
-       column into the next one instead of wrapping within it. */
     overflow-wrap: break-word;
   }
 
-  .data-table tbody tr > [data-label]::before {
-    content: attr(data-label) ": ";
-    font-weight: 600;
-    color: var(--mat-sys-on-surface-variant);
+  .data-table tbody tr > td[data-label="Start"],
+  .data-table tbody tr > td[data-label="Slut"],
+  .data-table tbody tr > td[data-label="Chauffører"],
+  .data-table tbody tr > td[data-label="Køretøjer"] {
+    display: none;
   }
 
-  .data-table tbody tr > .trip-cell {
-    order: -1;
-    grid-column: 1 / -1;
+  .desktop-trip-info {
+    display: none;
   }
 
-  .data-table tbody tr > .cell-actions {
-    grid-column: 1 / -1;
-    width: auto;
-    margin-top: 4px;
-    padding-top: 8px;
-    border-top: 1px solid var(--mat-sys-outline-variant);
-  }
-
-  /* Only needed here — a 100%-basis quick-log-group forces a wrap onto its own line, ahead
-     of the report/edit/delete icons on the next line. Desktop's .row-actions never wraps. */
-  .row-actions {
-    flex-wrap: wrap;
-  }
-
-  /* Its own full-width line above the report/edit/delete icons, rather than squeezed into
-     the same row — .row-actions already wraps, so a 100%-basis item claims the whole line. */
-  .quick-log-group {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 100%;
-    gap: 4px;
-    margin-bottom: 8px;
-  }
-
-  .quick-log-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .quick-log-actions .log-btn {
-    flex: 1 1 0;
+  .mobile-trip-info {
+    display: block;
   }
 }

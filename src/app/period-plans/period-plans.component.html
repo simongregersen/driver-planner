@@ -53,7 +53,8 @@
           <app-trips [trips]="filterByDate(filterTripsByDriver(trips), date)"
                      [hideDescriptionOnScreen]="true"
                      (edit)="edit($event)"
-                     (remove)="removeTrip($event)"></app-trips>
+                     (removeDriver)="removeDriverFromTrip($event)"
+                     (removeVehicle)="removeVehicleFromTrip($event)"></app-trips>
         </div>
       }
     }

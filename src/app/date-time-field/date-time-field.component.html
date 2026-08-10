@@ -1,0 +1,23 @@
+<div class="datetime-row">
+  <mat-form-field class="picker-field material-picker" subscriptSizing="dynamic">
+    <mat-label>{{ dateLabel() }}</mat-label>
+    <input matInput readonly [formControl]="materialDateControl" [matDatepicker]="datePicker" [min]="minDate" (click)="datePicker.open()">
+    <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
+    <mat-datepicker #datePicker></mat-datepicker>
+  </mat-form-field>
+  <mat-form-field class="picker-field material-picker" subscriptSizing="dynamic">
+    <mat-label>{{ timeLabel() }}</mat-label>
+    <input matInput readonly [formControl]="materialTimeControl" [matTimepicker]="timePicker">
+    <mat-timepicker-toggle matIconSuffix [for]="timePicker"></mat-timepicker-toggle>
+    <mat-timepicker #timePicker interval="15m"></mat-timepicker>
+  </mat-form-field>
+
+  <mat-form-field class="picker-field native-picker" subscriptSizing="dynamic">
+    <mat-label>{{ dateLabel() }}</mat-label>
+    <input matInput type="date" [min]="minDateInputValue" [value]="nativeDateValue()" (change)="onNativeDateChange($event)">
+  </mat-form-field>
+  <mat-form-field class="picker-field native-picker" subscriptSizing="dynamic">
+    <mat-label>{{ timeLabel() }}</mat-label>
+    <input matInput type="time" step="900" [value]="nativeTimeValue()" (change)="onNativeTimeChange($event)">
+  </mat-form-field>
+</div>

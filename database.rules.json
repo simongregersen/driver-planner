@@ -54,6 +54,15 @@
       }
     },
 
+    "clockRecords": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$driverKey": {
+        ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === $driverKey)",
+        ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === $driverKey)",
+        ".indexOn": "clockIn"
+      }
+    },
+
     "public": {
       ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",
       ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",

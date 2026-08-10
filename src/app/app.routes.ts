@@ -21,7 +21,7 @@ export const routes: Routes = [
       },
       {
         path: 'my-trips',
-        loadComponent: () => import('./my-trips/my-trips.component').then(m => m.MyTripsComponent),
+        loadComponent: () => import('./my-day/my-day.component').then(m => m.MyDayComponent),
       },
       {
         path: 'time-report',

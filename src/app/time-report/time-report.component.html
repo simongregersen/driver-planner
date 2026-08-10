@@ -45,59 +45,87 @@
         @if (report.weeks.length > 0) {
           @for (week of report.weeks; track week.weekNumber) {
             <h3 class="week-heading">Uge {{ week.weekNumber }}</h3>
-            <div class="table-scroll">
-              <table class="data-table">
-                <thead>
-                <tr>
-                  <th class="col-date">Dato</th>
-                  <th class="col-name">Tur</th>
-                  <th class="col-time">Start</th>
-                  <th class="col-time">Slut</th>
-                  <th class="no-print" style="width: 20px"></th>
-                  <th class="col-computed col-time">Tid</th>
-                </tr>
-                </thead>
-                <tbody>
-                  @for (row of week.rows; track row.key) {
-                    <tr class="hoverable" [class.day-start]="row.showDate">
-                      <td [matTooltip]="row.showDate ? ((row.date.toDate() | date: 'short') ?? '') : ''">
-                        @if (row.showDate) {
-                          {{ row.date.toDate() | date:'EEE d/M' }}
-                        }
-                      </td>
-                      <td class="col-name">{{ row.name }}</td>
-                      <td [class.reported]="row.startIsReported" [matTooltip]="(row.start.toDate() | date: 'short') ?? ''">
-                        {{ row.start.toDate() | date:'HH:mm' }}
-                      </td>
-                      <td [class.reported-end]="row.end" [matTooltip]="(row.end?.toDate() | date: 'short') ?? ''">
-                        {{ row.end ? (row.end.toDate() | date:'HH:mm') : '—' }}
-                      </td>
-                      <td class="no-print cell-actions">
-                        <button matIconButton type="button" matTooltip="Registrer tider"
-                                (click)="openTripReport(row.trip, driverKey)">
-                          <mat-icon>timer</mat-icon>
-                        </button>
-                      </td>
-                      <td class="col-computed" [class.cell-warning]="row.hasTimeError"
-                          [matTooltip]="row.hasTimeError ? 'Afsluttet er registreret før start' : ''">
-                        {{ row.durationLabel }}
-                      </td>
+            @for (day of week.days; track day.date.valueOf()) {
+              <div class="day-block">
+                <h4 class="day-heading">{{ day.date.toDate() | date:'EEEE d/M' }}</h4>
+
+                @if (day.trips.length > 0) {
+                  <ul class="day-trips no-print">
+                    @for (trip of day.trips; track trip.key) {
+                      <li class="muted">
+                        {{ trip.start.toDate() | date:'HH:mm' }}@if (trip.end) { &ndash; {{ trip.end.toDate() | date:'HH:mm' }} }
+                        &nbsp;{{ trip.name }}
+                      </li>
+                    }
+                  </ul>
+                }
+
+                <div class="table-scroll">
+                  <table class="data-table">
+                    <colgroup>
+                      <col class="col-time">
+                      <col class="col-time">
+                      <col>
+                      <col class="col-actions">
+                      <col class="col-time">
+                    </colgroup>
+                    <thead>
+                    <tr>
+                      <th>Start</th>
+                      <th>Slut</th>
+                      <th>Bemærkning</th>
+                      <th class="no-print"></th>
+                      <th class="col-computed">Tid</th>
                     </tr>
-                  }
-                </tbody>
-                <tfoot>
-                <tr class="row-total">
-                  <td colspan="4">Total (uge {{ week.weekNumber }})</td>
-                  <td class="no-print"></td>
-                  <td class="col-computed">{{ week.totalLabel }}</td>
-                </tr>
-                </tfoot>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      @for (dayRecord of day.records; track dayRecord.record.$key) {
+                        <tr class="hoverable">
+                          <td><span class="report-start">{{ dayRecord.record.clockIn.toDate() | date:'HH:mm' }}</span></td>
+                          <td>
+                            @if (dayRecord.record.clockOut) {
+                              <span class="report-end"
+                                    [matTooltip]="dayRecord.crossesDay ? (dayRecord.record.clockOut.toDate() | date:'EEE d/M HH:mm') : ''">
+                                {{ dayRecord.record.clockOut.toDate() | date:'HH:mm' }}@if (dayRecord.crossesDay) {*}
+                              </span>
+                            } @else {
+                              <span class="in-progress">I gang</span>
+                            }
+                          </td>
+                          <td class="muted note-cell">{{ dayRecord.record.note }}</td>
+                          <td class="no-print cell-actions">
+                            <button matIconButton type="button" matTooltip="Rediger"
+                                    (click)="editClockRecord(dayRecord.record, driverKey)">
+                              <mat-icon>edit</mat-icon>
+                            </button>
+                          </td>
+                          <td class="col-computed" [class.cell-warning]="dayRecord.hasError"
+                              [matTooltip]="dayRecord.hasError ? 'Slut er registreret før start' : ''">
+                            {{ dayRecord.durationLabel }}
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="muted no-print">Ingen registreringer denne dag.</td>
+                        </tr>
+                      }
+                    </tbody>
+                    <tfoot>
+                    <tr class="row-total">
+                      <td colspan="3">Total</td>
+                      <td class="no-print"></td>
+                      <td class="col-computed">{{ day.totalLabel }}</td>
+                    </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            }
+            <p class="week-total">Total (uge {{ week.weekNumber }}): {{ week.totalLabel }}</p>
           }
           <p class="period-total">I alt: {{ report.totalLabel }}</p>
         } @else {
-          <em class="no-print">Ingen ture i denne periode.</em>
+          <em class="no-print">Ingen ture eller registreringer i denne periode.</em>
         }
       }
     } @else {
