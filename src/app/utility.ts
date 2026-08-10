@@ -13,7 +13,7 @@ export class Utility {
   }
 
   static sortByDisplayName(arr: any[]): any[] {
-    return arr.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    return arr.sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, {numeric: true}));
   }
 
   static copyDate(from: Moment, to: Moment): void {

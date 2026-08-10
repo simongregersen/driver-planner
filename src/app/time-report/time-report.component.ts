@@ -1,11 +1,10 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, OnInit} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
-import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
-import {MatSelectModule} from '@angular/material/select';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {BehaviorSubject, combineLatest, Observable, of} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
@@ -17,6 +16,7 @@ import {Driver} from '../driver';
 import {Trip} from '../trip';
 import {ClockRecord} from '../clock-record';
 import {ClockRecordEditorComponent, ClockRecordUpdates} from '../clock-record-editor/clock-record-editor.component';
+import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 interface DayTrip {
@@ -60,7 +60,7 @@ interface PeriodReport {
   styleUrls: ['./time-report.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatFormFieldModule, MatIconModule, MatProgressSpinnerModule, MatSelectModule, MatTooltipModule,
+    MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, ChipFilterComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -71,11 +71,13 @@ export class TimeReportComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
 
   isAdmin$!: Observable<boolean>;
-  drivers$!: Observable<Driver[]>;
   effectiveDriverKey$!: Observable<string | null>;
   report$!: Observable<PeriodReport | null>;
 
   selectedDriver: Driver | null = null;
+
+  private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
+  readonly driverOptions = computed(() => this.driverList().map(d => ({id: d.$key, name: d.displayName})));
 
   // Payroll runs in fixed 14-day periods, two ISO weeks at a time, anchored so the first week
   // of the pair is always even-numbered (e.g. the period covering today is weeks 32-33 — 32 is even).
@@ -84,7 +86,6 @@ export class TimeReportComponent implements OnInit {
 
   ngOnInit(): void {
     this.isAdmin$ = this.userService.isAdmin$;
-    this.drivers$ = this.dataStore.getAllDrivers();
 
     this.effectiveDriverKey$ = combineLatest([this.isAdmin$, this.userService.driverProfile$, this.driverKeySubject]).pipe(
       map(([isAdmin, driverProfile, pickedKey]) => isAdmin ? pickedKey : (driverProfile?.$key ?? null))
@@ -111,13 +112,10 @@ export class TimeReportComponent implements OnInit {
     );
   }
 
-  selectDriver(driver: Driver) {
-    this.selectedDriver = driver;
-    this.driverKeySubject.next(driver.$key);
-  }
-
-  compareDrivers(a: Driver | null, b: Driver | null): boolean {
-    return a?.$key === b?.$key;
+  onDriverSelectionChange(ids: string[]): void {
+    const key = ids[0] ?? null;
+    this.selectedDriver = this.driverList().find(d => d.$key === key) ?? null;
+    this.driverKeySubject.next(key);
   }
 
   get periodStart(): Moment {

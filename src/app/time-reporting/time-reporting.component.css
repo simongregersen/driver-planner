@@ -1,6 +1,10 @@
 :host {
   display: block;
   overflow-x: auto;
+  /* See trips.component.css for why this has to be "hidden" rather than "visible" — the
+     latter gets silently force-computed back to "auto" whenever overflow-x isn't visible,
+     which is exactly the spurious-vertical-scrollbar bug this works around. */
+  overflow-y: hidden;
 }
 
 .loading {
@@ -11,8 +15,8 @@
 }
 
 .in-progress {
-  color: #2e7d32;
   font-style: italic;
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 .report-start {
@@ -57,15 +61,16 @@
   background-color: rgba(46, 125, 50, 0.12);
 }
 
+/* Marks the first row of a new date within the (newest-first) list — a heavier rule than the
+   default 1px row divider, so the day groupings stand out at a glance. */
+.date-boundary td {
+  border-top: 2px solid var(--mat-sys-outline);
+}
+
 .show-all-cell {
   text-align: center;
   white-space: normal;
   padding: 8px 0 0;
-}
-
-.pulsing-dots {
-  display: inline-block;
-  animation: pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes pulse {

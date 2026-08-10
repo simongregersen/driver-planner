@@ -21,8 +21,8 @@
     </tr>
     </thead>
     <tbody>
-    @for (record of visibleRecords(); track record.$key) {
-      <tr class="hoverable" [class.latest-row]="!record.clockOut">
+    @for (record of visibleRecords(); track record.$key; let i = $index) {
+      <tr class="hoverable" [class.latest-row]="!record.clockOut" [class.date-boundary]="isDateBoundary(i)">
         <td data-label="Dato">{{ record.clockIn.toDate() | date:'EEE d/M' }}</td>
         <td data-label="Start"><span class="report-start">{{ record.clockIn.toDate() | date:'HH:mm' }}</span></td>
         <td data-label="Slut">
@@ -32,7 +32,7 @@
               {{ record.clockOut.toDate() | date:'HH:mm' }}@if (!sameDay(record.clockIn, record.clockOut)) {*}
             </span>
           } @else {
-            <span class="in-progress">I gang<span class="pulsing-dots">...</span></span>
+            <span class="in-progress">I gang...</span>
           }
         </td>
         <td data-label="Bemærkning" class="muted note-cell" [matTooltip]="record.note ?? ''">{{ record.note }}</td>

@@ -20,6 +20,7 @@ body {
      defaults to inline, which breaks the width/margin/padding below. */
   display: block;
   width: 98%;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 12px;
   box-sizing: border-box;
@@ -160,9 +161,13 @@ body {
 /* Tables
    ------------------------------------------------------------------ */
 
-/* Wide tables scroll inside their own box rather than pushing the page sideways. */
+/* Wide tables scroll inside their own box rather than pushing the page sideways.
+   overflow-y is pinned to hidden — "visible" would just get silently force-computed back to
+   "auto" (per spec, since overflow-x isn't visible), which spuriously clips the last few
+   pixels of the table behind its own vertical scrollbar whenever the horizontal one shows. */
 .table-scroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .data-table {

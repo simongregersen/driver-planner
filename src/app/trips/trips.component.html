@@ -35,8 +35,8 @@
           </span>
         </ng-template>
 
-        <ng-template #driverChips>
-          @if (!hideSingleDriver() || trip.drivers.length > 1) {
+        <ng-template #driverChips let-applyHideSingle="applyHideSingle">
+          @if (!applyHideSingle || !hideSingleDriver() || trip.drivers.length > 1) {
             <mat-chip-set class="no-print">
               @for (key of trip.drivers; track key) {
                 <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
@@ -82,8 +82,10 @@
                 <span class="mobile-trip-time">{{ trip.start.toDate() | date:'HH:mm' }} @if (trip.end) {(&ndash;{{ trip.end.toDate() | date:'HH:mm' }})}</span>
                 <span class="mobile-trip-name">{{ trip.name }}</span>
               </strong>
-              <div class="mobile-line"><ng-container [ngTemplateOutlet]="vehicleChips"></ng-container></div>
-              <div class="mobile-line"><ng-container [ngTemplateOutlet]="driverChips"></ng-container></div>
+              <div class="mobile-line mobile-chips-line">
+                <ng-container [ngTemplateOutlet]="driverChips" [ngTemplateOutletContext]="{applyHideSingle: true}"></ng-container>
+                <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
+              </div>
               <div class="mobile-line newline muted" [class.print-only]="hideDescriptionOnScreen()">{{trip.description}}</div>
             </div>
           </td>

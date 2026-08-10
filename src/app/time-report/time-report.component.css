@@ -52,8 +52,8 @@
 }
 
 .in-progress {
-  color: #2e7d32;
   font-style: italic;
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
 .report-start {

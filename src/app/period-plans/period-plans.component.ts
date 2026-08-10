@@ -1,20 +1,22 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, inject, OnInit, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {DateRange, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatSelectModule} from '@angular/material/select';
 import {Moment} from 'moment';
+import {Observable} from 'rxjs';
 import {DateUtility} from '../date-utility';
 import {DataStore} from '../data.service';
 import {Trip} from '../trip';
-import {Observable} from 'rxjs';
 import {Driver} from '../driver';
-import {Utility} from '../utility';
+import {Vehicle} from '../vehicle';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {TripsComponent} from '../trips/trips.component';
-import {DIALOG_CONFIG} from '../dialog-config';
+import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
+import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   standalone: true,
@@ -23,8 +25,8 @@ import {DIALOG_CONFIG} from '../dialog-config';
   styleUrls: ['./period-plans.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatSelectModule,
-    TripsComponent,
+    MatButtonModule, MatDatepickerModule, MatFormFieldModule,
+    TripsComponent, ChipFilterComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -36,7 +38,6 @@ export class PeriodPlansComponent implements OnInit {
   from: Moment | null = null;
   to: Moment | null = null;
   range!: Moment[];
-  drivers$!: Observable<Driver[]>;
   trips$!: Observable<Trip[]>;
   readonly minDate = this.dateUtility.minDate(5);
 
@@ -46,10 +47,21 @@ export class PeriodPlansComponent implements OnInit {
   readonly dateClass: MatCalendarCellClassFunction<Moment> = date =>
     this.dateUtility.isPast(date) ? 'past-day' : '';
 
-  private _selectedDriver: Driver | null = null;
+  readonly selectedDriverKeys = signal<string[]>([]);
+  readonly selectedVehicleKeys = signal<string[]>([]);
+
+  private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
+  private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
+  readonly driverOptions = computed(() => this.driverList().map(d => ({id: d.$key, name: d.displayName})));
+  readonly vehicleOptions = computed(() => this.vehicleList().map(v => ({id: v.$key, name: v.displayName})));
+  readonly selectedDriverNames = computed(() =>
+    this.driverOptions().filter(o => this.selectedDriverKeys().includes(o.id)).map(o => o.name).join(', ')
+  );
+  readonly selectedVehicleNames = computed(() =>
+    this.vehicleOptions().filter(o => this.selectedVehicleKeys().includes(o.id)).map(o => o.name).join(', ')
+  );
 
   ngOnInit(): void {
-    this.drivers$ = this.dataStore.getAllDrivers();
     this.from = this.dateUtility.today();
     this.to = this.dateUtility.addDays(this.from, 6);
     this.updateRange();
@@ -76,11 +88,27 @@ export class PeriodPlansComponent implements OnInit {
   }
 
   removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
-    this.dataStore.updateTrip(trip, {drivers: trip.drivers.filter(k => k !== driverKey)});
+    const name = this.driverList().find(d => d.$key === driverKey)?.displayName ?? 'chaufføren';
+    this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen?`, () =>
+      this.dataStore.updateTrip(trip, {drivers: trip.drivers.filter(k => k !== driverKey)}));
   }
 
   removeVehicleFromTrip({trip, vehicleKey}: {trip: Trip; vehicleKey: string}) {
-    this.dataStore.updateTrip(trip, {vehicles: trip.vehicles.filter(k => k !== vehicleKey)});
+    const name = this.vehicleList().find(v => v.$key === vehicleKey)?.displayName ?? 'køretøjet';
+    this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen?`, () =>
+      this.dataStore.updateTrip(trip, {vehicles: trip.vehicles.filter(k => k !== vehicleKey)}));
+  }
+
+  // Chip removal happens right next to the row-click-to-edit target, and on a phone screen
+  // it's easy to hit by mistake — this catches that before it silently changes the trip.
+  private confirmRemoval(message: string, onConfirm: () => void): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...SMALL_DIALOG_CONFIG,
+      data: {message, confirmLabel: 'Fjern', danger: true} as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) onConfirm();
+    });
   }
 
   edit(trip: Trip) {
@@ -101,22 +129,14 @@ export class PeriodPlansComponent implements OnInit {
     return trips.filter(t => t.start >= start! && t.start < end!);
   }
 
-  filterTripsByDriver(trips: Trip[] | null): Trip[] {
+  filterTrips(trips: Trip[] | null): Trip[] {
     if (!trips) return [];
-    if (!this._selectedDriver) return trips;
-    return trips.filter(t => Utility.isAssigned(this._selectedDriver!, t));
-  }
-
-  set selectedDriver(driver: Driver | null) {
-    this._selectedDriver = (driver && this._selectedDriver?.$key === driver.$key) ? null : driver;
-  }
-
-  get selectedDriver(): Driver | null {
-    return this._selectedDriver;
-  }
-
-  compareDrivers(a: Driver | null, b: Driver | null): boolean {
-    return a?.$key === b?.$key;
+    const driverKeys = this.selectedDriverKeys();
+    const vehicleKeys = this.selectedVehicleKeys();
+    return trips.filter(t =>
+      (driverKeys.length === 0 || (t.drivers ?? []).some(k => driverKeys.includes(k))) &&
+      (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k)))
+    );
   }
 
   private updateRange(): void {

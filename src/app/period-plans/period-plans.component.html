@@ -13,9 +13,10 @@
       {{ from?.toDate() | date:'EEEE, d MMMM' }} - {{ to?.toDate() | date:'EEEE, d MMMM' }}
     </small>
   </h5>
-  @if (selectedDriver) {
+  @if (selectedDriverKeys().length > 0 || selectedVehicleKeys().length > 0) {
     <h6 class="page-subtitle">
-      Chauffør: {{ selectedDriver.displayName }}
+      @if (selectedDriverKeys().length > 0) { Chauffører: {{ selectedDriverNames() }} }
+      @if (selectedVehicleKeys().length > 0) { Køretøjer: {{ selectedVehicleNames() }} }
     </h6>
   }
 </div>
@@ -29,19 +30,14 @@
                     [dateClass]="dateClass">
       </mat-calendar>
       <div>
-        <h5 class="section-title">Filter</h5>
-        @if (drivers$ | async; as driverList) {
-          <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
-            <mat-label>Chauffør</mat-label>
-            <mat-select [value]="selectedDriver" [compareWith]="compareDrivers"
-                        (selectionChange)="selectedDriver = $event.value">
-              <mat-option [value]="null" class="reset-option">Alle chauffører</mat-option>
-              @for (driver of driverList; track driver.$key) {
-                <mat-option [value]="driver">{{driver.displayName}}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        }
+        <h5 class="section-title">Chauffører</h5>
+        <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
+                          (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
+      </div>
+      <div>
+        <h5 class="section-title">Køretøjer</h5>
+        <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
+                          (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
       </div>
     </div>
   </aside>
@@ -50,7 +46,7 @@
       @for (date of range; track dateUtility.dateKey(date)) {
         <div class="day-block">
           <h5 class="day-heading">{{ date.toDate() | date:'EEEE, d MMMM y'}}</h5>
-          <app-trips [trips]="filterByDate(filterTripsByDriver(trips), date)"
+          <app-trips [trips]="filterByDate(filterTrips(trips), date)"
                      [hideDescriptionOnScreen]="true"
                      (edit)="edit($event)"
                      (removeDriver)="removeDriverFromTrip($event)"

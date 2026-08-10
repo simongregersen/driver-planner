@@ -78,6 +78,14 @@ export class TimeReportingComponent {
     return this.dateUtility.equals(a, b);
   }
 
+  // Records are sorted newest-first, so a "new date" boundary is a row whose date differs
+  // from the row above it (not below) — used to draw a divider between each date's records.
+  isDateBoundary(index: number): boolean {
+    if (index === 0) return false;
+    const records = this.visibleRecords();
+    return !this.sameDay(records[index].clockIn, records[index - 1].clockIn);
+  }
+
   editRecord(record: ClockRecord) {
     const dialogRef = this.dialog.open(ClockRecordEditorComponent, SMALL_DIALOG_CONFIG);
     dialogRef.componentInstance.edit(

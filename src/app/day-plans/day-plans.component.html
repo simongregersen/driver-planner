@@ -9,9 +9,10 @@
     Dagsplan
     <small>{{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
   </h5>
-  @if (selectedDriver) {
+  @if (selectedDriverKeys().length > 0 || selectedVehicleKeys().length > 0) {
     <h6 class="page-subtitle">
-      Chauffør: {{ selectedDriver.displayName }}
+      @if (selectedDriverKeys().length > 0) { Chauffører: {{ selectedDriverNames() }} }
+      @if (selectedVehicleKeys().length > 0) { Køretøjer: {{ selectedVehicleNames() }} }
     </h6>
   }
 </div>
@@ -41,21 +42,6 @@
         <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
         <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
       </div>
-      <div>
-        <h5 class="section-title">Filter</h5>
-        @if (drivers | async; as driverList) {
-          <mat-form-field appearance="outline" class="full-width" subscriptSizing="dynamic">
-            <mat-label>Chauffør</mat-label>
-            <mat-select [value]="selectedDriver" [compareWith]="compareDrivers"
-                        (selectionChange)="selectedDriver = $event.value">
-              <mat-option [value]="null" class="reset-option">Alle chauffører</mat-option>
-              @for (driver of driverList; track driver.$key) {
-                <mat-option [value]="driver">{{driver.displayName}}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        }
-      </div>
       @if (trips$ | async; as trips) {
       <div>
         <h5 class="section-title">Operationer</h5>
@@ -75,17 +61,27 @@
       </div>
       }
       <div>
-      <mat-slide-toggle class="day-public-toggle"
-                  [checked]="(dayPublic$ | async) ?? false"
-                  (change)="setDayPublic($event.checked)">
-        Synlig for chauffører
-      </mat-slide-toggle>
+        <mat-slide-toggle class="day-public-toggle"
+                    [checked]="(dayPublic$ | async) ?? false"
+                    (change)="setDayPublic($event.checked)">
+          Synlig for chauffører
+        </mat-slide-toggle>
+      </div>
+      <div>
+        <h5 class="section-title">Chauffører</h5>
+        <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
+                          (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
+      </div>
+      <div>
+        <h5 class="section-title">Køretøjer</h5>
+        <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
+                          (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
       </div>
     </div>
   </aside>
   <main class="page-main">
     @if (trips$ | async; as trips) {
-      <app-trips [trips]="filterTripsByDriver(trips)"
+      <app-trips [trips]="filterTrips(trips)"
                  [hideDescriptionOnScreen]="true"
                  (edit)="edit($event)"
                  (removeDriver)="removeDriverFromTrip($event)"

@@ -1,6 +1,14 @@
 :host {
   display: block;
   overflow-x: auto;
+  /* Per spec, overflow-x: auto paired with overflow-y: visible gets silently force-computed
+     back to overflow-y: auto — so "visible" doesn't actually stick here. When the table is
+     wide enough to need the horizontal scrollbar, that scrollbar's own height eats into the
+     box, and the resulting auto overflow-y then clips the last few pixels of the table
+     behind a spurious vertical scrollbar. hidden is the only value that actually prevents it;
+     there's nothing to legitimately clip since this box has no max-height of its own.
+     https://www.w3.org/TR/css-overflow-3/#overflow-control */
+  overflow-y: hidden;
 }
 
 .newline {
@@ -24,6 +32,20 @@
   margin-top: 2px;
 }
 
+/* mat-chip-set is a block-level flex container (display: flex, not inline-flex), so two of
+   them stacked in normal flow would each claim the full row width and land on their own line
+   regardless of how little content they hold — this row has to lay them out as flex items
+   itself so they shrink to content and sit side by side instead. The gap is load-bearing, not
+   just visual spacing: each chip-set's inner wrapper carries its own -8px margin (compensating
+   for its first chip's left margin so it sits flush within its own set), which bleeds into the
+   previous set's box and overlaps its last chip unless something re-adds that 8px between them. */
+.mobile-chips-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .mobile-trip-time {
   margin-right: 6px;
 }
@@ -43,11 +65,32 @@ mat-chip-set {
   /* !important: Material's own default chip margin (4px) otherwise wins the cascade despite
      this being more specific — CSS custom properties above cascade fine without it since
      Material just reads whatever value is set, but a literal margin has to out-fight theirs. */
-  margin: 0 2px !important;
+  margin: 1px 2px 1px 2px !important;
 }
 
 .trip-chip ::ng-deep .mat-mdc-chip-action-label {
-  padding: 0 6px;
+  padding: 0 4px;
+}
+
+/* Same tightened padding as the chip-filter component's chips — Material's own default (12px
+   each side) otherwise leaves these noticeably wider than the label-padding change above. */
+.trip-chip ::ng-deep .mdc-evolution-chip__action--primary {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+/* The remove ("X") button sits in its own trailing cell, so it doesn't inherit the primary
+   cell's right padding above — that padding still applies before the icon, on top of its own
+   (already-zeroed) left padding, so the actual name-to-X gap was that 8px, not this one. */
+.trip-chip ::ng-deep .mdc-evolution-chip__action--secondary {
+  padding-left: 0 !important;
+}
+
+/* Drop the primary cell's own right padding specifically when there's a trailing remove button,
+   so the name-to-X gap collapses to just the label's padding — the symmetric 8px on both sides
+   above is only wanted for the (button-less) name-to-border case. */
+.trip-chip.mdc-evolution-chip--with-trailing-action ::ng-deep .mdc-evolution-chip__action--primary {
+  padding-right: 0 !important;
 }
 
 .loading {
