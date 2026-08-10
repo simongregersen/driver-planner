@@ -10,8 +10,9 @@ export const db = getDatabase(app);
 export const auth = getAuth(app);
 
 if (environment.useEmulators) {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099');
-  connectDatabaseEmulator(db, '127.0.0.1', 9000);
+  const emulatorHost = window.location.hostname;
+  connectAuthEmulator(auth, `http://${emulatorHost}:9099`);
+  connectDatabaseEmulator(db, emulatorHost, 9000);
 }
 
 // Messaging isn't available in every browser (e.g. no SW/Notification support), and

@@ -36,7 +36,7 @@ export class UserService {
     const secondaryApp = initializeApp(environment.firebase, `secondary-${email}`);
     const secondaryAuth = getAuth(secondaryApp);
     if (environment.useEmulators) {
-      connectAuthEmulator(secondaryAuth, 'http://127.0.0.1:9099');
+      connectAuthEmulator(secondaryAuth, `http://${window.location.hostname}:9099`);
     }
 
     return createUserWithEmailAndPassword(secondaryAuth, email, password)

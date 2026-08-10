@@ -16,17 +16,21 @@
   ],
   "emulators": {
     "auth": {
+      "host": "0.0.0.0",
       "port": 9099
     },
     "database": {
+      "host": "0.0.0.0",
       "port": 9000
     },
     "hosting": {
-      "port": 5000
+      "host": "0.0.0.0",
+      "port": 5002
     },
     "ui": {
       "enabled": true,
-      "port": 4000
+      "host": "0.0.0.0",
+      "port": 4002
     }
   }
 }
