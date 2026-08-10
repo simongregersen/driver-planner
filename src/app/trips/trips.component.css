@@ -62,6 +62,20 @@ mat-chip-set {
 .trip-chip {
   --mat-chip-container-height: 22px;
   --mat-chip-outline-color: var(--mat-sys-outline-variant);
+  /* Lighter than Material's default (on-surface-variant) so the remove "X" reads as a quiet,
+     secondary action rather than competing visually with the chip's own label text. */
+  --mat-chip-with-trailing-icon-trailing-icon-color: var(--mat-sys-outline-variant);
+  /* The default hover/focus state-layer circle behind the "X" comes out as an oval rather than
+     a circle at this chip's compact size (Material sizes it off fixed pixel insets tuned for
+     its default, taller chip) — simplest fix is to drop the overlay entirely and rely on the
+     icon's own color change on hover instead (see .trip-chip .mat-mdc-chip-remove:hover below).
+     Material adds --mat-chip-hover-state-layer-opacity and --mat-chip-trailing-action-hover-
+     state-layer-opacity together for this one overlay, so both have to be zeroed — the first
+     alone still left a faint (and still oval) overlay behind. */
+  --mat-chip-hover-state-layer-opacity: 0;
+  --mat-chip-focus-state-layer-opacity: 0;
+  --mat-chip-trailing-action-hover-state-layer-opacity: 0;
+  --mat-chip-trailing-action-focus-state-layer-opacity: 0;
   /* !important: Material's own default chip margin (4px) otherwise wins the cascade despite
      this being more specific — CSS custom properties above cascade fine without it since
      Material just reads whatever value is set, but a literal margin has to out-fight theirs. */
@@ -93,11 +107,43 @@ mat-chip-set {
   padding-right: 0 !important;
 }
 
+.trip-chip .mat-mdc-chip-remove:hover mat-icon {
+  color: var(--mat-sys-error);
+}
+
 .loading {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 48px 0;
+}
+
+/* Grey when off, green when on — the icon itself is deliberately not covered by the
+   .trip-finished dimming below, so it stays legible/clickable on an already-dimmed row.
+   The stroke is a fake-bold trick: this icon font has no variable weight axis to lean on. */
+.finish-toggle mat-icon {
+  color: var(--mat-sys-outline);
+  -webkit-text-stroke: 1px currentColor;
+}
+
+.finish-toggle-active mat-icon {
+  color: #2e7d32;
+}
+
+/* Marking a trip finished is purely a local/on-device thing (see FinishedTripsService) — tints
+   the whole row, including its driver/vehicle chips, a light green so "done" reads clearly at
+   a glance rather than just a subtle dimming. */
+.trip-finished {
+  background: rgba(46, 125, 50, 0.16);
+}
+
+.trip-finished td {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.trip-finished .trip-chip {
+  --mat-chip-elevated-container-color: rgba(46, 125, 50, 0.22);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
 }
 
 /* Below 768px the table becomes a stack of cards, one per trip. Start/Slut/Chauffører/Køretøjer
@@ -116,11 +162,30 @@ mat-chip-set {
   }
 
   .data-table tbody tr {
+    position: relative;
     display: block;
     margin-bottom: 8px;
     padding: 8px 10px;
+    /* Reserved on the right rather than the bottom, so cards stay as short as their content
+       and more of them fit on screen at once — the toggle sits alongside, not underneath. */
+    padding-right: 56px;
     border: 1px solid var(--mat-sys-outline-variant);
     border-radius: var(--mat-sys-corner-medium);
+  }
+
+  /* Bottom of the reserved right-hand column, not vertically centered. */
+  .finish-toggle-side {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+  }
+
+  /* Bigger than the 26px/16px the rest of this table's icon-buttons get (see the global
+     .data-table .mat-mdc-icon-button rule) — this is the one touch target on the card meant
+     to be easy to hit, so it gets its own comfortably larger size. */
+  .finish-toggle-side .finish-toggle {
+    --mat-icon-button-state-layer-size: 56px;
+    --mat-icon-button-icon-size: 40px;
   }
 
   .data-table tbody tr:last-child {
@@ -138,7 +203,8 @@ mat-chip-set {
   .data-table tbody tr > td[data-label="Start"],
   .data-table tbody tr > td[data-label="Slut"],
   .data-table tbody tr > td[data-label="Chauffører"],
-  .data-table tbody tr > td[data-label="Køretøjer"] {
+  .data-table tbody tr > td[data-label="Køretøjer"],
+  .data-table tbody tr > td.cell-finish-toggle {
     display: none;
   }
 

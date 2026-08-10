@@ -43,7 +43,8 @@
             <app-trips [trips]="filterMyTrips(trips, driver)"
                        [readonly]="true"
                        [highlightModified]="true"
-                       [hideSingleDriver]="true"></app-trips>
+                       [hideSingleDriver]="true"
+                       [showFinishToggle]="true"></app-trips>
           }
         } @else {
           <p class="muted">Denne dag er endnu ikke gjort synlig af en administrator.</p>

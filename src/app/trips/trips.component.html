@@ -10,6 +10,9 @@
         <th>Tur</th>
         <th class="col-w-15">Chauffører</th>
         <th class="col-w-15">Køretøjer</th>
+        @if (showFinishToggle()) {
+          <th class="no-print"></th>
+        }
       </tr>
       </thead>
       <tbody>
@@ -58,8 +61,20 @@
           }
         </ng-template>
 
+        <ng-template #finishToggle>
+          @if (showFinishToggle()) {
+            <button matIconButton type="button" class="finish-toggle no-print"
+                    [class.finish-toggle-active]="isFinished(trip)"
+                    [matTooltip]="isFinished(trip) ? 'Marker som ikke afsluttet' : 'Marker som afsluttet'"
+                    (click)="toggleFinished(trip, $event)">
+              <mat-icon>check</mat-icon>
+            </button>
+          }
+        </ng-template>
+
         <tr class="hoverable"
             [class.row-highlight]="isRecentlyModified(trip)"
+            [class.trip-finished]="isFinished(trip)"
             [class.pointer]="!readonly()"
             (click)="onRowClick(trip)">
           <td data-label="Start">
@@ -87,6 +102,9 @@
                 <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
               </div>
               <div class="mobile-line newline muted" [class.print-only]="hideDescriptionOnScreen()">{{trip.description}}</div>
+              <div class="finish-toggle-side">
+                <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
+              </div>
             </div>
           </td>
           <td data-label="Chauffører" [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
@@ -95,6 +113,11 @@
           <td data-label="Køretøjer" [class.cell-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
             <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
           </td>
+          @if (showFinishToggle()) {
+            <td class="no-print cell-actions cell-finish-toggle">
+              <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
+            </td>
+          }
         </tr>
       }
       </tbody>

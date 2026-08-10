@@ -191,12 +191,24 @@ body {
   white-space: nowrap;
 }
 
-.data-table tbody tr.hoverable:hover {
-  background: var(--mat-sys-surface-container-highest);
+/* (hover: hover) excludes touchscreens — without it, tapping a row on mobile "sticks" this
+   hover style on until the next tap elsewhere, reading as the whole card flashing dark grey. */
+@media (hover: hover) {
+  .data-table tbody tr.hoverable:hover {
+    background: var(--mat-sys-surface-container-highest);
+  }
 }
 
+/* Separate from the CSS :hover above: mobile browsers also paint their own translucent tap
+   highlight on anything clickable, which is the more likely culprit for a grey flash on press. */
+.data-table tbody tr {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Recently-modified trip — yellow as an "OBS, check this" attention cue, matching .latest-row's
+   ongoing-record highlight in time-reporting.component.css. */
 .data-table .row-highlight {
-  background: var(--mat-sys-secondary-container);
+  background: rgba(255, 193, 7, 0.25);
 }
 
 .data-table .cell-warning {

@@ -56,9 +56,10 @@
   text-overflow: ellipsis;
 }
 
-/* The currently-open record — started but not yet stopped. */
+/* The currently-open record — started but not yet stopped. Yellow as an "OBS, still running"
+   attention cue rather than the green/positive tone that color otherwise carries in this app. */
 .latest-row {
-  background-color: rgba(46, 125, 50, 0.12);
+  background-color: rgba(255, 193, 7, 0.25);
 }
 
 /* Marks the first row of a new date within the (newest-first) list — a heavier rule than the
