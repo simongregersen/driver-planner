@@ -8,8 +8,9 @@
   <rect x="96" y="180" width="320" height="140" rx="28" fill="#FFC633" stroke="#1F2937" stroke-width="6"/>
 
   <g clip-path="url(#bodyClip)">
-    <polygon points="96,216 336,280 336,300 96,236" fill="#1F3A93"/>
-    <polygon points="96,242 336,306 336,326 96,262" fill="#E1261C"/>
+    <polygon points="96,216 336,280 336,292 96,228" fill="#1F3A93"/>
+    <polygon points="96,233 336,297 336,309 96,245" fill="#E1261C"/>
+    <polygon points="96,250 336,314 336,326 96,262" fill="#1F3A93"/>
     <rect x="380" y="184" width="40" height="76" fill="#FFFFFF"/>
   </g>
 
