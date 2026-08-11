@@ -1,13 +1,13 @@
 <div class="page-header no-print">
   <h2 class="page-title">
     Timeseddel
-    <small>{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
+    <small>@if (effectiveDriverName$ | async; as driverName) { {{ driverName }} &middot; }{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
   </h2>
 </div>
 <div class="print-only">
   <h5 class="page-title">
     Timeseddel
-    <small>{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
+    <small>@if (effectiveDriverName$ | async; as driverName) { {{ driverName }} &middot; }{{ periodStart.toDate() | date:'d. MMM' }} &ndash; {{ periodEnd.toDate() | date:'d. MMM y' }}</small>
   </h5>
 </div>
 <div class="page-layout">
@@ -46,8 +46,8 @@
                   <ul class="day-trips no-print">
                     @for (trip of day.trips; track trip.key) {
                       <li class="muted">
-                        {{ trip.start.toDate() | date:'HH:mm' }}@if (trip.end) { &ndash; {{ trip.end.toDate() | date:'HH:mm' }} }
-                        &nbsp;<app-rich-text [text]="trip.name"></app-rich-text>
+                        <span class="day-trip-time">{{ trip.start.toDate() | date:'HH:mm' }}@if (trip.end) { &ndash; {{ trip.end.toDate() | date:'HH:mm' }} }</span>
+                        <app-rich-text [text]="trip.name"></app-rich-text>
                       </li>
                     }
                   </ul>

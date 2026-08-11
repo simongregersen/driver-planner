@@ -74,6 +74,7 @@ export class TimeReportComponent implements OnInit {
 
   isAdmin$!: Observable<boolean>;
   effectiveDriverKey$!: Observable<string | null>;
+  effectiveDriverName$!: Observable<string | null>;
   report$!: Observable<PeriodReport | null>;
 
   selectedDriver: Driver | null = null;
@@ -91,6 +92,10 @@ export class TimeReportComponent implements OnInit {
 
     this.effectiveDriverKey$ = combineLatest([this.isAdmin$, this.userService.driverProfile$, this.driverKeySubject]).pipe(
       map(([isAdmin, driverProfile, pickedKey]) => isAdmin ? pickedKey : (driverProfile?.$key ?? null))
+    );
+
+    this.effectiveDriverName$ = this.effectiveDriverKey$.pipe(
+      map(key => this.driverList().find(d => d.$key === key)?.displayName ?? null)
     );
 
     this.report$ = combineLatest([this.periodStartSubject, this.effectiveDriverKey$]).pipe(

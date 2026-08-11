@@ -1,10 +1,10 @@
-<div class="page-header">
-  <h2 class="page-title">
-    Min dag
-    <small>{{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
-  </h2>
-</div>
 @if (userService.driverProfile$ | async; as driver) {
+  <div class="page-header">
+    <h2 class="page-title">
+      Min dag
+      <small>{{ driver.displayName }} &middot; {{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
+    </h2>
+  </div>
   <div class="page-layout">
     <aside class="page-aside no-print">
       <div class="sidebar-stack">
@@ -33,7 +33,7 @@
         </mat-form-field>
         <div class="button-row" role="group" aria-label="Dato-navigation">
           <button matButton="outlined" type="button" [disabled]="!hasPreviousPublicDate()" (click)="previousDay()">Forrige</button>
-          <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
+          <button [matButton]="isToday() ? 'filled' : 'outlined'" type="button" (click)="goToToday()">I dag</button>
           <button matButton="outlined" type="button" [disabled]="!hasNextPublicDate()" (click)="nextDay()">Næste</button>
         </div>
       </div>
@@ -42,7 +42,7 @@
     <app-collapsible-bottom-bar class="mobile-date-bar no-print">
       <div bar-collapsed class="button-row" role="group" aria-label="Dato-navigation">
         <button matButton="outlined" type="button" [disabled]="!hasPreviousPublicDate()" (click)="previousDay()">Forrige</button>
-        <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
+        <button [matButton]="isToday() ? 'filled' : 'outlined'" type="button" (click)="goToToday()">I dag</button>
         <button matButton="outlined" type="button" [disabled]="!hasNextPublicDate()" (click)="nextDay()">Næste</button>
       </div>
       <div bar-expanded class="mobile-date-bar-expanded">

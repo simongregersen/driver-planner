@@ -69,6 +69,10 @@
   font: var(--mat-sys-body-small);
 }
 
+.day-trip-time {
+  margin-right: 4px;
+}
+
 .week-total {
   margin: 4px 0 0;
   text-align: right;

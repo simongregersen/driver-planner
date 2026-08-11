@@ -110,6 +110,10 @@ export class MyTripsComponent implements OnInit {
     this.selectedDate = this.dateUtility.today();
   }
 
+  isToday(): boolean {
+    return this.dateUtility.equals(this.selectedDate, this.dateUtility.today());
+  }
+
   filterMyTrips(trips: Trip[] | null, driver: Driver | null): Trip[] {
     if (!trips || !driver) return [];
     return trips.filter(t => Utility.isAssigned(driver, t));
