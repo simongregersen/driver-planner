@@ -11,7 +11,7 @@ export const auth = getAuth(app);
 
 if (environment.useEmulators) {
   const emulatorHost = window.location.hostname;
-  connectAuthEmulator(auth, `http://${emulatorHost}:9099`);
+  connectAuthEmulator(auth, `http://${emulatorHost}:9099`, {disableWarnings: true});
   connectDatabaseEmulator(db, emulatorHost, 9000);
 }
 

@@ -18,12 +18,9 @@
       }
     </mat-form-field>
 
-    <mat-form-field class="date-field">
-      <mat-label>Fødselsdag</mat-label>
-      <input matInput formControlName="birthday" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
-      <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-      <mat-datepicker #d startView="multi-year"></mat-datepicker>
-    </mat-form-field>
+    <app-date-field class="date-field" label="Fødselsdag" startView="multi-year"
+                     [value]="driverForm.controls['birthday'].value" [minDate]="minDate"
+                     (valueChange)="setBirthday($event)"></app-date-field>
   </form>
 </mat-dialog-content>
 

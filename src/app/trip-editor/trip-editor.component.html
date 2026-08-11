@@ -12,7 +12,7 @@
 
     <div class="datetime-row">
       @if (showDate) {
-        <mat-form-field>
+        <mat-form-field class="material-picker">
           <mat-label>Fra dato</mat-label>
           <input matInput formControlName="fromDate" [matDatepicker]="d1" [min]="minDate" placeholder="yyyy-MM-dd">
           <mat-datepicker-toggle matIconSuffix [for]="d1"></mat-datepicker-toggle>
@@ -20,6 +20,10 @@
           @if (tripForm.controls['fromDate'].hasError('required')) {
             <mat-error>Dato påkrævet.</mat-error>
           }
+        </mat-form-field>
+        <mat-form-field class="native-picker">
+          <mat-label>Fra dato</mat-label>
+          <input matInput type="date" [min]="minDateInputValue" [value]="nativeFromDateValue()" (change)="onNativeFromDateChange($event)">
         </mat-form-field>
       }
       <mat-form-field>
@@ -32,11 +36,15 @@
 
     <div class="datetime-row">
       @if (showDate) {
-        <mat-form-field>
+        <mat-form-field class="material-picker">
           <mat-label>Til dato</mat-label>
           <input matInput formControlName="toDate" [matDatepicker]="d2" [min]="minDate" placeholder="yyyy-MM-dd">
           <mat-datepicker-toggle matIconSuffix [for]="d2"></mat-datepicker-toggle>
           <mat-datepicker #d2></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field class="native-picker">
+          <mat-label>Til dato</mat-label>
+          <input matInput type="date" [min]="minDateInputValue" [value]="nativeToDateValue()" (change)="onNativeToDateChange($event)">
         </mat-form-field>
       }
       <mat-form-field>

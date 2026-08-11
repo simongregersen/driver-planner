@@ -12,7 +12,7 @@ import {DataStore} from '../data.service';
 import {VehicleEditorComponent} from '../vehicle-editor/vehicle-editor.component';
 import {VehicleCreatorComponent} from '../vehicle-creator/vehicle-creator.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
-import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -42,7 +42,7 @@ export class VehiclesComponent implements OnInit {
 
   removeVehicle(vehicle: Vehicle) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...SMALL_DIALOG_CONFIG,
+      ...CONFIRM_DIALOG_CONFIG,
       data: {
         message: `Er du sikker på, at du vil slette køretøjet\n'${vehicle.displayName}'?`,
         confirmLabel: 'Slet',

@@ -15,7 +15,7 @@ import {Vehicle} from '../vehicle';
 import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
-import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -103,7 +103,7 @@ export class PeriodPlansComponent implements OnInit {
   // it's easy to hit by mistake — this catches that before it silently changes the trip.
   private confirmRemoval(message: string, onConfirm: () => void): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...SMALL_DIALOG_CONFIG,
+      ...CONFIRM_DIALOG_CONFIG,
       data: {message, confirmLabel: 'Fjern', danger: true} as ConfirmDialogData,
     });
     dialogRef.afterClosed().subscribe(confirmed => {

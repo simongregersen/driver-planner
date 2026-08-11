@@ -17,7 +17,7 @@ import {TripEditorComponent} from '../trip-editor/trip-editor.component';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
-import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -62,7 +62,7 @@ export class TemplatesComponent implements OnInit {
 
   removeTemplate(template: Template) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...SMALL_DIALOG_CONFIG,
+      ...CONFIRM_DIALOG_CONFIG,
       data: {
         message: `Er du sikker på, at du vil slette skabelonen\n'${template.name}'?`,
         confirmLabel: 'Slet',

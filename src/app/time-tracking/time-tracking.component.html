@@ -1,0 +1,9 @@
+<div class="page-header">
+  <h2 class="page-title">Arbejdstid</h2>
+</div>
+<main class="page-main">
+  @if (userService.driverProfile$ | async; as driver) {
+    <app-clock-punch class="no-print" [driverKey]="driver.$key"></app-clock-punch>
+    <app-time-reporting [driverKey]="driver.$key" [from]="recordsWindowStart" [limit]="3"></app-time-reporting>
+  }
+</main>

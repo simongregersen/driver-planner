@@ -7,6 +7,36 @@
   flex: 1 1 0;
 }
 
+/* Below the bottom-nav breakpoint (see app.component.css), period navigation is pinned above
+   that bottom nav bar instead of sitting above a potentially long report — reachable with a
+   thumb without scrolling back up. Only the buttons move; the admin-only Chauffør filter
+   above them stays in normal flow, it's reached for far less often. The heading is dropped
+   since the buttons are self-explanatory once they're their own bottom toolbar. */
+@media (max-width: 1024px) {
+  .periode-heading {
+    display: none;
+  }
+
+  .periode-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    z-index: 900;
+    margin: 0;
+    background: var(--mat-sys-surface-container);
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    padding: 8px 12px;
+    box-sizing: border-box;
+  }
+
+  /* Room for the pinned bar above, in addition to the bottom nav it already accounts for
+     via body's own padding (see styles.css). */
+  .page-main {
+    padding-bottom: 68px;
+  }
+}
+
 .loading {
   display: flex;
   justify-content: center;
@@ -72,7 +102,7 @@
 
 /* Each day renders its own <table>, so without a fixed layout their columns can
    drift out of alignment depending on how much text lands in a given day's rows. Start/Slut/Tid
-   are just wide enough for their content (matching the Tidsregistrering widget's table),
+   are just wide enough for their content (matching the Arbejdstid widget's table),
    Bemærkning absorbs whatever's left. */
 .data-table {
   table-layout: fixed;

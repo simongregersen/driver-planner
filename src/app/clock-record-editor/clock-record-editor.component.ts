@@ -10,7 +10,7 @@ import moment, {Moment} from 'moment';
 import {ClockRecord} from '../clock-record';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {DateTimeFieldComponent} from '../date-time-field/date-time-field.component';
-import {SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 
 export interface ClockRecordUpdates {
   clockIn: Moment;
@@ -70,7 +70,7 @@ export class ClockRecordEditorComponent {
 
   confirmDelete(): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...SMALL_DIALOG_CONFIG,
+      ...CONFIRM_DIALOG_CONFIG,
       data: {
         message: 'Er du sikker på, at du vil slette denne registrering?',
         confirmLabel: 'Slet',

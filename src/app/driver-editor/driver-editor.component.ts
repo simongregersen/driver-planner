@@ -1,13 +1,13 @@
 import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
-import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import moment from 'moment';
+import moment, {Moment} from 'moment';
 import {Driver} from '../driver';
 import {DateUtility} from '../date-utility';
+import {DateFieldComponent} from '../date-field/date-field.component';
 
 @Component({
   standalone: true,
@@ -16,7 +16,8 @@ import {DateUtility} from '../date-utility';
   styleUrls: ['./driver-editor.component.css'],
   imports: [
     ReactiveFormsModule,
-    MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+    MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+    DateFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -41,6 +42,10 @@ export class DriverEditorComponent {
       name: this.driver.name,
       birthday: (this.driver.birthday) ? this.dateUtility.getDate(this.driver.birthday) : null
     });
+  }
+
+  setBirthday(value: Moment | null): void {
+    this.driverForm.controls['birthday'].setValue(value);
   }
 
   onSubmit() {

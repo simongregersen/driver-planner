@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  /* The sheet already sits above the bottom nav bar visually, but on a phone with a home
+     indicator the last list item would otherwise sit right under it. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+a[mat-list-item].active-link {
+  font-weight: 700;
+}

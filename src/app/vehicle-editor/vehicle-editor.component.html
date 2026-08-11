@@ -20,12 +20,9 @@
       <input matInput type="text" formControlName="regNo">
     </mat-form-field>
 
-    <mat-form-field class="date-field">
-      <mat-label>Sidst synet</mat-label>
-      <input matInput formControlName="latestInspection" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
-      <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-      <mat-datepicker #d></mat-datepicker>
-    </mat-form-field>
+    <app-date-field class="date-field" label="Sidst synet"
+                     [value]="vehicleForm.controls['latestInspection'].value" [minDate]="minDate"
+                     (valueChange)="setLatestInspection($event)"></app-date-field>
   </form>
 </mat-dialog-content>
 

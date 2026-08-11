@@ -23,7 +23,7 @@ import {SelectOption} from '../select-option';
 import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
-import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -48,6 +48,7 @@ export class DayPlansComponent implements OnInit {
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
   readonly minDate = this.dateUtility.minDate(5);
+  readonly minDateInputValue = this.dateUtility.toDateInputValue(this.minDate);
   private _selectedDate: Moment = this.dateUtility.today();
 
   readonly selectedDriverKeys = signal<string[]>([]);
@@ -124,7 +125,7 @@ export class DayPlansComponent implements OnInit {
   // it's easy to hit by mistake — this catches that before it silently changes the trip.
   private confirmRemoval(message: string, onConfirm: () => void): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...SMALL_DIALOG_CONFIG,
+      ...CONFIRM_DIALOG_CONFIG,
       data: {message, confirmLabel: 'Fjern', danger: true} as ConfirmDialogData,
     });
     dialogRef.afterClosed().subscribe(confirmed => {
@@ -145,7 +146,7 @@ export class DayPlansComponent implements OnInit {
 
   insertTemplateWithConfirm(templateId: string, templateName: string) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...SMALL_DIALOG_CONFIG,
+      ...CONFIRM_DIALOG_CONFIG,
       data: {
         title: 'Indsæt skabelon',
         message: `Er du sikker på, at du vil indsætte skabelonen\n'${templateName}'?`,
@@ -170,6 +171,14 @@ export class DayPlansComponent implements OnInit {
   /** The calendar and the date input both hand back null when a selection is cleared. */
   onDateSelected(date: Moment | null) {
     if (date) this.selectedDate = date;
+  }
+
+  nativeDateValue(): string {
+    return this.dateUtility.toDateInputValue(this.selectedDate);
+  }
+
+  onNativeDateChange(event: Event): void {
+    this.onDateSelected(this.dateUtility.parseDateInputValue((event.target as HTMLInputElement).value));
   }
 
   set selectedDate(date: Moment) {

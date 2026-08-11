@@ -14,8 +14,11 @@
   padding: 24px 0;
 }
 
+/* nowrap so this short status text moves to the next line as a whole when its column is too
+   narrow, rather than breaking mid-phrase between "I" and "gang...". */
 .in-progress {
   font-style: italic;
+  white-space: nowrap;
   animation: pulse 1.4s ease-in-out infinite;
 }
 
@@ -27,9 +30,10 @@
   color: var(--mat-sys-error);
 }
 
-/* Stays a real table at every width — Dato/Start/Slut are just wide enough for their content,
-   Bemærkning absorbs whatever's left, truncating with an ellipsis instead of wrapping or
-   forcing horizontal scroll. */
+/* Stays a real table at every width — Dato/Start/Slut are sized for their normal content, but
+   nothing stops a device locale or a long note from occasionally needing more than that; wrapping
+   (the default) handles that by growing the row instead of ever exceeding the table's own
+   width, which a stray nowrap value would otherwise poke past by a few px. */
 .time-reporting-table {
   table-layout: fixed;
   width: 100%;
@@ -43,17 +47,16 @@
   width: 4.5em;
 }
 
+/* Wide enough to contain the edit button's restored 48px invisible touch target (see
+   .data-table .mat-mdc-icon-button in styles.css) — this column is sized by table-layout:
+   fixed (see .time-reporting-table above), which takes it literally rather than as a
+   shrink-to-fit hint the way drivers/vehicles' auto-layout actions column does. */
 .col-actions {
-  width: 40px;
-}
-
-.time-reporting-table td {
-  white-space: nowrap;
+  width: 56px;
 }
 
 .note-cell {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
 }
 
 /* The currently-open record — started but not yet stopped. Yellow as an "OBS, still running"

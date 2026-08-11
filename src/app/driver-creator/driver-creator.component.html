@@ -2,7 +2,7 @@
 
 <mat-dialog-content>
   <form id="driverCreatorForm" class="form-stack" [formGroup]="driverForm" (ngSubmit)="onSubmit(); dialogRef.close()">
-    <mat-form-field class="full-width">
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Kaldenavn</mat-label>
       <input matInput type="text" formControlName="displayName">
       @if (driverForm.controls['displayName'].hasError('required')) {
@@ -10,7 +10,7 @@
       }
     </mat-form-field>
 
-    <mat-form-field class="full-width">
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Navn</mat-label>
       <input matInput type="text" formControlName="name">
       @if (driverForm.controls['name'].hasError('required')) {
@@ -18,7 +18,7 @@
       }
     </mat-form-field>
 
-    <mat-form-field class="date-field">
+    <mat-form-field class="date-field" subscriptSizing="dynamic">
       <mat-label>Fødselsdag</mat-label>
       <input matInput formControlName="birthday" [matDatepicker]="d" [min]="minDate" placeholder="yyyy-MM-dd">
       <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>

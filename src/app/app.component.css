@@ -6,8 +6,17 @@
   z-index: 1000;
   gap: 4px;
   padding: 0 10px;
+  /* Extends the toolbar's own background up under the status bar/notch instead of leaving
+     that area blank — paired with body's matching padding-top in styles.css. */
+  padding-top: env(safe-area-inset-top);
+  height: calc(64px + env(safe-area-inset-top));
+  box-sizing: border-box;
   background: var(--mat-sys-inverse-surface);
   color: var(--mat-sys-inverse-on-surface);
+  /* This is app chrome, not content — long-pressing a nav link/button shouldn't pop up a
+     text-selection callout the way it would on a webpage. */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .app-toolbar a {
@@ -65,24 +74,20 @@
   text-decoration: underline;
 }
 
-/* The links live in the toolbar on wide screens and behind the menu button below md. */
-.nav-toggle {
-  display: none;
-}
-
 .toolbar-actions {
   display: flex;
   align-items: center;
 }
 
+.bottom-nav {
+  display: none;
+}
+
 /* This breakpoint is intentionally wider than the app's usual 767px mobile cutoff — with
    Chauffører/Køretøjer/Skabeloner etc. now in the nav, the full link row overflows well before
-   phone width, e.g. on iPad portrait/landscape (768-1024px). */
+   phone width, e.g. on iPad portrait/landscape (768-1024px). Below it the desktop tab row and
+   toolbar actions give way to the bottom nav bar instead (see .bottom-nav below). */
 @media (max-width: 1024px) {
-  .nav-toggle {
-    display: inline-flex;
-  }
-
   .nav-links {
     display: none;
   }
@@ -91,12 +96,66 @@
     display: none;
   }
 
-  /* Taken out of flex flow so it centers on the bar itself, independent of the
-     hamburger button's width on the left. */
+  /* No hamburger button competing for space on the left anymore, but the brand still gets
+     centered rather than left-aligned — the toolbar would otherwise look off-balance with
+     nothing else in it. */
   .brand {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     margin-right: 0;
   }
+
+  .bottom-nav {
+    display: flex;
+  }
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  height: calc(64px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--mat-sys-surface-container);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bottom-nav-link {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  border: none;
+  border-radius: var(--mat-sys-corner-large, 16px);
+  background: none;
+  padding: 6px 0 4px;
+  margin: 6px 4px;
+  color: var(--mat-sys-on-surface-variant);
+  font: inherit;
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.bottom-nav-link mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.bottom-nav-link.active {
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-weight: 600;
 }

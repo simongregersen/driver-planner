@@ -1,0 +1,11 @@
+<mat-form-field class="picker-field material-picker" subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  <input matInput [formControl]="materialDateControl" [matDatepicker]="picker" [min]="minDate()" placeholder="yyyy-MM-dd">
+  <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+  <mat-datepicker #picker [startView]="startView()"></mat-datepicker>
+</mat-form-field>
+
+<mat-form-field class="picker-field native-picker" subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  <input matInput type="date" [min]="minDateInputValue()" [value]="nativeDateValue()" (change)="onNativeDateChange($event)">
+</mat-form-field>

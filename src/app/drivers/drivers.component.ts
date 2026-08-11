@@ -13,7 +13,7 @@ import {DriverEditorComponent} from '../driver-editor/driver-editor.component';
 import {DriverCreatorComponent} from '../driver-creator/driver-creator.component';
 import {DriverLoginCreatorComponent} from '../driver-login-creator/driver-login-creator.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
-import {DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -49,7 +49,7 @@ export class DriversComponent implements OnInit {
 
   removeDriver(driver: Driver) {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...SMALL_DIALOG_CONFIG,
+      ...CONFIRM_DIALOG_CONFIG,
       data: {
         message: `Er du sikker på, at du vil slette chaufføren\n'${driver.displayName}'?`,
         confirmLabel: 'Slet',

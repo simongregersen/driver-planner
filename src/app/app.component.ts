@@ -3,9 +3,8 @@ import {AsyncPipe} from '@angular/common';
 import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatButtonModule} from '@angular/material/button';
-import {MatDividerModule} from '@angular/material/divider';
 import {MatIconModule} from '@angular/material/icon';
-import {MatMenuModule} from '@angular/material/menu';
+import {MatBottomSheet} from '@angular/material/bottom-sheet';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -14,6 +13,8 @@ import {map} from 'rxjs/operators';
 import {AuthenticationService} from './authentication.service';
 import {UserService} from './user.service';
 import {MessagingService} from './messaging.service';
+import {UpdateService} from './update.service';
+import {NavMoreSheetComponent, NavMoreSheetData} from './nav-more-sheet/nav-more-sheet.component';
 
 @Component({
   standalone: true,
@@ -22,7 +23,7 @@ import {MessagingService} from './messaging.service';
   styleUrls: ['./app.component.css'],
   imports: [
     AsyncPipe, RouterLink, RouterLinkActive, RouterOutlet,
-    MatToolbarModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatTabsModule,
+    MatToolbarModule, MatButtonModule, MatIconModule, MatTabsModule,
     MatTooltipModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +33,10 @@ export class AppComponent {
   private readonly userService = inject(UserService);
   private readonly messagingService = inject(MessagingService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly bottomSheet = inject(MatBottomSheet);
+  // Field injection only — this activates UpdateService's constructor (its version-check
+  // subscription), nothing here calls it directly.
+  private readonly updateService = inject(UpdateService);
 
   loggedIn$: Observable<boolean> = this.authService.authState.pipe(map(user => user != null));
   isAdmin$: Observable<boolean> = this.userService.isAdmin$;
@@ -54,6 +59,17 @@ export class AppComponent {
       'OK',
       {duration: 4000},
     );
+  }
+
+  openMoreSheet(): void {
+    const data: NavMoreSheetData = {
+      isAdmin$: this.isAdmin$,
+      email$: this.email$,
+      onEnableNotifications: () => this.enableNotifications(),
+      onPrint: () => this.print(),
+      onLogout: () => this.logout(),
+    };
+    this.bottomSheet.open(NavMoreSheetComponent, {data});
   }
 
 }

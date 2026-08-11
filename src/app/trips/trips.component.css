@@ -15,9 +15,19 @@
   white-space: pre-line;
 }
 
+/* Auto layout only takes Start/Slut/Chauffører/Køretøjer's percentage hints as loose
+   suggestions — a long unbroken value in any column (most commonly Tur's description, shown
+   inline on My Dag) could still nudge the whole table a few px past 100%, which then showed up
+   as a faint horizontal scrollbar on this box (see :host above) rather than actual page
+   overflow. Fixed layout makes those percentages authoritative instead of advisory, so any
+   overflow is forced into a wrap within its own column rather than widening the table. */
+.data-table {
+  table-layout: fixed;
+}
+
 /* Tur has no fixed column width, so — unlike Start/Slut's percentage hints — it's the column
-   the table shrinks first when a nowrap value (e.g. a finish time plus a garage time) needs
-   more room; this guarantees it can still wrap even for an unusually long, unbroken name. */
+   that absorbs whatever's left, and the one that most needs to wrap rather than overflow
+   (a finish time plus a garage time, or an unusually long, unbroken name/description). */
 .trip-cell {
   word-break: break-word;
 }
@@ -109,6 +119,15 @@ mat-chip-set {
 
 .trip-chip .mat-mdc-chip-remove:hover mat-icon {
   color: var(--mat-sys-error);
+}
+
+/* The hover/focus custom properties above only cover those two states — the same oval overlay
+   still shows at 0.12 opacity while the button is pressed (mousedown/tap), since MDC's ripple
+   surface applies its "pressed" opacity as a hardcoded value with no exposed token to zero it
+   through. Overriding the pseudo-element directly, unconditionally, closes that gap without
+   needing to chase every interaction state individually. */
+.trip-chip .mat-mdc-chip-remove::after {
+  opacity: 0 !important;
 }
 
 .loading {

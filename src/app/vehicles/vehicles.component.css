@@ -1,7 +1,20 @@
+/* Kaldenavn has no width hint at all and absorbs whatever's left after the other columns'
+   percentage hints — this is the safety net for a long value that would otherwise overflow
+   its column instead of wrapping (auto layout, kept here rather than table-layout: fixed, is
+   what lets the actions column below stay shrunk to its own content instead of needing a
+   guessed pixel width). */
+.data-table td {
+  overflow-wrap: break-word;
+}
+
 .row-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  /* Buttons are 26px visible but keep the default 48px invisible touch target (see
+     .data-table .mat-mdc-icon-button in styles.css) — this gap keeps those targets
+     from overlapping so adjacent buttons stay unambiguous to tap. */
+  gap: 24px;
 }
 
 .toolbar-row {

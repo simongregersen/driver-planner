@@ -1,18 +1,42 @@
 /* Angular Material system tokens (--mat-sys-*) come from the prebuilt theme loaded in angular.json. */
 
-html, body {
+/* height (not min-height) so html always exactly fills the viewport — deliberately NOT
+   shared with body below: body has its own padding, and with the default content-box sizing
+   an explicit height on top of that padding would make body render taller than the viewport
+   by the padding amount no matter how little actual content it holds. That extra was invisible
+   on its own, but stacked with the mobile-only bottom-nav clearance and each page's own pinned-
+   bar clearance it became real, content-independent scroll room past the end of every page. */
+html {
   height: 100%;
+}
+
+html, body {
   margin: 0;
   padding: 0;
   font-size: 14px;
   font-family: Roboto, "Helvetica Neue", sans-serif;
   color: var(--mat-sys-on-surface);
   background: var(--mat-sys-surface);
+  /* Without this, overscrolling a list on Android Chrome triggers the browser's own
+     rubber-band/pull-to-refresh chrome, which reads as "this is just a webpage". */
+  overscroll-behavior-y: contain;
 }
 
 body {
-  padding-top: 64px;
+  /* The extra env() term makes room for the fixed toolbar's own safe-area padding below
+     (see .app-toolbar in app.component.css) so content doesn't start underneath it on
+     devices with a notch/status-bar inset. */
+  padding-top: calc(64px + env(safe-area-inset-top));
   padding-bottom: 50px;
+}
+
+/* Below 1024px the app shell swaps in a fixed bottom nav bar (see .bottom-nav in
+   app.component.css) in place of the desktop toolbar's tab row — content needs the matching
+   extra clearance so the last thing on a page isn't hidden behind it. */
+@media (max-width: 1024px) {
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
 }
 
 .container {
@@ -44,8 +68,15 @@ body {
 /* Page scaffolding
    ------------------------------------------------------------------ */
 
+/* Sticks just below the fixed toolbar once a page scrolls past it, so the page title (and on
+   my-trips, the date it's showing) stays visible rather than scrolling away with everything
+   else — an opaque background is required so content doesn't visibly slide underneath it. */
 .page-header {
   margin: 24px 0 8px;
+  position: sticky;
+  top: calc(64px + env(safe-area-inset-top));
+  z-index: 500;
+  background: var(--mat-sys-surface);
 }
 
 .page-title {
@@ -220,9 +251,16 @@ body {
   font-weight: 600;
 }
 
+/* The 48px invisible touch target restored on .data-table .mat-mdc-icon-button below extends
+   11px past each button's own 26px visible edge — harmless on interior edges where it just
+   overlaps already-occupied space, but the last button in a row (almost always right-aligned
+   via .row-actions) has nothing to its right except this cell's own padding, so its overhang
+   needs enough room here or it pokes past the table's outer edge by a few px, which read as a
+   faint "the table scrolls a little" horizontal scrollbar rather than a real layout problem. */
 .data-table .cell-actions {
   width: 1%;
   white-space: nowrap;
+  padding-right: 12px;
 }
 
 .data-table mat-icon {
@@ -231,12 +269,12 @@ body {
   height: 16px;
 }
 
-/* The invisible touch target is disabled here too — otherwise it stays at the default
-   48px and adjacent action buttons end up with overlapping hit areas. */
+/* Keeps the visible chip small for dense rows, but leaves the default invisible 48px touch
+   target enabled — .row-actions supplies enough gap between adjacent buttons (see
+   drivers/vehicles component CSS) so those touch targets no longer overlap. */
 .data-table .mat-mdc-icon-button {
   --mat-icon-button-state-layer-size: 26px;
   --mat-icon-button-icon-size: 16px;
-  --mat-icon-button-touch-target-display: none;
 }
 
 /* Column widths carried over from the previous layout. */
@@ -283,6 +321,37 @@ button.confirm-danger.mat-mdc-unelevated-button {
     height: 2.5rem;
     width: 2.5rem;
     font-size: 1.1rem;
+  }
+}
+
+/* Dialogs
+   ------------------------------------------------------------------ */
+
+/* Applied via panelClass from dialog-config.ts (DIALOG_CONFIG / SMALL_DIALOG_CONFIG, not
+   CONFIRM_DIALOG_CONFIG — see the comment there). Below 600px the dialog fills the screen
+   instead of floating as a centered box, which is what makes it read as a native modal
+   sheet rather than a desktop popup. !important is needed because MatDialogConfig's width/
+   maxWidth are applied as inline styles on this same .cdk-overlay-pane element. */
+@media (max-width: 599px) {
+  .cdk-overlay-pane.app-dialog-fullscreen-mobile {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100%;
+    max-height: 100%;
+  }
+
+  .app-dialog-fullscreen-mobile .mat-mdc-dialog-surface {
+    border-radius: 0;
+  }
+
+  /* Material's own .mat-mdc-dialog-content has flex-grow: 1, meant to fill a dialog sized to
+     its content — here the surface itself is forced full-height above, so that flex-grow
+     stretches short forms' content area to the whole screen and shoves the actions bar down
+     to the very bottom, leaving a large dead gap. Content should hug its own height instead;
+     the surface (already overflow-y: auto) still scrolls as a whole if a longer form ever
+     exceeds the screen. */
+  .app-dialog-fullscreen-mobile .mat-mdc-dialog-content {
+    flex-grow: 0;
   }
 }
 

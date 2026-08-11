@@ -1,8 +1,5 @@
 @if (loggedIn$ | async) {
   <mat-toolbar class="app-toolbar no-print">
-    <button matIconButton class="nav-toggle" [matMenuTriggerFor]="navMenu" aria-label="Åbn navigation">
-      <mat-icon>menu</mat-icon>
-    </button>
     <a class="brand" routerLink="/" aria-label="Planner">
       <svg viewBox="90 172 332 188" aria-hidden="true">
         <defs>
@@ -33,6 +30,8 @@
       @if (isDriver$ | async) {
         <a mat-tab-link routerLink="/my-trips" routerLinkActive #rlaMyTrips="routerLinkActive"
            [active]="rlaMyTrips.isActive">Min dag</a>
+        <a mat-tab-link routerLink="/time-tracking" routerLinkActive #rlaTimeTracking="routerLinkActive"
+           [active]="rlaTimeTracking.isActive">Arbejdstid</a>
       }
       <a mat-tab-link routerLink="/time-report" routerLinkActive #rlaTimeReport="routerLinkActive"
          [active]="rlaTimeReport.isActive">Timeseddel</a>
@@ -62,23 +61,35 @@
     </span>
   </mat-toolbar>
 
-  <mat-menu #navMenu="matMenu">
+  <!-- Below the 1024px breakpoint (see app.component.css) this replaces both the desktop
+       tab row and the old hamburger menu — a persistent bottom tab bar reads as a native
+       app shell, where a menu the user has to open first reads as a website. -->
+  <nav class="bottom-nav no-print" aria-label="Bund-navigation">
     @if (isDriver$ | async) {
-      <a mat-menu-item routerLink="/my-trips" routerLinkActive="active-link">Min dag</a>
+      <a class="bottom-nav-link" routerLink="/my-trips" routerLinkActive="active">
+        <mat-icon>directions_bus</mat-icon>
+        <span>Min dag</span>
+      </a>
+      <a class="bottom-nav-link" routerLink="/time-tracking" routerLinkActive="active">
+        <mat-icon>punch_clock</mat-icon>
+        <span>Arbejdstid</span>
+      </a>
     }
-    <a mat-menu-item routerLink="/time-report" routerLinkActive="active-link">Timeseddel</a>
+    <a class="bottom-nav-link" routerLink="/time-report" routerLinkActive="active">
+      <mat-icon>receipt_long</mat-icon>
+      <span>Timeseddel</span>
+    </a>
     @if (isAdmin$ | async) {
-      <a mat-menu-item routerLink="/day-plans" routerLinkActive="active-link">Dagsplaner</a>
-      <a mat-menu-item routerLink="/period-plans" routerLinkActive="active-link">Periodeplaner</a>
-      <a mat-menu-item routerLink="/templates" routerLinkActive="active-link">Skabeloner</a>
-      <a mat-menu-item routerLink="/drivers" routerLinkActive="active-link">Chauffører</a>
-      <a mat-menu-item routerLink="/vehicles" routerLinkActive="active-link">Køretøjer</a>
+      <a class="bottom-nav-link" routerLink="/day-plans" routerLinkActive="active">
+        <mat-icon>event</mat-icon>
+        <span>Dagsplaner</span>
+      </a>
     }
-    <mat-divider class="nav-menu-actions-divider"></mat-divider>
-    <button mat-menu-item type="button" (click)="enableNotifications()">Slå notifikationer til</button>
-    <button mat-menu-item type="button" (click)="print()">Print</button>
-    <button mat-menu-item type="button" (click)="logout()">Log ud ({{ email$ | async }})</button>
-  </mat-menu>
+    <button type="button" class="bottom-nav-link" (click)="openMoreSheet()">
+      <mat-icon>more_horiz</mat-icon>
+      <span>Mere</span>
+    </button>
+  </nav>
 }
 <mat-tab-nav-panel #tabPanel class="container">
   <router-outlet></router-outlet>

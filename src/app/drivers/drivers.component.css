@@ -1,7 +1,20 @@
+/* Fulde navn/Login have no width hint at all and share whatever's left after the other
+   columns' percentage hints — an email address in particular has no spaces for normal
+   wrapping to break on, so without this a long one just overflowed its column instead of
+   wrapping (auto layout, kept here rather than table-layout: fixed, is what lets the actions
+   column below stay shrunk to its own content instead of needing a guessed pixel width). */
+.data-table td {
+  overflow-wrap: break-word;
+}
+
 .row-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  /* Buttons are 26px visible but keep the default 48px invisible touch target (see
+     .data-table .mat-mdc-icon-button in styles.css) — this gap keeps those targets
+     from overlapping so adjacent buttons stay unambiguous to tap. */
+  gap: 24px;
 }
 
 .toolbar-row {

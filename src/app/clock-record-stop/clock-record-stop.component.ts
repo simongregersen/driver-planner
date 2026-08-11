@@ -9,7 +9,7 @@ import {ClockRecord} from '../clock-record';
 import {ClockRecordUpdates} from '../clock-record-editor/clock-record-editor.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {DateTimeFieldComponent} from '../date-time-field/date-time-field.component';
-import {SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 
 // Separate from ClockRecordEditorComponent on purpose: this is specifically the "confirm and
 // stop" step (clockOut always defaults to now, primary action is a red "Stop"), whereas the
@@ -63,7 +63,7 @@ export class ClockRecordStopComponent {
 
   confirmDelete(): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...SMALL_DIALOG_CONFIG,
+      ...CONFIRM_DIALOG_CONFIG,
       data: {
         message: 'Er du sikker på, at du vil slette denne registrering?',
         confirmLabel: 'Slet',

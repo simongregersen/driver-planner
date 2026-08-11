@@ -1,0 +1,35 @@
+.page-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+app-time-reporting {
+  align-self: stretch;
+}
+
+/* Below the bottom-nav breakpoint (see app.component.css), the start/stop button is the one
+   control a driver reaches for constantly — pinned above that bottom nav bar instead of
+   sitting at the top of the page, it's reachable with a thumb without scrolling up first. */
+@media (max-width: 1024px) {
+  app-clock-punch {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    z-index: 900;
+    display: flex;
+    justify-content: center;
+    background: var(--mat-sys-surface-container);
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    padding: 12px 16px;
+    box-sizing: border-box;
+  }
+
+  /* Room for the pinned button above, in addition to the bottom nav it already accounts
+     for via body's own padding (see styles.css). */
+  .page-main {
+    padding-bottom: 84px;
+  }
+}

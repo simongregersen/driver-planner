@@ -16,22 +16,20 @@ import {AuthenticationService} from '../authentication.service';
 import {Utility} from '../utility';
 import {DateUtility} from '../date-utility';
 import {TripsComponent} from '../trips/trips.component';
-import {ClockPunchComponent} from '../clock-punch/clock-punch.component';
-import {TimeReportingComponent} from '../time-reporting/time-reporting.component';
 
 @Component({
   standalone: true,
-  selector: 'app-my-day',
-  templateUrl: './my-day.component.html',
-  styleUrls: ['./my-day.component.css'],
+  selector: 'app-my-trips',
+  templateUrl: './my-trips.component.html',
+  styleUrls: ['./my-trips.component.css'],
   imports: [
     FormsModule, AsyncPipe, DatePipe,
     MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule,
-    TripsComponent, ClockPunchComponent, TimeReportingComponent,
+    TripsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MyDayComponent implements OnInit {
+export class MyTripsComponent implements OnInit {
   readonly dataStore = inject(DataStore);
   readonly userService = inject(UserService);
   readonly dateUtility = inject(DateUtility);
@@ -41,7 +39,7 @@ export class MyDayComponent implements OnInit {
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
   readonly minDate = this.dateUtility.minDate(5);
-  readonly recordsWindowStart = this.dateUtility.today().subtract(14, 'days');
+  readonly minDateInputValue = this.dateUtility.toDateInputValue(this.minDate);
   private _selectedDate: Moment = this.dateUtility.today();
 
   private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
@@ -119,6 +117,14 @@ export class MyDayComponent implements OnInit {
   /** The calendar and the date input both hand back null when a selection is cleared. */
   onDateSelected(date: Moment | null) {
     if (date) this.selectedDate = date;
+  }
+
+  nativeDateValue(): string {
+    return this.dateUtility.toDateInputValue(this.selectedDate);
+  }
+
+  onNativeDateChange(event: Event): void {
+    this.onDateSelected(this.dateUtility.parseDateInputValue((event.target as HTMLInputElement).value));
   }
 
   set selectedDate(date: Moment) {

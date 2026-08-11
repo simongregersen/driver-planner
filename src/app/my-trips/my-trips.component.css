@@ -1,0 +1,75 @@
+.inline-calendar {
+  width: 296px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+/* The inline calendar takes over from the compact date field once the sidebar
+   sits beside the content, mirroring day-plans' responsive split. */
+.compact-date-field {
+  display: none;
+  width: 296px;
+}
+
+@media (max-width: 1199px) {
+  .inline-calendar {
+    display: none;
+  }
+
+  .compact-date-field {
+    display: block;
+  }
+
+  /* Both siblings share .compact-date-field above (so they occupy the same slot) — the
+     Material picker is fine at tablet width (768-1199px), but below phone width its calendar
+     overlay has small touch targets, so the native picker takes over there instead, opening
+     the OS's own date sheet. */
+  .compact-date-field.native-picker {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .compact-date-field.material-picker {
+    display: none;
+  }
+
+  .compact-date-field.native-picker {
+    display: block;
+  }
+}
+
+.button-row {
+  display: flex;
+  gap: 4px;
+}
+
+.button-row > button {
+  flex: 1 1 0;
+}
+
+/* Below the bottom-nav breakpoint (see app.component.css) the date field + Forrige/I dag/Næste
+   are the controls a driver reaches for most often, so they're pinned above that bottom nav
+   bar instead of sitting in normal flow above the trip list — reachable with a thumb without
+   scrolling back up. Fixed positioning takes it out of .page-layout's grid flow entirely,
+   which is fine: at this width .page-layout is already a single stacked column. */
+@media (max-width: 1024px) {
+  .page-aside {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    z-index: 900;
+    background: var(--mat-sys-surface-container);
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    padding: 8px 12px;
+    box-sizing: border-box;
+  }
+
+  /* Room for the pinned bar above, in addition to the bottom nav it already accounts for
+     via body's own padding (see styles.css) — otherwise the last trip card ends up hidden
+     behind it. */
+  .page-main {
+    padding-bottom: 132px;
+  }
+}
