@@ -3,7 +3,13 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(64px + env(safe-area-inset-bottom));
+  /* .bottom-nav (app.component.css) anchors itself `env(safe-area-inset-bottom)` below where
+     this bar's own `bottom` is measured from (both against the same WebKit-buggy reference
+     point — see the --bottom-nav-* variables in styles.css) — so its top edge, which this bar
+     needs to sit flush against, is --bottom-nav-height *minus* one inset, not the full height.
+     Deriving it from that variable (rather than hand-copying "64px + 2 * env(...)") means this
+     stays correct automatically if --bottom-nav-content-height or -safe-area-padding changes. */
+  bottom: calc(var(--bottom-nav-height) - env(safe-area-inset-bottom));
   z-index: 900;
   background: var(--mat-sys-surface-container);
   border-top: 1px solid var(--mat-sys-outline-variant);

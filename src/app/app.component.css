@@ -113,21 +113,37 @@
 
 .bottom-nav {
   position: fixed;
-  bottom: 0;
+  /* Not plain 0: iOS's installed-PWA WebKit has a known bug (see the --bottom-nav-* variables
+     in styles.css for the full explanation) where the viewport box used to resolve `bottom: 0`
+     for fixed elements is itself short by exactly safe-area-inset-bottom. bottom:0 therefore
+     anchors this many px above the true screen edge, leaving the gap below visible through
+     height/padding-bottom alone, however correct they are on their own — shifting the anchor
+     itself down by that same amount corrects it. This is *not* --bottom-nav-safe-area-padding:
+     it's a fixed, always-exactly-1x correction for the bug itself, unrelated to how much extra
+     breathing room --bottom-nav-height reserves below. */
+  bottom: calc(-1 * env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   z-index: 1000;
   box-sizing: border-box;
-  height: calc(64px + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  height: var(--bottom-nav-height);
+  padding-bottom: var(--bottom-nav-safe-area-padding);
   background: var(--mat-sys-surface-container);
   border-top: 1px solid var(--mat-sys-outline-variant);
+  /* Without this, the buttons (cross-axis default: stretch) would grow to fill the full
+     content height above instead of staying pinned to their own original height. */
+  align-items: flex-start;
   user-select: none;
   -webkit-user-select: none;
 }
 
 .bottom-nav-link {
   flex: 1 1 0;
+  /* No explicit height — .bottom-nav's own align-items: flex-start means this sizes to its
+     own natural content (icon + label + padding) instead of stretching to fill however tall
+     --bottom-nav-content-height (styles.css) grows. A hardcoded height here fought that
+     natural sizing (confirmed: it visibly misaligned the plain-<button> "Mere" link against
+     the <a>-based ones next to it), so this is deliberately left alone rather than pinned. */
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -1,5 +1,37 @@
 /* Angular Material system tokens (--mat-sys-*) come from the prebuilt theme loaded in angular.json. */
 
+/* Single source of truth for .bottom-nav's size (app.component.css) — every bar stacked above
+   it (collapsible-bottom-bar, drivers/vehicles' toolbar-row, time-report's periode-nav,
+   time-tracking's app-clock-punch) and body's own mobile padding-bottom below all derive their
+   own position from these two variables instead of duplicating the arithmetic, so a future
+   change to either one doesn't have to be manually re-propagated across every file.
+     Background on why env(safe-area-inset-bottom) shows up throughout this file and
+   app.component.css at all: iOS's installed-PWA WebKit has a known bug (viewport-fit=cover +
+   standalone) where dvh/vh/%/innerHeight/fixed-position-anchoring all resolve *short* by
+   exactly safe-area-inset-bottom — confirmed on a real device (762px reported vs. the correct
+   812px, a 50px gap that matched the missing inset exactly). It's not a transient cold-launch
+   value that self-corrects (confirmed: a forced real scroll fixed window.innerHeight, but
+   nothing short of that did — no JS trick reproduces it), it's simply how these resolve in this
+   mode. See https://stackoverflow.com/questions/79902310 for the same bug reported elsewhere.
+   The fix is to explicitly add the missing inset back everywhere it's excluded — see html and
+   .cdk-overlay-container below, and .bottom-nav/.cdk-global-overlay-wrapper in the
+   corresponding files, all of which anchor via `bottom: -1 * env(safe-area-inset-bottom)`
+   specifically to counteract that exclusion, not for any padding/spacing reason. */
+:root {
+  /* .bottom-nav's own icon row, not counting the safe-area reservation below it. Bumped up
+     from the original 64px for a more spacious, native-tab-bar look (per reference
+     screenshot) — the buttons themselves stay pinned to that original 64px height (see
+     .bottom-nav-link in app.component.css) rather than stretching to fill this, so the extra
+     space reads as breathing room below them, not as taller buttons. */
+  --bottom-nav-content-height: 90px;
+  /* The bare safe-area inset itself — the standard native convention for a bottom tab bar's own
+     clearance, matching Apple's own guidance. (A 3x multiplier was tried and found to look like
+     too much padding in practice — kept as a single named value, not because anything else
+     depends on the amount, so it's still one place to change should that change again.) */
+  --bottom-nav-safe-area-padding: env(safe-area-inset-bottom);
+  --bottom-nav-height: calc(var(--bottom-nav-content-height) + var(--bottom-nav-safe-area-padding));
+}
+
 /* height (not min-height) so html always exactly fills the viewport — deliberately NOT
    shared with body below: body has its own padding, and with the default content-box sizing
    an explicit height on top of that padding would make body render taller than the viewport
@@ -7,7 +39,68 @@
    on its own, but stacked with the mobile-only bottom-nav clearance and each page's own pinned-
    bar clearance it became real, content-independent scroll room past the end of every page. */
 html {
+  /* Fallback for browsers without dvh support — every other case resolves the line below. */
   height: 100%;
+  /* iOS's installed-PWA WebKit has a known bug (viewport-fit=cover + standalone) where dvh (and
+     vh, %, innerHeight, ...) resolve short by exactly safe-area-inset-bottom — confirmed on a
+     real device (762px reported vs. the correct 812px, a 50px gap that matches the missing
+     inset). Adding it back explicitly is the documented fix; no JS/settle-forcing needed, since
+     this isn't a transient cold-launch value that corrects itself, it's how dvh is defined to
+     resolve in this mode. */
+  height: calc(100dvh + env(safe-area-inset-bottom));
+}
+
+/* Angular CDK's overlay host (used by MatBottomSheet, MatDialog, etc. — this is where the
+   "Mere" sheet lives) is `position: fixed; height: 100%;` on its own, same as html above, and
+   so has the exact same short-by-the-safe-area problem — the sheet is anchored `bottom: 0`
+   against this container specifically, not the root viewport, so it needs its own copy of the
+   fix rather than inheriting html's. !important: same specificity as Material's own rule, and
+   source order isn't guaranteed to put this after it. */
+.cdk-overlay-container {
+  height: calc(100dvh + env(safe-area-inset-bottom)) !important;
+}
+
+/* Belt-and-suspenders on top of the container fix above: CDK's GlobalPositionStrategy (what
+   the "Mere" sheet uses to anchor itself) sets `bottom: 0` as an inline style directly on this
+   wrapper, the same way .bottom-nav's own (confirmed-working) fix had to compensate its own
+   bottom rather than relying on an ancestor. An !important stylesheet rule still outranks a
+   plain (non-important) inline style, so this reaches it despite that. Harmless for any other
+   overlay using this same wrapper class without a `bottom` position — `bottom` set on this
+   wrapper does nothing when contradicted by an already-explicit top/height positioning. */
+.cdk-global-overlay-wrapper {
+  bottom: calc(-1 * env(safe-area-inset-bottom)) !important;
+}
+
+/* The two fixes above turned out not to be reliable for the "Mere" sheet specifically —
+   confirmed via live Web Inspector diagnostics: .cdk-global-overlay-wrapper's own bottom edge
+   is positioned via flex alignment (align-items: flex-end, an inline style CDK sets), not by
+   its `bottom` offset at all, so it inherits whatever the wrapper's *height* resolves to — and
+   that height, read live on a freshly-created overlay, was NOT the same value from one check
+   to the next (762px vs. 796px moments apart) despite nothing else changing. Unlike html
+   (whose dvh value has settled by the time anything checks it, since the page's already been
+   open a while), a brand-new overlay's dvh baseline is apparently still unstable at the moment
+   it's created — so a height-based fix chasing that number can't reliably win. Anchoring the
+   sheet directly to the root viewport instead sidesteps the wrapper's own sizing entirely,
+   the same technique already confirmed working for .bottom-nav. Global (not scoped to
+   nav-more-sheet.component.css) since MatBottomSheet's container is CDK-rendered outside that
+   component's own template — fine while this app only ever opens the one sheet type; revisit
+   if a second, differently-positioned bottom sheet is ever added.
+     KNOWN REMAINING LIMITATION, accepted rather than chased further: this still doesn't fully
+   close the gap. Confirmed via live diagnostics that the override above DOES apply correctly
+   (position: fixed, bottom: -34px, exactly as authored) — the gap persists anyway, on every
+   single open, not just a cold-launch first one. That rules out any CSS value being wrong; the
+   underlying viewport reference a *freshly-inserted* fixed-position element gets from iOS
+   appears to be unreliable at the moment of creation, in a way no CSS substitution can correct
+   — .bottom-nav only works reliably because it's mounted once at page load and never recreated.
+   A real fix would mean not using MatBottomSheet.open() for this menu at all (rendering it as a
+   permanent, always-mounted element toggled by CSS instead, the same pattern as .bottom-nav) —
+   deliberately not done, to avoid reimplementing MatBottomSheet's backdrop/focus-trap/animation
+   behavior by hand for a narrow cosmetic gap. Revisit if that trade-off changes. */
+.mat-bottom-sheet-container {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: calc(-1 * env(safe-area-inset-bottom)) !important;
 }
 
 html, body {
@@ -20,6 +113,10 @@ html, body {
   /* Without this, overscrolling a list on Android Chrome triggers the browser's own
      rubber-band/pull-to-refresh chrome, which reads as "this is just a webpage". */
   overscroll-behavior-y: contain;
+  /* "manipulation" keeps panning and pinch-zoom but drops the browser's own double-tap-to-zoom
+     gesture — without it, quickly tapping a button/chip twice (e.g. in a sidebar) can register
+     as double-tap-zoom instead of two clicks, which is the opposite of feeling native. */
+  touch-action: manipulation;
 }
 
 body {
@@ -35,7 +132,7 @@ body {
    extra clearance so the last thing on a page isn't hidden behind it. */
 @media (max-width: 1024px) {
   body {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+    padding-bottom: var(--bottom-nav-height);
   }
 }
 
@@ -48,6 +145,23 @@ body {
   margin: 0 auto;
   padding: 0 12px;
   box-sizing: border-box;
+}
+
+/* iOS Safari auto-zooms the page on focus for any form control whose own font-size computes
+   under 16px — this app's 14px base (see html, body above) puts every field under that
+   threshold. Scoped to mobile so the desktop type scale is untouched; native selects/textareas
+   are covered too in case a future form uses one outside Material.
+   !important: Material sets its own reset via a doubled class (.mat-mdc-form-field-input-
+   control.mat-mdc-form-field-input-control { font-size: inherit; }) specifically to out-rank
+   plain single-class app overrides like this one — matching that specificity trick is more
+   fragile than just outranking it outright. */
+@media (max-width: 767px) {
+  input.mat-mdc-input-element,
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 @media (max-width: 767px) {

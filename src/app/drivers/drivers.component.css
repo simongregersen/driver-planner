@@ -33,7 +33,8 @@
     position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(64px + env(safe-area-inset-bottom));
+    /* See the bottom comment on collapsible-bottom-bar's :host for the full explanation. */
+    bottom: calc(var(--bottom-nav-height) - env(safe-area-inset-bottom));
     z-index: 900;
     justify-content: center;
     background: var(--mat-sys-surface-container);

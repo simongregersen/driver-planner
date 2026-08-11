@@ -1,8 +1,10 @@
 :host {
   display: block;
   /* The sheet already sits above the bottom nav bar visually, but on a phone with a home
-     indicator the last list item would otherwise sit right under it. */
-  padding-bottom: env(safe-area-inset-bottom);
+     indicator the last list item would otherwise sit right under it — same clearance as
+     .bottom-nav itself (--bottom-nav-safe-area-padding in styles.css), not because this sheet
+     is part of that stack, just deliberately matching its amount of breathing room. */
+  padding-bottom: var(--bottom-nav-safe-area-padding);
 }
 
 a[mat-list-item].active-link {
