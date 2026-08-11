@@ -47,7 +47,7 @@
                     @for (trip of day.trips; track trip.key) {
                       <li class="muted">
                         {{ trip.start.toDate() | date:'HH:mm' }}@if (trip.end) { &ndash; {{ trip.end.toDate() | date:'HH:mm' }} }
-                        &nbsp;{{ trip.name }}
+                        &nbsp;<app-rich-text [text]="trip.name"></app-rich-text>
                       </li>
                     }
                   </ul>

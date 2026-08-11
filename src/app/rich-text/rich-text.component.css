@@ -1,0 +1,10 @@
+:host {
+  display: contents;
+}
+
+mark {
+  background-color: #fff176;
+  color: #1f2937;
+  padding: 0 2px;
+  border-radius: 2px;
+}

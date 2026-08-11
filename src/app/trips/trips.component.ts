@@ -13,6 +13,7 @@ import {FinishedTripsService} from '../finished-trips.service';
 import {combineLatest, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import moment from 'moment';
+import {RichTextComponent} from '../rich-text/rich-text.component';
 
 @Component({
   standalone: true,
@@ -22,6 +23,7 @@ import moment from 'moment';
   imports: [
     AsyncPipe, DatePipe, NgTemplateOutlet,
     MatButtonModule, MatChipsModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
+    RichTextComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

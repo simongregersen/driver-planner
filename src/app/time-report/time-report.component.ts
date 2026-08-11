@@ -18,6 +18,7 @@ import {ClockRecord} from '../clock-record';
 import {ClockRecordEditorComponent, ClockRecordUpdates} from '../clock-record-editor/clock-record-editor.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {RichTextComponent} from '../rich-text/rich-text.component';
 
 interface DayTrip {
   key: string;
@@ -61,6 +62,7 @@ interface PeriodReport {
   imports: [
     AsyncPipe, DatePipe,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, ChipFilterComponent,
+    RichTextComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

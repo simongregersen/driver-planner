@@ -89,19 +89,19 @@
           </td>
           <td class="trip-cell">
             <div class="desktop-trip-info">
-              {{trip.name}}
-              <span class="muted newline" [class.print-only]="hideDescriptionOnScreen()">@if (!hideDescriptionOnScreen()) {<br>}{{trip.description}}</span>
+              <app-rich-text [text]="trip.name"></app-rich-text>
+              <span class="muted newline" [class.print-only]="hideDescriptionOnScreen()">@if (!hideDescriptionOnScreen()) {<br>}<app-rich-text [text]="trip.description"></app-rich-text></span>
             </div>
             <div class="mobile-trip-info">
               <strong>
                 <span class="mobile-trip-time">{{ trip.start.toDate() | date:'HH:mm' }} @if (trip.end) {(&ndash;{{ trip.end.toDate() | date:'HH:mm' }})}</span>
-                <span class="mobile-trip-name">{{ trip.name }}</span>
+                <span class="mobile-trip-name"><app-rich-text [text]="trip.name"></app-rich-text></span>
               </strong>
               <div class="mobile-line mobile-chips-line">
                 <ng-container [ngTemplateOutlet]="driverChips" [ngTemplateOutletContext]="{applyHideSingle: true}"></ng-container>
                 <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
               </div>
-              <div class="mobile-line newline muted" [class.print-only]="hideDescriptionOnScreen()">{{trip.description}}</div>
+              <div class="mobile-line newline muted" [class.print-only]="hideDescriptionOnScreen()"><app-rich-text [text]="trip.description"></app-rich-text></div>
               <div class="finish-toggle-side">
                 <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
               </div>
