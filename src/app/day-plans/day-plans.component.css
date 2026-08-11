@@ -64,3 +64,58 @@
 .day-public-toggle {
   margin-top: 8px;
 }
+
+/* The desktop/tablet sidebar and the mobile collapsible bar below show the same controls, just
+   arranged differently — only one of the two is ever in play at a given width. */
+.mobile-day-bar {
+  display: none;
+}
+
+.mobile-day-bar-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* This panel can get tall (two chip-filter lists, potentially many chips each) — scrolling
+     it internally keeps it from ever pushing past the top of the screen, unlike the sidebar's
+     equivalent content which just has the whole page to grow into. This is its own scroll
+     container though, so it clips at its own top edge regardless of the padding the outer
+     .expand-panel-inner already adds above it — without a little padding here too, the first
+     field's outline-appearance label (which pokes slightly above the field itself) got clipped
+     by this container instead of by anything visible. */
+  padding-top: 6px;
+  /* Reserves room for the scrollbar this container needs once its content passes max-height,
+     rather than letting an overlay-style scrollbar sit on top of the fields/chips right at
+     this edge — and a few extra px of breathing room beyond the scrollbar itself. */
+  padding-right: 10px;
+  scrollbar-gutter: stable;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+/* .compact-date-field's 296px is sized for sitting next to the 296px-wide calendar in the
+   sidebar — here it's the panel's full-width content, so it should fill the available width. */
+.mobile-day-bar-expanded .compact-date-field {
+  width: 100%;
+}
+
+/* Below the bottom-nav breakpoint (see app.component.css), Forrige/I dag/Næste are the
+   controls reached for most often, so they're pinned above that bottom nav bar instead of
+   sitting in normal flow above the trip list. Everything else here (date field, Operationer,
+   the chauffør/køretøj filters) is one tap away behind the expand toggle rather than always
+   shown, so the bar doesn't eat too much of the screen on short-height phones. */
+@media (max-width: 1024px) {
+  .page-aside {
+    display: none;
+  }
+
+  .mobile-day-bar {
+    display: block;
+  }
+
+  /* Room for the pinned bar above, in addition to the bottom nav it already accounts for
+     via body's own padding (see styles.css) — sized for the bar's collapsed row plus toggle,
+     not the (internally-scrolling) expanded panel, which overlays rather than pushing this. */
+  .page-main {
+    padding-bottom: 68px;
+  }
+}

@@ -48,28 +48,36 @@
   flex: 1 1 0;
 }
 
-/* Below the bottom-nav breakpoint (see app.component.css) the date field + Forrige/I dag/Næste
-   are the controls a driver reaches for most often, so they're pinned above that bottom nav
-   bar instead of sitting in normal flow above the trip list — reachable with a thumb without
-   scrolling back up. Fixed positioning takes it out of .page-layout's grid flow entirely,
-   which is fine: at this width .page-layout is already a single stacked column. */
+/* The desktop/tablet sidebar and the mobile collapsible bar below show the same controls, just
+   arranged differently — only one of the two is ever in play at a given width. */
+.mobile-date-bar {
+  display: none;
+}
+
+/* .compact-date-field's 296px is sized for sitting next to the 296px-wide calendar in the
+   sidebar — here it's the panel's only content, so it should fill the available width instead. */
+.mobile-date-bar-expanded .compact-date-field {
+  width: 100%;
+}
+
+/* Below the bottom-nav breakpoint (see app.component.css), Forrige/I dag/Næste are the
+   controls a driver reaches for most often, so they're pinned above that bottom nav bar
+   instead of sitting in normal flow above the trip list — reachable with a thumb without
+   scrolling back up. The date field itself is one tap away behind the expand toggle rather
+   than always shown, so the bar doesn't eat too much of the screen on short-height phones. */
 @media (max-width: 1024px) {
   .page-aside {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(64px + env(safe-area-inset-bottom));
-    z-index: 900;
-    background: var(--mat-sys-surface-container);
-    border-top: 1px solid var(--mat-sys-outline-variant);
-    padding: 8px 12px;
-    box-sizing: border-box;
+    display: none;
+  }
+
+  .mobile-date-bar {
+    display: block;
   }
 
   /* Room for the pinned bar above, in addition to the bottom nav it already accounts for
-     via body's own padding (see styles.css) — otherwise the last trip card ends up hidden
-     behind it. */
+     via body's own padding (see styles.css) — sized for the bar fully expanded, otherwise
+     the last trip card ends up hidden behind it once the date field is revealed. */
   .page-main {
-    padding-bottom: 132px;
+    padding-bottom: 150px;
   }
 }

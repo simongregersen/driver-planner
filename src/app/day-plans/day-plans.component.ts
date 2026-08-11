@@ -25,6 +25,7 @@ import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
+import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
 
 @Component({
   standalone: true,
@@ -35,7 +36,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
     FormsModule, AsyncPipe, DatePipe,
     MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatIconModule,
     MatInputModule, MatMenuModule, MatSlideToggleModule,
-    TripsComponent, ChipFilterComponent,
+    TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

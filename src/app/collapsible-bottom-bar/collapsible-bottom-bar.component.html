@@ -1,0 +1,14 @@
+<div class="collapsed-row">
+  <div class="collapsed-content">
+    <ng-content select="[bar-collapsed]"></ng-content>
+  </div>
+  <button type="button" class="expand-toggle" (click)="toggle()"
+          [attr.aria-expanded]="expanded()" aria-label="Vis flere kontroller">
+    <mat-icon class="triangle" [class.expanded]="expanded()">arrow_drop_up</mat-icon>
+  </button>
+</div>
+<div class="expand-panel" [class.expanded]="expanded()">
+  <div class="expand-panel-inner">
+    <ng-content select="[bar-expanded]"></ng-content>
+  </div>
+</div>

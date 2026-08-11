@@ -83,6 +83,68 @@
       </div>
     </div>
   </aside>
+
+  <app-collapsible-bottom-bar class="mobile-day-bar no-print">
+    <div bar-collapsed class="button-row" role="group" aria-label="Dato-navigation">
+      <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>
+      <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
+      <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
+    </div>
+    <div bar-expanded class="mobile-day-bar-expanded">
+      <mat-form-field class="compact-date-field material-picker" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Dato</mat-label>
+        <input matInput
+               readonly
+               [matDatepicker]="dMobile"
+               [min]="minDate"
+               [ngModel]="selectedDate"
+               (ngModelChange)="onDateSelected($event)"
+               (click)="dMobile.open()">
+        <mat-datepicker-toggle matIconSuffix [for]="dMobile"></mat-datepicker-toggle>
+        <mat-datepicker #dMobile [dateClass]="dateClass()"></mat-datepicker>
+      </mat-form-field>
+      <mat-form-field class="compact-date-field native-picker" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Dato</mat-label>
+        <input matInput type="date" [min]="minDateInputValue" [value]="nativeDateValue()" (change)="onNativeDateChange($event)">
+      </mat-form-field>
+      @if (trips$ | async; as trips) {
+      <div>
+        <h5 class="section-title">Operationer</h5>
+        <div class="toolbar-row">
+          <button matButton="filled" type="button" (click)="create()">Opret tur</button>
+          <button matButton="outlined" type="button" [matMenuTriggerFor]="templateMenuMobile">
+            Indsæt skabelon
+            <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+          </button>
+        </div>
+        <mat-menu #templateMenuMobile="matMenu">
+          @for (template of (availableTemplates$ | async) ?? []; track template.id) {
+            <button mat-menu-item type="button"
+                    (click)="insertTemplateWithConfirm(template.id, template.name)">{{ template.name }}</button>
+          }
+        </mat-menu>
+      </div>
+      }
+      <div>
+        <mat-slide-toggle class="day-public-toggle"
+                    [checked]="(dayPublic$ | async) ?? false"
+                    (change)="setDayPublic($event.checked)">
+          Synlig for chauffører
+        </mat-slide-toggle>
+      </div>
+      <div>
+        <h5 class="section-title">Chauffører</h5>
+        <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
+                          (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
+      </div>
+      <div>
+        <h5 class="section-title">Køretøjer</h5>
+        <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
+                          (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
+      </div>
+    </div>
+  </app-collapsible-bottom-bar>
+
   <main class="page-main">
     @if (trips$ | async; as trips) {
       <app-trips [trips]="filterTrips(trips)"

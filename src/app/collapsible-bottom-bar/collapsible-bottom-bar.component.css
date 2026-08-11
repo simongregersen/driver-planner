@@ -1,0 +1,80 @@
+:host {
+  display: block;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  z-index: 900;
+  background: var(--mat-sys-surface-container);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  box-sizing: border-box;
+}
+
+.collapsed-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 8px 12px;
+}
+
+.collapsed-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.expand-toggle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* arrow_drop_up is already a solid triangle — pointing up (more content below the fold, tap to
+   reveal) at rest, flipped to point down once that content is showing. */
+.triangle {
+  transition: transform 0.25s ease;
+}
+
+.triangle.expanded {
+  transform: rotate(180deg);
+}
+
+/* The 0fr/1fr grid-row trick animates open/closed without having to measure the panel's actual
+   content height in JS first — height/max-height transitions need a concrete end value, this
+   doesn't. */
+.expand-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.expand-panel.expanded {
+  grid-template-rows: 1fr;
+}
+
+/* padding is part of an element's own box regardless of content height, so unlike min-height
+   it's NOT zeroed out by the grid row collapsing to 0fr — a padding set unconditionally here
+   would keep this box (and whatever of its content peeks out through that padding) visible
+   even while "collapsed". Gating it on .expanded, in step with grid-template-rows above, is
+   what actually gets it to nothing. */
+.expand-panel-inner {
+  overflow: hidden;
+  min-height: 0;
+  transition: padding 0.25s ease;
+}
+
+/* Top padding specifically has to clear the outline-appearance fields' floating label, which
+   sits just above the field's own top border — without it, that label read as clipped by the
+   collapsed row directly above. Horizontal padding keeps content off the screen edges, which
+   this panel would otherwise run flush into (it's not inside .container like normal content). */
+.expand-panel.expanded .expand-panel-inner {
+  padding: 16px 16px 8px;
+}

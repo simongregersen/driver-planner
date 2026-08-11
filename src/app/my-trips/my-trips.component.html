@@ -38,6 +38,34 @@
         </div>
       </div>
     </aside>
+
+    <app-collapsible-bottom-bar class="mobile-date-bar no-print">
+      <div bar-collapsed class="button-row" role="group" aria-label="Dato-navigation">
+        <button matButton="outlined" type="button" [disabled]="!hasPreviousPublicDate()" (click)="previousDay()">Forrige</button>
+        <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
+        <button matButton="outlined" type="button" [disabled]="!hasNextPublicDate()" (click)="nextDay()">Næste</button>
+      </div>
+      <div bar-expanded class="mobile-date-bar-expanded">
+        <mat-form-field class="compact-date-field material-picker" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Dato</mat-label>
+          <input matInput
+                 readonly
+                 [matDatepicker]="dMobile"
+                 [min]="minDate"
+                 [matDatepickerFilter]="dateFilter()"
+                 [ngModel]="selectedDate"
+                 (ngModelChange)="onDateSelected($event)"
+                 (click)="dMobile.open()">
+          <mat-datepicker-toggle matIconSuffix [for]="dMobile"></mat-datepicker-toggle>
+          <mat-datepicker #dMobile></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field class="compact-date-field native-picker" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Dato</mat-label>
+          <input matInput type="date" [min]="minDateInputValue" [value]="nativeDateValue()" (change)="onNativeDateChange($event)">
+        </mat-form-field>
+      </div>
+    </app-collapsible-bottom-bar>
+
     <main class="page-main">
       @if (dayPublic$ | async) {
         @if (trips$ | async; as trips) {

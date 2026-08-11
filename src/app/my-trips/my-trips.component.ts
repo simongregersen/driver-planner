@@ -16,6 +16,7 @@ import {AuthenticationService} from '../authentication.service';
 import {Utility} from '../utility';
 import {DateUtility} from '../date-utility';
 import {TripsComponent} from '../trips/trips.component';
+import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
 
 @Component({
   standalone: true,
@@ -25,7 +26,7 @@ import {TripsComponent} from '../trips/trips.component';
   imports: [
     FormsModule, AsyncPipe, DatePipe,
     MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule,
-    TripsComponent,
+    TripsComponent, CollapsibleBottomBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
