@@ -13,6 +13,11 @@ import {DateUtility} from '../date-utility';
 // alone toggles which pair is visible, the same technique already used for the calendar/compact
 // date-field split on My Trips and Day Plans. The two pairs stay in sync through the single
 // `value` Moment they both read from and write back to.
+//
+// Used only by the clock-record creator/editor/stop dialogs (Tidsregistrering) — the 15-minute
+// rounding below is specifically about those clock-in/out times, not a general-purpose rule for
+// any time field in the app (trip start/finish times use their own mat-timepicker directly,
+// with no rounding of typed/picked values at all).
 @Component({
   standalone: true,
   selector: 'app-date-time-field',
@@ -61,11 +66,21 @@ export class DateTimeFieldComponent {
   }
 
   onNativeTimeChange(event: Event): void {
-    const time = this.dateUtility.parseTimeInputValue((event.target as HTMLInputElement).value);
+    const parsed = this.dateUtility.parseTimeInputValue((event.target as HTMLInputElement).value);
+    const time = parsed ? this.roundToQuarterHour(parsed) : null;
     this.emit(this.materialDateControl.value, time);
   }
 
   private emit(date: Moment | null, time: Moment | null): void {
     this.valueChange.emit(this.dateUtility.toMoment(date, time));
+  }
+
+  // <input type=time step="900"> only affects form validation, not the picker UI itself — iOS
+  // and most Android browsers let the user scroll to any minute regardless of step, unlike the
+  // Material timepicker's interval="15m" (a fixed list of options, nothing else selectable).
+  // Rounding here on read is what actually enforces the same 15-minute grid on the native side.
+  private roundToQuarterHour(time: Moment): Moment {
+    const rounded = Math.round(time.minute() / 15) * 15;
+    return time.clone().set({minute: 0, second: 0, millisecond: 0}).add(rounded, 'minutes');
   }
 }

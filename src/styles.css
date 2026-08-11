@@ -283,6 +283,67 @@ body {
 .col-w-15 { width: 15%; }
 .col-w-25 { width: 25%; }
 
+/* Below phone width, an opted-in table (.card-on-mobile) becomes a stack of cards instead of a
+   horizontally-cramped table — each row's own header cell (<th>) reads as the card's title,
+   each data cell is labeled via its data-label attribute. Trips has its own bespoke composed
+   mobile view instead (several columns folded into one summary block) because it's dense
+   enough to need that; drivers/vehicles' plain name/value columns don't. */
+@media (max-width: 767px) {
+  .data-table.card-on-mobile thead {
+    display: none;
+  }
+
+  .data-table.card-on-mobile,
+  .data-table.card-on-mobile tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table.card-on-mobile tbody tr {
+    display: block;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--mat-sys-corner-medium);
+  }
+
+  .data-table.card-on-mobile tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .data-table.card-on-mobile tbody tr > th,
+  .data-table.card-on-mobile tbody tr > td {
+    display: block;
+    width: auto;
+    padding: 3px 0;
+    border-bottom: none;
+    overflow-wrap: break-word;
+  }
+
+  .data-table.card-on-mobile tbody tr > th {
+    font: var(--mat-sys-title-medium);
+    padding-bottom: 6px;
+  }
+
+  /* A cell with nothing in it (e.g. no birthday set) would otherwise still show its bare
+     "Label: " prefix — an empty row a card has no room to spare for. */
+  .data-table.card-on-mobile tbody tr > td:empty {
+    display: none;
+  }
+
+  .data-table.card-on-mobile tbody tr > td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .data-table.card-on-mobile .cell-actions {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+  }
+}
+
 /* Inline confirmation menus
    ------------------------------------------------------------------ */
 
@@ -352,6 +413,12 @@ button.confirm-danger.mat-mdc-unelevated-button {
      exceeds the screen. */
   .app-dialog-fullscreen-mobile .mat-mdc-dialog-content {
     flex-grow: 0;
+    /* Material's own default here is 65vh — sized for a centered dialog with room to spare
+       above and below, not a full-screen one. Left in place, a form taller than 65vh (trip
+       editor's Navn/dates/times/Chauffører/Køretøjer/Beskrivelse, easily is) got its own
+       cramped inner scrollbar instead of using the rest of the screen the surface already has
+       available, which just scrolls as a whole per the comment above once nothing caps it. */
+    max-height: none;
   }
 }
 

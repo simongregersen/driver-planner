@@ -1,5 +1,12 @@
+/* MDC's chip-set gives its inner wrapper a -8px left margin (compensating for the first
+   chip's own left margin so chips still sit flush within THAT wrapper) — harmless where
+   there's another chip-set to its left to bleed into (see trips.component.css), but this is
+   a standalone listbox, so that -8px instead bled past this component's own left edge,
+   misaligning it against whatever sits above it (the calendar, the date field). Padding here
+   directly cancels it back out. */
 mat-chip-listbox {
   margin: 0;
+  padding-left: 8px;
 }
 
 /* Same shrinking as the read-only trip chips (see trips.component.css) — denser than

@@ -23,3 +23,30 @@
   gap: 8px;
   margin-bottom: 16px;
 }
+
+/* Below the bottom-nav breakpoint (see app.component.css), "Opret køretøj" is pinned above
+   that bottom nav bar instead of sitting above the list — same treatment as Arbejdstid's
+   start/stop button, for a consistent single-primary-action pattern across pages. There's
+   only ever the one button here, so (unlike Min dag/Dagsplaner) there's nothing to collapse. */
+@media (max-width: 1024px) {
+  .toolbar-row {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    z-index: 900;
+    justify-content: center;
+    background: var(--mat-sys-surface-container);
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    padding: 8px 16px;
+    margin-bottom: 0;
+    box-sizing: border-box;
+  }
+
+  /* Room for the pinned bar above, in addition to the bottom nav it already accounts for
+     via body's own padding (see styles.css) — otherwise the last card ends up hidden behind
+     it. */
+  .table-scroll {
+    padding-bottom: 60px;
+  }
+}

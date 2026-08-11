@@ -7,7 +7,7 @@
 </div>
 
 <div class="table-scroll">
-  <table class="data-table">
+  <table class="data-table card-on-mobile">
     <thead>
     <tr>
       <th class="col-w-25">Kaldenavn</th>
@@ -23,10 +23,10 @@
       @for (driver of (drivers | async) ?? []; track driver.$key) {
         <tr class="hoverable">
           <th>{{driver.displayName}}</th>
-          <td>{{driver.name}}</td>
-          <td>{{driver.birthday?.toDate()|date}}</td>
-          <td>{{driver.email}}</td>
-          <td>
+          <td data-label="Fulde navn">{{driver.name}}</td>
+          <td data-label="Fødselsdag">{{driver.birthday?.toDate()|date}}</td>
+          <td data-label="Login">{{driver.email}}</td>
+          <td data-label="Admin">
             @if (driver.uid) {
               <mat-checkbox [checked]="isDriverAdmin(driver, users)"
                             (change)="setDriverAdmin(driver, $event.checked)"
