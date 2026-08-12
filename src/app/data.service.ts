@@ -5,7 +5,7 @@ import {NewTrip, Trip} from './trip';
 import {ClockRecord} from './clock-record';
 import {Driver} from './driver';
 import {AppUser} from './user';
-import {firstValueFrom, Observable} from 'rxjs';
+import {combineLatest, firstValueFrom, Observable} from 'rxjs';
 import {first, map, tap} from 'rxjs/operators';
 import {Vehicle} from './vehicle';
 import {DateUtility} from './date-utility';
@@ -15,6 +15,12 @@ import {db} from './firebase';
 import {Moment} from 'moment';
 import moment from 'moment';
 import {NotificationDispatchService} from './notification-dispatch.service';
+
+// How far back getTrips looks for a multi-day trip via its own multiDayStart-indexed query (see
+// below) — trips lasting more than 1-2 weeks are very uncommon, so this is a generous margin
+// past that, not a tight fit. A multi-day trip starting further back than this would silently
+// stop appearing on its later days once it's this far in the past.
+const MULTI_DAY_LOOKBACK_DAYS = 30;
 
 @Injectable({providedIn: 'root'})
 export class DataStore {
@@ -30,18 +36,52 @@ export class DataStore {
   constructor(private dateUtility: DateUtility, private notificationDispatch: NotificationDispatchService) {
   }
 
+  // Returns trips *overlapping* [from, to) — including a multi-day trip that started before
+  // `from`, as long as it hadn't already ended before `from` — not just ones starting in it.
+  //
+  // Realtime Database can only order/range-filter by one child key per query (no compound
+  // indexes), and that key has to be `start` rather than `end` since `end` is often null (a
+  // single-day trip) and RTDB sorts a missing child before every real value, which would
+  // silently exclude those trips from an end-anchored query. Widening the `start` query itself
+  // to reach further back (an earlier version of this did that) would work too, but means
+  // scanning that whole extra stretch of ordinary single-day trips just to find the rare ones
+  // that might span into this window — wasteful on a free-tier read quota. Since multi-day
+  // trips are uncommon, this instead fetches them via their own sparse multiDayStart index (see
+  // addTrip/updateTrip) — present only on multi-day trips, so this stays cheap regardless of
+  // how many ordinary single-day trips exist — and merges that with the normal windowed query.
   getTrips(from: Moment, to?: Moment): Observable<Trip[]> {
     const fromDate = this.dateUtility.toMoment(from)!;
     const toDate = (to) ? this.dateUtility.toMoment(to)! : moment(fromDate);
     toDate.add(1, 'days');
 
-    const q = query(this.tripsRef, orderByChild('start'), startAt(fromDate.valueOf()), endAt(toDate.valueOf() - 1));
-    return listVal<Trip>(q, {keyField: '$key'}).pipe(
+    const inWindow$ = listVal<Trip>(
+      query(this.tripsRef, orderByChild('start'), startAt(fromDate.valueOf()), endAt(toDate.valueOf() - 1)),
+      {keyField: '$key'}
+    );
+    const multiDayLookback = fromDate.clone().subtract(MULTI_DAY_LOOKBACK_DAYS, 'days');
+    const multiDay$ = listVal<Trip>(
+      query(this.tripsRef, orderByChild('multiDayStart'), startAt(multiDayLookback.valueOf()), endAt(toDate.valueOf() - 1)),
+      {keyField: '$key'}
+    );
+
+    return combineLatest([inWindow$, multiDay$]).pipe(
+      // Every trip left over from multiDay$ once inWindow$'s own trips are excluded must have
+      // started before `from` (a trip starting within the window would have matched inWindow$
+      // too) — earlier than anything in inWindow$, in other words. multiDay$ is itself already
+      // ordered by start (its query is ordered by multiDayStart, which is exactly that), so
+      // putting those first, ahead of inWindow$'s own start-ordered results, keeps the combined
+      // list correctly ordered by actual start time without a separate sort.
+      map(([inWindow, multiDay]) => {
+        const inWindowKeys = new Set(inWindow.map(t => t.$key));
+        const beforeWindow = multiDay.filter(t => !inWindowKeys.has(t.$key));
+        return [...beforeWindow, ...inWindow];
+      }),
       tap(ts => ts.forEach(t => {
         t.start = moment(t.start as any);
         t.end = (t.end) ? moment(t.end as any) : null;
         t.modified = (t.modified) ? moment(t.modified as any) : undefined;
-      }))
+      })),
+      map(ts => ts.filter(t => Utility.tripOverlaps(t, fromDate, toDate)))
     );
   }
 
@@ -52,7 +92,8 @@ export class DataStore {
       name: trip.name,
       description: trip.description || '',
       drivers: trip.drivers || [],
-      vehicles: trip.vehicles || []
+      vehicles: trip.vehicles || [],
+      multiDayStart: this.multiDayStart(trip.start, trip.end)
     });
   }
 
@@ -60,7 +101,15 @@ export class DataStore {
     // Gates on the destination day (updates.start is always populated by the trip editor on every submit),
     // so this reflects where the trip ends up, not where it was before the edit.
     const effectiveStart: Moment = updates.start || trip.start;
-    if (updates.start) updates.start = updates.start.valueOf();
+    if (updates.start) {
+      // The trip editor's save always carries both start and end together (never just one of
+      // the two), so this can be recomputed from the update alone rather than merged with the
+      // existing trip. Explicit null clears a previously-set flag now that this trip no longer
+      // spans multiple calendar days — update() only touches keys it's given, so omitting this
+      // instead would leave a stale value in place.
+      updates.multiDayStart = this.multiDayStart(updates.start, updates.end);
+      updates.start = updates.start.valueOf();
+    }
     if (updates.end) updates.end = updates.end.valueOf();
     return firstValueFrom(this.isDayPublic(effectiveStart)).then(isPublic => {
       if (isPublic) updates.modified = moment().valueOf();
@@ -70,6 +119,13 @@ export class DataStore {
         }
       });
     });
+  }
+
+  // The value getTrips' multiDayStart-indexed query above filters on — present (as the trip's
+  // own start) only when the trip actually spans more than one calendar day, absent (as null,
+  // which Firebase treats as "omit this key") otherwise, so the index stays sparse.
+  private multiDayStart(start: Moment, end: Moment | null | undefined): number | null {
+    return (end && !Utility.sameDate(start, end)) ? start.valueOf() : null;
   }
 
   // Best-effort: a notification failing to enqueue shouldn't fail the trip save itself.

@@ -10,9 +10,10 @@ import {DataStore} from '../data.service';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {FinishedTripsService} from '../finished-trips.service';
+import {Utility} from '../utility';
 import {combineLatest, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
-import moment from 'moment';
+import moment, {Moment} from 'moment';
 import {RichTextComponent} from '../rich-text/rich-text.component';
 
 @Component({
@@ -34,6 +35,11 @@ export class TripsComponent implements OnInit {
   hideDescriptionOnScreen = input(false);
   hideSingleDriver = input(false);
   showFinishToggle = input(false);
+  /** The single day this list is being shown under, if any (a day-plans/period-plans day-block,
+   * my-trips' selected day, ...) — lets a multi-day trip's start time be marked with an asterisk
+   * and a fuller tooltip on the days it didn't actually start on. Templates/other callers with
+   * no such day context simply leave this unset, and no trip ever gets marked. */
+  referenceDate = input<Moment | null>(null);
   edit = output<Trip>();
   removeDriver = output<{trip: Trip; driverKey: string}>();
   removeVehicle = output<{trip: Trip; vehicleKey: string}>();
@@ -59,6 +65,16 @@ export class TripsComponent implements OnInit {
 
   isRecentlyModified(trip: Trip): boolean {
     return this.highlightModified() && !!trip.modified && trip.modified.isAfter(moment().subtract(24, 'hours'));
+  }
+
+  startsOutsideReference(trip: Trip): boolean {
+    const reference = this.referenceDate();
+    return !!reference && !Utility.sameDate(trip.start, reference);
+  }
+
+  endsOutsideReference(trip: Trip): boolean {
+    const reference = this.referenceDate();
+    return !!reference && !!trip.end && !Utility.sameDate(trip.end, reference);
   }
 
   // Row click is the only way to edit now — there's no separate edit/delete button.

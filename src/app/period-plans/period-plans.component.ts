@@ -12,6 +12,7 @@ import {DataStore} from '../data.service';
 import {NewTrip, Trip} from '../trip';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
+import {Utility} from '../utility';
 import {TripFormComponent} from '../trip-form/trip-form.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
@@ -124,12 +125,14 @@ export class PeriodPlansComponent implements OnInit {
     this.trips$ = this.dataStore.getTrips(this.from!, this.to!);
   }
 
+  // Overlap, not just "starts on this date" — a multi-day trip should show up on every day it
+  // spans, not only the one it started on.
   filterByDate(trips: Trip[], date: Moment): Trip[] {
     if (!trips || !trips.length) return [];
 
-    const start = this.dateUtility.toMoment(date);
-    const end = this.dateUtility.toMoment(this.dateUtility.addDays(date, 1));
-    return trips.filter(t => t.start >= start! && t.start < end!);
+    const start = this.dateUtility.toMoment(date)!;
+    const end = this.dateUtility.toMoment(this.dateUtility.addDays(date, 1))!;
+    return trips.filter(t => Utility.tripOverlaps(t, start, end));
   }
 
   filterTrips(trips: Trip[] | null): Trip[] {

@@ -78,13 +78,13 @@
             [class.pointer]="!readonly()"
             (click)="onRowClick(trip)">
           <td data-label="Start">
-            <span [matTooltip]="(trip.start.toDate() | date: 'short') ?? ''">
-            {{trip.start.toDate() | date: 'HH:mm' }}
+            <span [matTooltip]="startsOutsideReference(trip) ? ((trip.start.toDate() | date:'EEE d/M HH:mm') ?? '') : ''">
+              @if (startsOutsideReference(trip)) { &mdash; } @else { {{trip.start.toDate() | date: 'HH:mm' }} }
             </span>
           </td>
           <td class="muted" data-label="Slut">
-            <span [matTooltip]="(trip.end?.toDate() | date: 'short') ?? ''">
-              {{trip.end?.toDate() | date:'HH:mm' }}
+            <span [matTooltip]="endsOutsideReference(trip) ? ((trip.end?.toDate() | date:'EEE d/M HH:mm') ?? '') : ''">
+              @if (endsOutsideReference(trip)) { &mdash; } @else { {{trip.end?.toDate() | date:'HH:mm' }} }
             </span>
           </td>
           <td class="trip-cell">
@@ -94,7 +94,7 @@
             </div>
             <div class="mobile-trip-info">
               <strong>
-                <span class="mobile-trip-time">{{ trip.start.toDate() | date:'HH:mm' }} @if (trip.end) {(&ndash;{{ trip.end.toDate() | date:'HH:mm' }})}</span>
+                <span class="mobile-trip-time">@if (startsOutsideReference(trip)) { &mdash; } @else { {{ trip.start.toDate() | date:'HH:mm' }} }@if (trip.end) {(&ndash;@if (endsOutsideReference(trip)) { &mdash; } @else { {{ trip.end.toDate() | date:'HH:mm' }} })}</span>
                 <span class="mobile-trip-name"><app-rich-text [text]="trip.name"></app-rich-text></span>
               </strong>
               <div class="mobile-line mobile-chips-line">

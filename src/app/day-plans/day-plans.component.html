@@ -141,6 +141,7 @@
     @if (trips$ | async; as trips) {
       <app-trips [trips]="filterTrips(trips)"
                  [hideDescriptionOnScreen]="true"
+                 [referenceDate]="selectedDate"
                  (edit)="edit($event)"
                  (removeDriver)="removeDriverFromTrip($event)"
                  (removeVehicle)="removeVehicleFromTrip($event)">

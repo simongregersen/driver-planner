@@ -48,6 +48,7 @@
           <h5 class="day-heading">{{ date.toDate() | date:'EEEE, d MMMM y'}}</h5>
           <app-trips [trips]="filterByDate(filterTrips(trips), date)"
                      [hideDescriptionOnScreen]="true"
+                     [referenceDate]="date"
                      (edit)="edit($event)"
                      (removeDriver)="removeDriverFromTrip($event)"
                      (removeVehicle)="removeVehicleFromTrip($event)"></app-trips>

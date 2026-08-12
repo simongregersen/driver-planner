@@ -25,4 +25,13 @@ export class Utility {
     return a.year() === b.year() && a.month() === b.month() && a.date() === b.date();
   }
 
+  // Whether a trip overlaps the half-open window [start, end) at all — used both to filter an
+  // overfetched query result down to genuine overlaps (DataStore.getTrips) and to decide which
+  // specific day(s) within a wider range a multi-day trip should be shown under. A trip with no
+  // `end` is treated as lasting only its own start instant.
+  static tripOverlaps(trip: Trip, start: Moment, end: Moment): boolean {
+    const effectiveEnd = trip.end ?? trip.start;
+    return trip.start.isBefore(end) && effectiveEnd.isSameOrAfter(start);
+  }
+
 }
