@@ -30,21 +30,44 @@
   color: var(--mat-sys-error);
 }
 
-/* Stays a real table at every width — Dato/Start/Slut are sized for their normal content, but
-   nothing stops a device locale or a long note from occasionally needing more than that; wrapping
-   (the default) handles that by growing the row instead of ever exceeding the table's own
-   width, which a stray nowrap value would otherwise poke past by a few px. */
+/* Stays a real table at every width — Dato/Start/Slut/actions are fixed at just enough to fit
+   their own content (see below) and never grow past that; Bemærkning is the only unconstrained
+   column, so it takes 100% of whatever's left over, and truncates with an ellipsis rather than
+   wrapping (see .note-cell) so a row can never exceed one line either way. */
 .time-reporting-table {
   table-layout: fixed;
   width: 100%;
 }
 
+/* Tight enough that there's essentially no slack left, so these two are sized precisely rather
+   than by feel: measured against the app's own rendered Roboto metrics (14px, via a real
+   browser) for the widest realistic content, rather than assumed from character count — e.g.
+   "man." (mandag) renders wider than "tirs."/"tors." despite being shorter, since a lowercase
+   "m" is one of the widest glyphs in this font. Also tightens these two columns' own horizontal
+   padding to 4px (from the table's normal 8px, see below) to buy back a bit more room without
+   needing an even smaller font. */
 .col-date {
-  width: 6.5em;
+  /* Widest realistic content: "man. 31/12" ≈ 88px text+padding at 4px padding each side, plus a
+     few px of margin. */
+  width: 6em;
 }
 
 .col-time {
-  width: 4.5em;
+  /* Widest NORMAL content: "23:59*"/"08:05*" (a cross-day end time) ≈ 49px at 4px padding each
+     side, plus a few px of margin. */
+  width: 3.75em;
+}
+
+/* Dato/Start/Slut don't need the table's normal 8px horizontal cell padding at this width —
+   halving it is what actually makes the narrower widths above viable, more so than the font
+   size itself (there's barely any slack in Roboto's own rendered glyph widths to shave). Scoped
+   to these three specifically via their data-label, since <col> (in the colgroup above) can't
+   carry padding itself — Bemærkning and the actions column keep the table's normal padding. */
+.time-reporting-table td[data-label="Dato"],
+.time-reporting-table td[data-label="Start"],
+.time-reporting-table td[data-label="Slut"] {
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 /* Wide enough to contain the edit button's restored 48px invisible touch target (see
@@ -55,8 +78,13 @@
   width: 56px;
 }
 
+/* Truncates rather than wraps, so a long note grows the column (already sized to take all
+   space left over from the fixed Dato/Start/Slut/actions columns above) instead of the row —
+   the full text is still reachable via this cell's own matTooltip in the template. */
 .note-cell {
-  overflow-wrap: break-word;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* The currently-open record — started but not yet stopped. Yellow as an "OBS, still running"

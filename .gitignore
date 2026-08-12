@@ -44,6 +44,7 @@ Thumbs.db
 firebase-debug.log
 database-debug.log
 ui-debug.log
+.firebase-export*
 
 # local secrets (GitHub PAT used to trigger the notification-poller workflow)
 /src/environments/secrets.ts

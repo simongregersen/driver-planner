@@ -32,7 +32,7 @@
               {{ record.clockOut.toDate() | date:'HH:mm' }}@if (!sameDay(record.clockIn, record.clockOut)) {*}
             </span>
           } @else {
-            <span class="in-progress">I gang...</span>
+            <span class="in-progress">I gang</span>
           }
         </td>
         <td data-label="Bemærkning" class="muted note-cell" [matTooltip]="record.note ?? ''">{{ record.note }}</td>
