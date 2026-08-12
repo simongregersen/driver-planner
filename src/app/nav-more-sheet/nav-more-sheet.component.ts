@@ -8,13 +8,13 @@ import {MatListModule} from '@angular/material/list';
 import {Observable} from 'rxjs';
 
 // Everything that doesn't fit as a direct bottom-nav tab: the less-frequently-used admin
-// links, plus the notifications/print/log-out actions that used to live in the desktop
-// toolbar's overflow and the old hamburger menu.
+// links, plus the notifications/log-out actions that used to live in the desktop toolbar's
+// overflow and the old hamburger menu. Print is deliberately not offered here — it stays a
+// desktop-toolbar-only action (see .toolbar-actions in app.component.html).
 export interface NavMoreSheetData {
   isAdmin$: Observable<boolean>;
   email$: Observable<string | null>;
   onEnableNotifications: () => void;
-  onPrint: () => void;
   onLogout: () => void;
 }
 
@@ -36,11 +36,6 @@ export class NavMoreSheetComponent {
 
   enableNotifications(): void {
     this.data.onEnableNotifications();
-    this.close();
-  }
-
-  print(): void {
-    this.data.onPrint();
     this.close();
   }
 

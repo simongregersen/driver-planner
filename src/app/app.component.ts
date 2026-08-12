@@ -15,6 +15,7 @@ import {UserService} from './user.service';
 import {MessagingService} from './messaging.service';
 import {UpdateService} from './update.service';
 import {NavMoreSheetComponent, NavMoreSheetData} from './nav-more-sheet/nav-more-sheet.component';
+import {BrandIconComponent} from './brand-icon/brand-icon.component';
 
 @Component({
   standalone: true,
@@ -24,7 +25,7 @@ import {NavMoreSheetComponent, NavMoreSheetData} from './nav-more-sheet/nav-more
   imports: [
     AsyncPipe, RouterLink, RouterLinkActive, RouterOutlet,
     MatToolbarModule, MatButtonModule, MatIconModule, MatTabsModule,
-    MatTooltipModule,
+    MatTooltipModule, BrandIconComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -66,7 +67,6 @@ export class AppComponent {
       isAdmin$: this.isAdmin$,
       email$: this.email$,
       onEnableNotifications: () => this.enableNotifications(),
-      onPrint: () => this.print(),
       onLogout: () => this.logout(),
     };
     this.bottomSheet.open(NavMoreSheetComponent, {data});

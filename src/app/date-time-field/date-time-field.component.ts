@@ -6,18 +6,20 @@ import {MatInputModule} from '@angular/material/input';
 import {MatTimepickerModule} from '@angular/material/timepicker';
 import {Moment} from 'moment';
 import {DateUtility} from '../date-utility';
+import {BreakpointService} from '../breakpoint.service';
 
-// A single date+time field that renders as a native <input type=date>/<input type=time> pair on
-// mobile (opens the OS's own picker sheet, works in every browser) and as a Material
-// datepicker+timepicker pair on desktop (consistent with the rest of the app's dialogs) — CSS
-// alone toggles which pair is visible, the same technique already used for the calendar/compact
-// date-field split on My Trips and Day Plans. The two pairs stay in sync through the single
-// `value` Moment they both read from and write back to.
+// A single date+time field — a Material datepicker+timepicker pair, matching the rest of the
+// app's dialogs, with touchUi on the datepicker for a full-screen, touch-friendly calendar on
+// mobile instead of desktop's small anchored popup. The timepicker's own dropdown list (15-
+// minute interval) is already touch-friendly as-is, no separate mobile treatment needed there.
 //
-// Used only by the clock-record creator/editor/stop dialogs (Tidsregistrering) — the 15-minute
-// rounding below is specifically about those clock-in/out times, not a general-purpose rule for
-// any time field in the app (trip start/finish times use their own mat-timepicker directly,
-// with no rounding of typed/picked values at all).
+// Used only by the clock-record creator/editor/stop dialogs (Tidsregistrering).
+//
+// Previously had a native <input type=date>/<input type=time> pair as a mobile fallback instead
+// — dropped because mobile browsers don't reliably respect the time input's step attribute (it
+// only affected form validation, not the picker UI: a user could freely scroll to any minute,
+// unlike the Material timepicker's fixed 15-minute list), which needed a manual rounding
+// workaround on every change; touchUi is the more robust choice and needs no such workaround.
 @Component({
   standalone: true,
   selector: 'app-date-time-field',
@@ -34,7 +36,7 @@ export class DateTimeFieldComponent {
 
   private readonly dateUtility = inject(DateUtility);
   readonly minDate = this.dateUtility.minDate(5);
-  readonly minDateInputValue = this.dateUtility.toDateInputValue(this.minDate);
+  readonly breakpoints = inject(BreakpointService);
 
   readonly materialDateControl = new FormControl<Moment | null>(null);
   readonly materialTimeControl = new FormControl<Moment | null>(null);
@@ -52,35 +54,7 @@ export class DateTimeFieldComponent {
     this.materialTimeControl.valueChanges.subscribe(time => this.emit(this.materialDateControl.value, time));
   }
 
-  nativeDateValue(): string {
-    return this.dateUtility.toDateInputValue(this.value());
-  }
-
-  nativeTimeValue(): string {
-    return this.dateUtility.toTimeInputValue(this.value());
-  }
-
-  onNativeDateChange(event: Event): void {
-    const date = this.dateUtility.parseDateInputValue((event.target as HTMLInputElement).value);
-    this.emit(date, this.materialTimeControl.value);
-  }
-
-  onNativeTimeChange(event: Event): void {
-    const parsed = this.dateUtility.parseTimeInputValue((event.target as HTMLInputElement).value);
-    const time = parsed ? this.roundToQuarterHour(parsed) : null;
-    this.emit(this.materialDateControl.value, time);
-  }
-
   private emit(date: Moment | null, time: Moment | null): void {
     this.valueChange.emit(this.dateUtility.toMoment(date, time));
-  }
-
-  // <input type=time step="900"> only affects form validation, not the picker UI itself — iOS
-  // and most Android browsers let the user scroll to any minute regardless of step, unlike the
-  // Material timepicker's interval="15m" (a fixed list of options, nothing else selectable).
-  // Rounding here on read is what actually enforces the same 15-minute grid on the native side.
-  private roundToQuarterHour(time: Moment): Moment {
-    const rounded = Math.round(time.minute() / 15) * 15;
-    return time.clone().set({minute: 0, second: 0, millisecond: 0}).add(rounded, 'minutes');
   }
 }

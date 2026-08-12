@@ -14,19 +14,3 @@
      fields side by side can overflow a narrow dialog instead of sharing the available space. */
   min-width: 0;
 }
-
-.native-picker {
-  display: none;
-}
-
-/* Matches the mobile breakpoint used elsewhere in the app (the trips table's card layout) —
-   below it, native pickers open the OS's own sheet; above it, the Material pair takes over. */
-@media (max-width: 767px) {
-  .material-picker {
-    display: none;
-  }
-
-  .native-picker {
-    display: block;
-  }
-}

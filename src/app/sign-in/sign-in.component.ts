@@ -5,13 +5,14 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {AuthenticationService} from '../authentication.service';
 import {Router} from '@angular/router';
+import {BrandIconComponent} from '../brand-icon/brand-icon.component';
 
 @Component({
   standalone: true,
   selector: 'app-sign-in',
   templateUrl: './sign-in.component.html',
   styleUrls: ['./sign-in.component.css'],
-  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, BrandIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignInComponent {

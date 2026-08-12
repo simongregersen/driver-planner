@@ -35,12 +35,6 @@
   margin-right: 8px;
 }
 
-.brand svg {
-  height: 28px;
-  width: auto;
-  display: block;
-}
-
 /* The tab bar's default M3 tokens resolve against on-surface/primary, which read fine on a
    light surface but disappear against this toolbar's dark inverse-surface background. */
 .nav-links {

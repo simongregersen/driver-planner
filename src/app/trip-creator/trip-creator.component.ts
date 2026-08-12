@@ -16,6 +16,7 @@ import {MatSelectModule} from '@angular/material/select';
 import {MatTimepickerModule} from '@angular/material/timepicker';
 import {DateUtility} from '../date-utility';
 import {NewTrip} from '../trip';
+import {BreakpointService} from '../breakpoint.service';
 
 @Component({
   standalone: true,
@@ -41,6 +42,7 @@ export class TripCreatorComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dateUtility = inject(DateUtility);
   readonly dialogRef = inject(MatDialogRef<TripCreatorComponent>);
+  readonly breakpoints = inject(BreakpointService);
   readonly minDate = this.dateUtility.minDate(5);
 
   ngOnInit() {

@@ -26,6 +26,7 @@ import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
+import {BreakpointService} from '../breakpoint.service';
 
 @Component({
   standalone: true,
@@ -44,12 +45,12 @@ export class DayPlansComponent implements OnInit {
   readonly dataStore = inject(DataStore);
   readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
+  readonly breakpoints = inject(BreakpointService);
 
   availableTemplates$!: Observable<SelectOption[]>;
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
   readonly minDate = this.dateUtility.minDate(5);
-  readonly minDateInputValue = this.dateUtility.toDateInputValue(this.minDate);
   private _selectedDate: Moment = this.dateUtility.today();
 
   readonly selectedDriverKeys = signal<string[]>([]);
@@ -172,14 +173,6 @@ export class DayPlansComponent implements OnInit {
   /** The calendar and the date input both hand back null when a selection is cleared. */
   onDateSelected(date: Moment | null) {
     if (date) this.selectedDate = date;
-  }
-
-  nativeDateValue(): string {
-    return this.dateUtility.toDateInputValue(this.selectedDate);
-  }
-
-  onNativeDateChange(event: Event): void {
-    this.onDateSelected(this.dateUtility.parseDateInputValue((event.target as HTMLInputElement).value));
   }
 
   set selectedDate(date: Moment) {

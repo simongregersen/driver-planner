@@ -499,43 +499,6 @@ button.confirm-danger.mat-mdc-unelevated-button {
   }
 }
 
-/* Dialogs
-   ------------------------------------------------------------------ */
-
-/* Applied via panelClass from dialog-config.ts (DIALOG_CONFIG / SMALL_DIALOG_CONFIG, not
-   CONFIRM_DIALOG_CONFIG — see the comment there). Below 600px the dialog fills the screen
-   instead of floating as a centered box, which is what makes it read as a native modal
-   sheet rather than a desktop popup. !important is needed because MatDialogConfig's width/
-   maxWidth are applied as inline styles on this same .cdk-overlay-pane element. */
-@media (max-width: 599px) {
-  .cdk-overlay-pane.app-dialog-fullscreen-mobile {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    height: 100%;
-    max-height: 100%;
-  }
-
-  .app-dialog-fullscreen-mobile .mat-mdc-dialog-surface {
-    border-radius: 0;
-  }
-
-  /* Material's own .mat-mdc-dialog-content has flex-grow: 1, meant to fill a dialog sized to
-     its content — here the surface itself is forced full-height above, so that flex-grow
-     stretches short forms' content area to the whole screen and shoves the actions bar down
-     to the very bottom, leaving a large dead gap. Content should hug its own height instead;
-     the surface (already overflow-y: auto) still scrolls as a whole if a longer form ever
-     exceeds the screen. */
-  .app-dialog-fullscreen-mobile .mat-mdc-dialog-content {
-    flex-grow: 0;
-    /* Material's own default here is 65vh — sized for a centered dialog with room to spare
-       above and below, not a full-screen one. Left in place, a form taller than 65vh (trip
-       editor's Navn/dates/times/Chauffører/Køretøjer/Beskrivelse, easily is) got its own
-       cramped inner scrollbar instead of using the rest of the screen the surface already has
-       available, which just scrolls as a whole per the comment above once nothing caps it. */
-    max-height: none;
-  }
-}
-
 /* Print
    ------------------------------------------------------------------ */
 

@@ -19,24 +19,6 @@
   .compact-date-field {
     display: block;
   }
-
-  /* Both siblings share .compact-date-field above (so they occupy the same slot) — the
-     Material picker is fine at tablet width (768-1199px), but below phone width its calendar
-     overlay has small touch targets, so the native picker takes over there instead, opening
-     the OS's own date sheet. */
-  .compact-date-field.native-picker {
-    display: none;
-  }
-}
-
-@media (max-width: 767px) {
-  .compact-date-field.material-picker {
-    display: none;
-  }
-
-  .compact-date-field.native-picker {
-    display: block;
-  }
 }
 
 .button-row {

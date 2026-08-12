@@ -25,7 +25,7 @@
                     [minDate]="minDate"
                     [dateClass]="dateClass()">
       </mat-calendar>
-      <mat-form-field class="compact-date-field material-picker" appearance="outline" subscriptSizing="dynamic">
+      <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Dato</mat-label>
         <input matInput
                readonly
@@ -35,11 +35,7 @@
                (ngModelChange)="onDateSelected($event)"
                (click)="d.open()">
         <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-        <mat-datepicker #d [dateClass]="dateClass()"></mat-datepicker>
-      </mat-form-field>
-      <mat-form-field class="compact-date-field native-picker" appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Dato</mat-label>
-        <input matInput type="date" [min]="minDateInputValue" [value]="nativeDateValue()" (change)="onNativeDateChange($event)">
+        <mat-datepicker #d [dateClass]="dateClass()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
       </mat-form-field>
       <div class="button-row" role="group" aria-label="Dato-navigation">
         <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>
@@ -91,7 +87,7 @@
       <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
     </div>
     <div bar-expanded class="mobile-day-bar-expanded">
-      <mat-form-field class="compact-date-field material-picker" appearance="outline" subscriptSizing="dynamic">
+      <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Dato</mat-label>
         <input matInput
                readonly
@@ -101,11 +97,7 @@
                (ngModelChange)="onDateSelected($event)"
                (click)="dMobile.open()">
         <mat-datepicker-toggle matIconSuffix [for]="dMobile"></mat-datepicker-toggle>
-        <mat-datepicker #dMobile [dateClass]="dateClass()"></mat-datepicker>
-      </mat-form-field>
-      <mat-form-field class="compact-date-field native-picker" appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Dato</mat-label>
-        <input matInput type="date" [min]="minDateInputValue" [value]="nativeDateValue()" (change)="onNativeDateChange($event)">
+        <mat-datepicker #dMobile [dateClass]="dateClass()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
       </mat-form-field>
       @if (trips$ | async; as trips) {
       <div>

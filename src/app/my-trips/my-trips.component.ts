@@ -17,6 +17,7 @@ import {Utility} from '../utility';
 import {DateUtility} from '../date-utility';
 import {TripsComponent} from '../trips/trips.component';
 import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
+import {BreakpointService} from '../breakpoint.service';
 
 @Component({
   standalone: true,
@@ -36,11 +37,11 @@ export class MyTripsComponent implements OnInit {
   readonly dateUtility = inject(DateUtility);
   private readonly authService = inject(AuthenticationService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly breakpoints = inject(BreakpointService);
 
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
   readonly minDate = this.dateUtility.minDate(5);
-  readonly minDateInputValue = this.dateUtility.toDateInputValue(this.minDate);
   private _selectedDate: Moment = this.dateUtility.today();
 
   private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
@@ -122,14 +123,6 @@ export class MyTripsComponent implements OnInit {
   /** The calendar and the date input both hand back null when a selection is cleared. */
   onDateSelected(date: Moment | null) {
     if (date) this.selectedDate = date;
-  }
-
-  nativeDateValue(): string {
-    return this.dateUtility.toDateInputValue(this.selectedDate);
-  }
-
-  onNativeDateChange(event: Event): void {
-    this.onDateSelected(this.dateUtility.parseDateInputValue((event.target as HTMLInputElement).value));
   }
 
   set selectedDate(date: Moment) {

@@ -4,12 +4,16 @@ import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {Moment} from 'moment';
-import {DateUtility} from '../date-utility';
+import {BreakpointService} from '../breakpoint.service';
 
-// A single date-only field (no time component) that renders as a native <input type=date> on
-// mobile and a Material datepicker on desktop — same CSS-toggle technique as
-// DateTimeFieldComponent, split out separately since date-only fields (a birthday, an
-// inspection date) don't need a paired time picker.
+// A single date-only field (no time component) — always a Material datepicker, touchUi on
+// mobile (a full-screen, touch-friendly calendar dialog instead of the small anchored popup
+// desktop gets). Used for a birthday, an inspection date, etc.; split out from
+// DateTimeFieldComponent since those don't need a paired time picker.
+//
+// Previously had a native <input type=date> fallback on mobile instead — dropped because
+// mobile browsers don't reliably respect min/step on native date/time inputs (confirmed on
+// date-time-field's time input; see git history), so touchUi is the more robust choice.
 @Component({
   standalone: true,
   selector: 'app-date-field',
@@ -25,8 +29,7 @@ export class DateFieldComponent {
   startView = input<'month' | 'year' | 'multi-year'>('month');
   valueChange = output<Moment | null>();
 
-  private readonly dateUtility = inject(DateUtility);
-  readonly minDateInputValue = () => this.minDate() ? this.dateUtility.toDateInputValue(this.minDate()!) : '';
+  readonly breakpoints = inject(BreakpointService);
 
   readonly materialDateControl = new FormControl<Moment | null>(null);
 
@@ -36,13 +39,5 @@ export class DateFieldComponent {
     });
 
     this.materialDateControl.valueChanges.subscribe(date => this.valueChange.emit(date));
-  }
-
-  nativeDateValue(): string {
-    return this.dateUtility.toDateInputValue(this.value());
-  }
-
-  onNativeDateChange(event: Event): void {
-    this.valueChange.emit(this.dateUtility.parseDateInputValue((event.target as HTMLInputElement).value));
   }
 }

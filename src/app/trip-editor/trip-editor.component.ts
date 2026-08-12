@@ -18,6 +18,7 @@ import {map} from 'rxjs/operators';
 import {DateUtility} from '../date-utility';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
+import {BreakpointService} from '../breakpoint.service';
 
 @Component({
   standalone: true,
@@ -44,8 +45,8 @@ export class TripEditorComponent implements OnInit {
   private readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
   readonly dialogRef = inject(MatDialogRef<TripEditorComponent>);
+  readonly breakpoints = inject(BreakpointService);
   readonly minDate = this.dateUtility.minDate(5);
-  readonly minDateInputValue = this.dateUtility.toDateInputValue(this.minDate);
 
   tripForm: FormGroup = this.fb.group({
     name: ['', Validators.required],
@@ -63,22 +64,6 @@ export class TripEditorComponent implements OnInit {
       .pipe(map(Utility.filterDeleted), map(ds => ds.map(d => ({id: d.$key, name: d.displayName}))));
     this.availableVehicles$ = this.dataStore.getAllVehicles()
       .pipe(map(Utility.filterDeleted), map(vs => vs.map(v => ({id: v.$key, name: v.displayName}))));
-  }
-
-  nativeFromDateValue(): string {
-    return this.dateUtility.toDateInputValue(this.tripForm.controls['fromDate'].value);
-  }
-
-  nativeToDateValue(): string {
-    return this.dateUtility.toDateInputValue(this.tripForm.controls['toDate'].value);
-  }
-
-  onNativeFromDateChange(event: Event): void {
-    this.tripForm.controls['fromDate'].setValue(this.dateUtility.parseDateInputValue((event.target as HTMLInputElement).value));
-  }
-
-  onNativeToDateChange(event: Event): void {
-    this.tripForm.controls['toDate'].setValue(this.dateUtility.parseDateInputValue((event.target as HTMLInputElement).value));
   }
 
   update() {

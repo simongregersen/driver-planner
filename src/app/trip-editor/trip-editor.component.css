@@ -8,22 +8,3 @@
   flex: 1 1 160px;
   min-width: 140px;
 }
-
-.native-picker {
-  display: none;
-}
-
-/* Matches the mobile breakpoint used elsewhere in the app (date-time-field, the trips table's
-   card layout) — below it, the native date input opens the OS's own picker sheet; above it,
-   the Material datepicker takes over. Only the date fields get this treatment here — the
-   from/to time fields already use mat-timepicker, whose dropdown list is touch-friendly as-is,
-   unlike the datepicker's small calendar-grid cells. */
-@media (max-width: 767px) {
-  .material-picker {
-    display: none;
-  }
-
-  .native-picker {
-    display: block;
-  }
-}
