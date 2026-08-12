@@ -3,29 +3,28 @@ import {ReactiveFormsModule, FormControl} from '@angular/forms';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import {MatTimepickerModule} from '@angular/material/timepicker';
 import {Moment} from 'moment';
 import {DateUtility} from '../date-utility';
 import {BreakpointService} from '../breakpoint.service';
+import {TimeFieldComponent} from '../time-field/time-field.component';
 
-// A single date+time field — a Material datepicker+timepicker pair, matching the rest of the
-// app's dialogs, with touchUi on the datepicker for a full-screen, touch-friendly calendar on
-// mobile instead of desktop's small anchored popup. The timepicker's own dropdown list (15-
-// minute interval) is already touch-friendly as-is, no separate mobile treatment needed there.
+// A single date+time field, matching the rest of the app's dialogs — a touchUi datepicker for
+// the date (a full-screen, touch-friendly calendar on mobile instead of desktop's small anchored
+// popup) paired with TimeFieldComponent for the time, which does the equivalent mobile/desktop
+// split of its own (see that component).
 //
 // Used only by the clock-record creator/editor/stop dialogs (Tidsregistrering).
 //
 // Previously had a native <input type=date>/<input type=time> pair as a mobile fallback instead
 // — dropped because mobile browsers don't reliably respect the time input's step attribute (it
-// only affected form validation, not the picker UI: a user could freely scroll to any minute,
-// unlike the Material timepicker's fixed 15-minute list), which needed a manual rounding
-// workaround on every change; touchUi is the more robust choice and needs no such workaround.
+// only affected form validation, not the picker UI: a user could freely scroll to any minute),
+// which needed a manual rounding workaround on every change.
 @Component({
   standalone: true,
   selector: 'app-date-time-field',
   templateUrl: './date-time-field.component.html',
   styleUrls: ['./date-time-field.component.css'],
-  imports: [ReactiveFormsModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatTimepickerModule],
+  imports: [ReactiveFormsModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, TimeFieldComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DateTimeFieldComponent {

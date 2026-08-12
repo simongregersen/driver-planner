@@ -22,12 +22,7 @@
           }
         </mat-form-field>
       }
-      <mat-form-field>
-        <mat-label>Fra tid</mat-label>
-        <input matInput formControlName="fromTime" [matTimepicker]="t1">
-        <mat-timepicker-toggle matIconSuffix [for]="t1"></mat-timepicker-toggle>
-        <mat-timepicker #t1 interval="15m"></mat-timepicker>
-      </mat-form-field>
+      <app-time-field label="Fra tid" formControlName="fromTime"></app-time-field>
     </div>
 
     <div class="datetime-row">
@@ -39,12 +34,7 @@
           <mat-datepicker #d2 [touchUi]="breakpoints.isMobile()"></mat-datepicker>
         </mat-form-field>
       }
-      <mat-form-field>
-        <mat-label>Til tid</mat-label>
-        <input matInput formControlName="toTime" [matTimepicker]="t2">
-        <mat-timepicker-toggle matIconSuffix [for]="t2"></mat-timepicker-toggle>
-        <mat-timepicker #t2 interval="15m"></mat-timepicker>
-      </mat-form-field>
+      <app-time-field label="Til tid" formControlName="toTime"></app-time-field>
     </div>
 
     <mat-form-field class="full-width">

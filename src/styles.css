@@ -141,6 +141,14 @@ html {
   }
 }
 
+/* TimePickerDialogComponent's own grey surface, matching the touchUi datepicker's calendar
+   dialog (mat-datepicker-content uses --mat-sys-surface-container-high; MatDialog's own default
+   is plain --mat-sys-surface, which reads as white/near-white by comparison) — see
+   TIME_PICKER_DIALOG_CONFIG in dialog-config.ts for the panelClass this targets. */
+.time-picker-dialog-panel .mat-mdc-dialog-surface {
+  background-color: var(--mat-sys-surface-container-high);
+}
+
 html, body {
   margin: 0;
   padding: 0;

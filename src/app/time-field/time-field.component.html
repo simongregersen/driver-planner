@@ -1,0 +1,14 @@
+<mat-form-field class="picker-field" subscriptSizing="dynamic" (click)="onFieldClick()">
+  <mat-label>{{ label() }}</mat-label>
+  @if (breakpoints.isMobile()) {
+    <input matInput readonly [value]="displayValue()" [disabled]="materialTimeControl.disabled">
+  } @else {
+    <input matInput [formControl]="materialTimeControl" [matTimepicker]="picker">
+  }
+  @if (breakpoints.isMobile()) {
+    <mat-icon matIconSuffix>schedule</mat-icon>
+  } @else {
+    <mat-timepicker-toggle matIconSuffix [for]="picker"></mat-timepicker-toggle>
+  }
+  <mat-timepicker #picker interval="15m"></mat-timepicker>
+</mat-form-field>

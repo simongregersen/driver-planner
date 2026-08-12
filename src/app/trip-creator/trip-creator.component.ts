@@ -13,10 +13,10 @@ import {MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
-import {MatTimepickerModule} from '@angular/material/timepicker';
 import {DateUtility} from '../date-utility';
 import {NewTrip} from '../trip';
 import {BreakpointService} from '../breakpoint.service';
+import {TimeFieldComponent} from '../time-field/time-field.component';
 
 @Component({
   standalone: true,
@@ -26,7 +26,7 @@ import {BreakpointService} from '../breakpoint.service';
   imports: [
     ReactiveFormsModule, AsyncPipe,
     MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatTimepickerModule,
+    MatSelectModule, TimeFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

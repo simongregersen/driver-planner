@@ -7,7 +7,6 @@ import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
-import {MatTimepickerModule} from '@angular/material/timepicker';
 import moment from 'moment';
 import {SelectOption} from '../select-option';
 import {DataStore} from '../data.service';
@@ -19,6 +18,7 @@ import {DateUtility} from '../date-utility';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 import {BreakpointService} from '../breakpoint.service';
+import {TimeFieldComponent} from '../time-field/time-field.component';
 
 @Component({
   standalone: true,
@@ -28,7 +28,7 @@ import {BreakpointService} from '../breakpoint.service';
   imports: [
     ReactiveFormsModule, AsyncPipe,
     MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatTimepickerModule,
+    MatSelectModule, TimeFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

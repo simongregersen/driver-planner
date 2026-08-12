@@ -1,0 +1,12 @@
+<mat-dialog-content>
+  <div class="time-wheels">
+    <app-time-wheel [values]="hours" [value]="selectedHour()" (valueChange)="selectedHour.set($event)"></app-time-wheel>
+    <div class="colon">:</div>
+    <app-time-wheel [values]="minutes" [value]="selectedMinute()" (valueChange)="selectedMinute.set($event)"></app-time-wheel>
+    <div class="wheel-highlight"></div>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="button" (click)="confirm()">OK</button>
+</mat-dialog-actions>
