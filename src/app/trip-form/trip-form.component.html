@@ -2,7 +2,7 @@
 
 <mat-dialog-content>
   <form id="tripForm" class="form-stack" [formGroup]="tripForm" (ngSubmit)="onSubmit(); dialogRef.close()">
-    <mat-form-field class="full-width">
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Navn</mat-label>
       <input matInput type="text" formControlName="name">
       @if (tripForm.controls['name'].hasError('required')) {
@@ -12,7 +12,7 @@
 
     <div class="datetime-row">
       @if (showDate) {
-        <mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
           <mat-label>Fra dato</mat-label>
           <input matInput readonly formControlName="fromDate" [matDatepicker]="d1" [min]="minDate" (click)="d1.open()">
           <mat-datepicker-toggle matIconSuffix [for]="d1"></mat-datepicker-toggle>
@@ -27,7 +27,7 @@
 
     <div class="datetime-row">
       @if (showDate) {
-        <mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
           <mat-label>Til dato</mat-label>
           <input matInput readonly formControlName="toDate" [matDatepicker]="d2" [min]="minDate" (click)="d2.open()">
           <mat-datepicker-toggle matIconSuffix [for]="d2"></mat-datepicker-toggle>
@@ -37,7 +37,7 @@
       <app-time-field label="Til tid" formControlName="toTime" [minuteStep]="1"></app-time-field>
     </div>
 
-    <mat-form-field class="full-width">
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Chauffører</mat-label>
       <mat-select formControlName="drivers" multiple placeholder="Vælg chauffører">
         @for (option of (availableDrivers$ | async) ?? []; track option.id) {
@@ -46,7 +46,7 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field class="full-width">
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Køretøjer</mat-label>
       <mat-select formControlName="vehicles" multiple placeholder="Vælg køretøjer">
         @for (option of (availableVehicles$ | async) ?? []; track option.id) {
@@ -55,7 +55,7 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field class="full-width">
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Beskrivelse</mat-label>
       <textarea matInput rows="10" formControlName="description"></textarea>
       <mat-hint>Omslut tekst med **stjerner** for at fremhæve den med gult, eller skriv [en adresse] for at gøre den til et link.</mat-hint>
