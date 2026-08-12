@@ -6,12 +6,9 @@ import {TimeWheelComponent} from '../time-wheel/time-wheel.component';
 
 export interface TimePickerDialogData {
   value: Moment | null;
+  /** In minutes — matches TimeFieldComponent's own minuteStep input. */
+  minuteStep: number;
 }
-
-// Matches the app-wide 15-minute granularity mat-timepicker was already configured with
-// (interval="15m") — this is the mobile replacement for that, not a general-purpose picker, so
-// there's no need to make the step configurable.
-const MINUTE_STEP = 15;
 
 // A wheel-style time picker in the same spirit as the touchUi datepicker's calendar dialog —
 // launched from TimeFieldComponent on mobile in place of mat-timepicker's dropdown list, which
@@ -28,15 +25,17 @@ export class TimePickerDialogComponent {
   private readonly data = inject<TimePickerDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<TimePickerDialogComponent, Moment>);
 
+  private readonly minuteStep = this.data.minuteStep;
+
   readonly hours = Array.from({length: 24}, (_, i) => i);
-  readonly minutes = Array.from({length: 60 / MINUTE_STEP}, (_, i) => i * MINUTE_STEP);
+  readonly minutes = Array.from({length: 60 / this.minuteStep}, (_, i) => i * this.minuteStep);
 
   private readonly initial = this.data.value ?? moment();
   readonly selectedHour = signal(this.initial.hours());
   readonly selectedMinute = signal(this.roundToStep(this.initial.minutes()));
 
   private roundToStep(minute: number): number {
-    return Math.round(minute / MINUTE_STEP) * MINUTE_STEP % 60;
+    return Math.round(minute / this.minuteStep) * this.minuteStep % 60;
   }
 
   confirm(): void {

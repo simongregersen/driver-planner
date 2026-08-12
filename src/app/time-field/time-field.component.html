@@ -10,5 +10,5 @@
   } @else {
     <mat-timepicker-toggle matIconSuffix [for]="picker"></mat-timepicker-toggle>
   }
-  <mat-timepicker #picker interval="15m"></mat-timepicker>
+  <mat-timepicker #picker [interval]="minuteStep() * 60"></mat-timepicker>
 </mat-form-field>

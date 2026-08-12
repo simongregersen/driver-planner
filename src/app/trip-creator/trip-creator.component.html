@@ -14,7 +14,7 @@
       @if (showDate) {
         <mat-form-field>
           <mat-label>Fra dato</mat-label>
-          <input matInput formControlName="fromDate" [matDatepicker]="d1" [min]="minDate" placeholder="yyyy-MM-dd">
+          <input matInput readonly formControlName="fromDate" [matDatepicker]="d1" [min]="minDate" (click)="d1.open()">
           <mat-datepicker-toggle matIconSuffix [for]="d1"></mat-datepicker-toggle>
           <mat-datepicker #d1 [touchUi]="breakpoints.isMobile()"></mat-datepicker>
           @if (tripForm.controls['fromDate'].hasError('required')) {
@@ -22,19 +22,19 @@
           }
         </mat-form-field>
       }
-      <app-time-field label="Fra tid" formControlName="fromTime"></app-time-field>
+      <app-time-field label="Fra tid" formControlName="fromTime" [minuteStep]="1"></app-time-field>
     </div>
 
     <div class="datetime-row">
       @if (showDate) {
         <mat-form-field>
           <mat-label>Til dato</mat-label>
-          <input matInput formControlName="toDate" [matDatepicker]="d2" [min]="minDate" placeholder="yyyy-MM-dd">
+          <input matInput readonly formControlName="toDate" [matDatepicker]="d2" [min]="minDate" (click)="d2.open()">
           <mat-datepicker-toggle matIconSuffix [for]="d2"></mat-datepicker-toggle>
           <mat-datepicker #d2 [touchUi]="breakpoints.isMobile()"></mat-datepicker>
         </mat-form-field>
       }
-      <app-time-field label="Til tid" formControlName="toTime"></app-time-field>
+      <app-time-field label="Til tid" formControlName="toTime" [minuteStep]="1"></app-time-field>
     </div>
 
     <mat-form-field class="full-width">

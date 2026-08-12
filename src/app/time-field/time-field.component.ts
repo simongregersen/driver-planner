@@ -33,6 +33,9 @@ import {TimePickerDialogComponent, TimePickerDialogData} from '../time-picker-di
 })
 export class TimeFieldComponent implements ControlValueAccessor {
   label = input('Tid');
+  /** In minutes — 15 to match the interval mat-timepicker was already using; trip start/end
+   * times need finer 1-minute control. */
+  minuteStep = input(15);
 
   readonly breakpoints = inject(BreakpointService);
   private readonly dialog = inject(MatDialog);
@@ -84,7 +87,7 @@ export class TimeFieldComponent implements ControlValueAccessor {
     this.onTouched();
     this.dialog.open<TimePickerDialogComponent, TimePickerDialogData, Moment>(TimePickerDialogComponent, {
       ...TIME_PICKER_DIALOG_CONFIG,
-      data: {value: this.materialTimeControl.value},
+      data: {value: this.materialTimeControl.value, minuteStep: this.minuteStep()},
     }).afterClosed().subscribe(result => {
       if (result) {
         this.materialTimeControl.setValue(result);
