@@ -103,6 +103,20 @@ html {
   bottom: calc(-1 * env(safe-area-inset-bottom)) !important;
 }
 
+/* On mobile, dialogs and the "Mere" sheet open with CDK's scroll-blocking disabled (see
+   app.config.ts, MobileScrollBlockStrategy) to avoid the white-bar bug above — that strategy
+   is what actually stops the page behind them from being dragged with a touch gesture (a plain
+   JS touchmove interceptor, chosen over touch-action after touch-action's own ancestor/
+   descendant composition proved unreliable in practice: dragging directly on the backdrop was
+   blocked as expected, but dragging on a form field inside the dialog's content still scrolled
+   the page behind despite an ancestor supposedly forbidding it).
+     What's left here is just overscroll-behavior: contain on the dialog's own scrollable content
+   — needed once a touch IS legitimately scrolling that content (a form taller than the screen),
+   so dragging past its own top/bottom edge doesn't chain into the page behind it. */
+.mat-mdc-dialog-content {
+  overscroll-behavior: contain;
+}
+
 html, body {
   margin: 0;
   padding: 0;

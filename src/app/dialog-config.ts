@@ -1,7 +1,6 @@
 import {MatDialogConfig} from '@angular/material/dialog';
 
-/** Shared size for the app's editor dialogs, matching the previous "large" modal width. Same
- * look on mobile and desktop — deliberately no fullscreen-on-mobile treatment. */
+/** Shared size for the app's editor dialogs, matching the previous "large" modal width. */
 export const DIALOG_CONFIG: MatDialogConfig = {
   width: '800px',
   maxWidth: '95vw',
@@ -13,7 +12,7 @@ export const SMALL_DIALOG_CONFIG: MatDialogConfig = {
   maxWidth: '95vw',
 };
 
-/** For ConfirmDialogComponent's yes/no prompts. */
+/** For ConfirmDialogComponent's yes/no prompts (including delete confirmations). */
 export const CONFIRM_DIALOG_CONFIG: MatDialogConfig = {
   width: '500px',
   maxWidth: '95vw',

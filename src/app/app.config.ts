@@ -1,4 +1,4 @@
-import {ApplicationConfig, LOCALE_ID, provideZoneChangeDetection, isDevMode} from '@angular/core';
+import {ApplicationConfig, Injector, LOCALE_ID, inject, provideZoneChangeDetection, isDevMode} from '@angular/core';
 import {provideRouter} from '@angular/router';
 import {registerLocaleData} from '@angular/common';
 import localeDa from '@angular/common/locales/da';
@@ -9,6 +9,11 @@ import {provideMomentDateAdapter} from '@angular/material-moment-adapter';
 import 'moment/locale/da';
 import {routes} from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
+import {MAT_DIALOG_SCROLL_STRATEGY} from '@angular/material/dialog';
+import {MAT_BOTTOM_SHEET_DEFAULT_OPTIONS} from '@angular/material/bottom-sheet';
+import {createBlockScrollStrategy} from '@angular/cdk/overlay';
+import {BreakpointService} from './breakpoint.service';
+import {MobileScrollBlockStrategy} from './mobile-scroll-block-strategy';
 
 registerLocaleData(localeDa);
 
@@ -39,5 +44,27 @@ export const appConfig: ApplicationConfig = {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
+    // CDK's default BlockScrollStrategy toggles <html> to position:fixed (its
+    // cdk-global-scrollblock class) on every single overlay open/close. On iOS Safari in
+    // standalone PWA mode, that re-layout is what makes the viewport-height calculation
+    // underlying the bottom nav's safe-area handling briefly go stale, which is what shows up as
+    // a white bar under the bottom nav whenever a dialog opens. On mobile, use
+    // MobileScrollBlockStrategy instead — it blocks the same background scroll without touching
+    // <html>/<body> layout at all, so it can't retrigger that instability. Desktop keeps CDK's
+    // own strategy, since the bug doesn't occur there.
+    {
+      provide: MAT_DIALOG_SCROLL_STRATEGY,
+      useFactory: () => {
+        const injector = inject(Injector);
+        const breakpoints = inject(BreakpointService);
+        return () => breakpoints.isMobile() ? new MobileScrollBlockStrategy() : createBlockScrollStrategy(injector);
+      },
+    },
+    // Same root cause as above, for the mobile-only "Mere" bottom sheet — this one has no
+    // desktop use, so it's unconditional.
+    {
+      provide: MAT_BOTTOM_SHEET_DEFAULT_OPTIONS,
+      useFactory: () => ({scrollStrategy: new MobileScrollBlockStrategy()}),
+    },
   ],
 };
