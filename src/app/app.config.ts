@@ -1,4 +1,4 @@
-import {ApplicationConfig, Injector, LOCALE_ID, inject, provideZoneChangeDetection, isDevMode} from '@angular/core';
+import {ApplicationConfig, Injector, LOCALE_ID, inject, provideAppInitializer, provideZoneChangeDetection, isDevMode} from '@angular/core';
 import {provideRouter} from '@angular/router';
 import {registerLocaleData} from '@angular/common';
 import localeDa from '@angular/common/locales/da';
@@ -14,6 +14,7 @@ import {MAT_BOTTOM_SHEET_DEFAULT_OPTIONS} from '@angular/material/bottom-sheet';
 import {createBlockScrollStrategy} from '@angular/cdk/overlay';
 import {BreakpointService} from './breakpoint.service';
 import {MobileScrollBlockStrategy} from './mobile-scroll-block-strategy';
+import {DatepickerScrollBlockWatcher} from './datepicker-scroll-block-watcher';
 
 registerLocaleData(localeDa);
 
@@ -66,5 +67,11 @@ export const appConfig: ApplicationConfig = {
       provide: MAT_BOTTOM_SHEET_DEFAULT_OPTIONS,
       useFactory: () => ({scrollStrategy: new MobileScrollBlockStrategy()}),
     },
+    // Eagerly instantiates the root-provided watcher (see its own doc comment) so it starts
+    // observing <html> right away, rather than lazily on first use — there's no natural first
+    // "use" of it to hang that off of, unlike an actual injected dependency.
+    provideAppInitializer(() => {
+      inject(DatepickerScrollBlockWatcher);
+    }),
   ],
 };

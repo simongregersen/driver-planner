@@ -117,6 +117,30 @@ html {
   overscroll-behavior: contain;
 }
 
+/* The touchUi datepicker (date-field, date-time-field, ...) hits the exact same white-bar bug,
+   but can't be fixed the same way as dialogs/the "Mere" sheet: MatDatepicker hardcodes CDK's
+   BlockScrollStrategy for touchUi mode directly in its source rather than reading it from an
+   overridable injection token, so there's no provider to swap it through (see app.config.ts,
+   where MAT_DIALOG_SCROLL_STRATEGY/MAT_BOTTOM_SHEET_DEFAULT_OPTIONS do exactly that for the
+   other two). Since we can't stop BlockScrollStrategy from running at all here, this instead
+   neutralizes what it actually does to <html> — its cdk-global-scrollblock class sets
+   position: fixed plus inline top/left offsets, and this rule (higher specificity than the
+   class's own, and !important for the inline styles, which normally always win over a
+   stylesheet) puts all three straight back to normal. The class itself still gets added/removed
+   as usual — this only strips its visual/layout effect, so <html>'s box never actually changes,
+   which is what should stop it from retriggering the dvh recalculation in the first place.
+   DatepickerScrollBlockWatcher mirrors the same class onto our own JS touch-block (used for
+   dialogs/the sheet above) so the background is still protected from scroll-through while this
+   is neutralized. Desktop is untouched — no bug there, and BlockScrollStrategy's normal
+   background-scroll-blocking is still worth having. */
+@media (max-width: 767px) {
+  html.cdk-global-scrollblock {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+  }
+}
+
 html, body {
   margin: 0;
   padding: 0;
