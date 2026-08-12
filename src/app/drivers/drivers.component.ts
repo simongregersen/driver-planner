@@ -6,11 +6,10 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
-import {Driver, NewDriver} from '../driver';
+import {Driver} from '../driver';
 import {AppUser} from '../user';
 import {Observable} from 'rxjs';
-import {DriverEditorComponent} from '../driver-editor/driver-editor.component';
-import {DriverCreatorComponent} from '../driver-creator/driver-creator.component';
+import {DriverFormComponent} from '../driver-form/driver-form.component';
 import {DriverLoginCreatorComponent} from '../driver-login-creator/driver-login-creator.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
@@ -43,8 +42,7 @@ export class DriversComponent implements OnInit {
   }
 
   create() {
-    const dialogRef = this.dialog.open(DriverCreatorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.create.subscribe((d: NewDriver) => this.dataStore.addDriver(d.displayName, d.name, d.birthday));
+    this.dialog.open(DriverFormComponent, DIALOG_CONFIG).componentInstance.mode = 'create';
   }
 
   removeDriver(driver: Driver) {
@@ -67,8 +65,9 @@ export class DriversComponent implements OnInit {
   }
 
   edit(driver: Driver) {
-    const dialogRef = this.dialog.open(DriverEditorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(driver, (d: Driver, u: any) => this.dataStore.updateDriver(d, u));
+    const instance = this.dialog.open(DriverFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'edit';
+    instance.driver = driver;
   }
 
   createLogin(driver: Driver) {

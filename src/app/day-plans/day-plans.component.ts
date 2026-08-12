@@ -18,9 +18,8 @@ import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {Moment} from 'moment';
 import {DateUtility} from '../date-utility';
-import {TripEditorComponent} from '../trip-editor/trip-editor.component';
+import {TripFormComponent} from '../trip-form/trip-form.component';
 import {SelectOption} from '../select-option';
-import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
@@ -136,14 +135,18 @@ export class DayPlansComponent implements OnInit {
   }
 
   edit(trip: Trip) {
-    const dialogRef = this.dialog.open(TripEditorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
+    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'edit';
+    instance.trip = trip;
+    instance.save.subscribe((updates: NewTrip) => this.dataStore.updateTrip(trip, updates));
+    instance.remove.subscribe(() => this.removeTrip(trip));
   }
 
   create() {
-    const dialogRef = this.dialog.open(TripCreatorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.defaultDate = this.selectedDate;
-    dialogRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
+    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'create';
+    instance.defaultDate = this.selectedDate;
+    instance.save.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
   }
 
   insertTemplateWithConfirm(templateId: string, templateName: string) {

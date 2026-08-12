@@ -1,0 +1,72 @@
+<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger' : 'Opret tur' }}</h2>
+
+<mat-dialog-content>
+  <form id="tripForm" class="form-stack" [formGroup]="tripForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+    <mat-form-field class="full-width">
+      <mat-label>Navn</mat-label>
+      <input matInput type="text" formControlName="name">
+      @if (tripForm.controls['name'].hasError('required')) {
+        <mat-error>Navn påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="datetime-row">
+      @if (showDate) {
+        <mat-form-field>
+          <mat-label>Fra dato</mat-label>
+          <input matInput readonly formControlName="fromDate" [matDatepicker]="d1" [min]="minDate" (click)="d1.open()">
+          <mat-datepicker-toggle matIconSuffix [for]="d1"></mat-datepicker-toggle>
+          <mat-datepicker #d1 [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+          @if (tripForm.controls['fromDate'].hasError('required')) {
+            <mat-error>Dato påkrævet.</mat-error>
+          }
+        </mat-form-field>
+      }
+      <app-time-field label="Fra tid" formControlName="fromTime" [minuteStep]="1"></app-time-field>
+    </div>
+
+    <div class="datetime-row">
+      @if (showDate) {
+        <mat-form-field>
+          <mat-label>Til dato</mat-label>
+          <input matInput readonly formControlName="toDate" [matDatepicker]="d2" [min]="minDate" (click)="d2.open()">
+          <mat-datepicker-toggle matIconSuffix [for]="d2"></mat-datepicker-toggle>
+          <mat-datepicker #d2 [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+        </mat-form-field>
+      }
+      <app-time-field label="Til tid" formControlName="toTime" [minuteStep]="1"></app-time-field>
+    </div>
+
+    <mat-form-field class="full-width">
+      <mat-label>Chauffører</mat-label>
+      <mat-select formControlName="drivers" multiple placeholder="Vælg chauffører">
+        @for (option of (availableDrivers$ | async) ?? []; track option.id) {
+          <mat-option [value]="option.id">{{ option.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Køretøjer</mat-label>
+      <mat-select formControlName="vehicles" multiple placeholder="Vælg køretøjer">
+        @for (option of (availableVehicles$ | async) ?? []; track option.id) {
+          <mat-option [value]="option.id">{{ option.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Beskrivelse</mat-label>
+      <textarea matInput rows="10" formControlName="description"></textarea>
+      <mat-hint>Omslut tekst med **stjerner** for at fremhæve den med gult, eller skriv [en adresse] for at gøre den til et link.</mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (mode === 'edit') {
+    <button matButton type="button" class="confirm-danger" (click)="deleteTrip()">Slet</button>
+  }
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="tripForm" [disabled]="!tripForm.valid">{{ mode === 'edit' ? 'Gem' : 'Opret' }}</button>
+</mat-dialog-actions>

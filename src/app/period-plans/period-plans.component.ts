@@ -9,10 +9,10 @@ import {Moment} from 'moment';
 import {Observable} from 'rxjs';
 import {DateUtility} from '../date-utility';
 import {DataStore} from '../data.service';
-import {Trip} from '../trip';
+import {NewTrip, Trip} from '../trip';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
-import {TripEditorComponent} from '../trip-editor/trip-editor.component';
+import {TripFormComponent} from '../trip-form/trip-form.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
@@ -112,8 +112,11 @@ export class PeriodPlansComponent implements OnInit {
   }
 
   edit(trip: Trip) {
-    const dialogRef = this.dialog.open(TripEditorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(trip, (t: Trip, u: any) => this.dataStore.updateTrip(t, u), (t: Trip) => this.removeTrip(t));
+    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'edit';
+    instance.trip = trip;
+    instance.save.subscribe((updates: NewTrip) => this.dataStore.updateTrip(trip, updates));
+    instance.remove.subscribe(() => this.removeTrip(trip));
   }
 
   fetchTrips(): void {

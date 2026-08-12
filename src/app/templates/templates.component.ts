@@ -13,8 +13,7 @@ import {Template} from '../template';
 import {Observable} from 'rxjs';
 import {take} from 'rxjs/operators';
 import {NewTrip, Trip} from '../trip';
-import {TripEditorComponent} from '../trip-editor/trip-editor.component';
-import {TripCreatorComponent} from '../trip-creator/trip-creator.component';
+import {TripFormComponent} from '../trip-form/trip-form.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
@@ -76,9 +75,10 @@ export class TemplatesComponent implements OnInit {
 
   create() {
     if (!this.selectedTemplate) return;
-    const dialogRef = this.dialog.open(TripCreatorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.showDate = false;
-    dialogRef.componentInstance.create.subscribe((t: NewTrip) => this.dataStore.addTripToTemplate(this.selectedTemplate, t));
+    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'create';
+    instance.showDate = false;
+    instance.save.subscribe((t: NewTrip) => this.dataStore.addTripToTemplate(this.selectedTemplate, t));
   }
 
   removeTrip(trip: Trip) {
@@ -86,13 +86,12 @@ export class TemplatesComponent implements OnInit {
   }
 
   edit(trip: Trip) {
-    const dialogRef = this.dialog.open(TripEditorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.showDate = false;
-    dialogRef.componentInstance.edit(
-      trip,
-      (t: Trip, u: any) => this.dataStore.updateTripFromTemplate(this.selectedTemplate, t, u),
-      (t: Trip) => this.removeTrip(t),
-    );
+    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'edit';
+    instance.showDate = false;
+    instance.trip = trip;
+    instance.save.subscribe((updates: NewTrip) => this.dataStore.updateTripFromTemplate(this.selectedTemplate, trip, updates));
+    instance.remove.subscribe(() => this.removeTrip(trip));
   }
 
 

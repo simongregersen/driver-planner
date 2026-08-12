@@ -1,0 +1,11 @@
+.datetime-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.datetime-row > mat-form-field,
+.datetime-row > app-time-field {
+  flex: 1 1 160px;
+  min-width: 140px;
+}

@@ -5,12 +5,11 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {Utility} from '../utility';
-import {NewVehicle, Vehicle} from '../vehicle';
+import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {DataStore} from '../data.service';
-import {VehicleEditorComponent} from '../vehicle-editor/vehicle-editor.component';
-import {VehicleCreatorComponent} from '../vehicle-creator/vehicle-creator.component';
+import {VehicleFormComponent} from '../vehicle-form/vehicle-form.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 
@@ -36,8 +35,7 @@ export class VehiclesComponent implements OnInit {
   }
 
   create() {
-    const dialogRef = this.dialog.open(VehicleCreatorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.create.subscribe((v: NewVehicle) => this.dataStore.addVehicle(v.displayName, v.brand, v.regNo, v.latestInspection));
+    this.dialog.open(VehicleFormComponent, DIALOG_CONFIG).componentInstance.mode = 'create';
   }
 
   removeVehicle(vehicle: Vehicle) {
@@ -55,8 +53,9 @@ export class VehiclesComponent implements OnInit {
   }
 
   edit(vehicle: Vehicle) {
-    const dialogRef = this.dialog.open(VehicleEditorComponent, DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(vehicle, (v: Vehicle, u: any) => this.dataStore.updateVehicle(v, u));
+    const instance = this.dialog.open(VehicleFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'edit';
+    instance.vehicle = vehicle;
   }
 
 }

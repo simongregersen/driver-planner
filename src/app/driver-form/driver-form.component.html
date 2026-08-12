@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger' : 'Opret chauffør' }}</h2>
+
+<mat-dialog-content>
+  <form id="driverForm" class="form-stack" [formGroup]="driverForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Kaldenavn</mat-label>
+      <input matInput type="text" formControlName="displayName">
+      @if (driverForm.controls['displayName'].hasError('required')) {
+        <mat-error>Et kaldenavn er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Navn</mat-label>
+      <input matInput type="text" formControlName="name">
+      @if (driverForm.controls['name'].hasError('required')) {
+        <mat-error>Et navn er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <app-date-field class="date-field" label="Fødselsdag" startView="multi-year"
+                     [value]="driverForm.controls['birthday'].value" [minDate]="minDate"
+                     (valueChange)="setBirthday($event)"></app-date-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (mode === 'edit') {
+    <button matButton type="button" class="confirm-danger" (click)="deleteDriver()">Slet</button>
+  }
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="driverForm" [disabled]="!driverForm.valid">{{ mode === 'edit' ? 'Gem' : 'Opret' }}</button>
+</mat-dialog-actions>

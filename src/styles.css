@@ -85,17 +85,17 @@ html {
    nav-more-sheet.component.css) since MatBottomSheet's container is CDK-rendered outside that
    component's own template — fine while this app only ever opens the one sheet type; revisit
    if a second, differently-positioned bottom sheet is ever added.
-     KNOWN REMAINING LIMITATION, accepted rather than chased further: this still doesn't fully
-   close the gap. Confirmed via live diagnostics that the override above DOES apply correctly
-   (position: fixed, bottom: -34px, exactly as authored) — the gap persists anyway, on every
-   single open, not just a cold-launch first one. That rules out any CSS value being wrong; the
-   underlying viewport reference a *freshly-inserted* fixed-position element gets from iOS
-   appears to be unreliable at the moment of creation, in a way no CSS substitution can correct
-   — .bottom-nav only works reliably because it's mounted once at page load and never recreated.
-   A real fix would mean not using MatBottomSheet.open() for this menu at all (rendering it as a
-   permanent, always-mounted element toggled by CSS instead, the same pattern as .bottom-nav) —
-   deliberately not done, to avoid reimplementing MatBottomSheet's backdrop/focus-trap/animation
-   behavior by hand for a narrow cosmetic gap. Revisit if that trade-off changes. */
+     For a long while this still didn't fully close the gap despite the override above applying
+   correctly (confirmed via live diagnostics: position: fixed, bottom: -34px, exactly as
+   authored) — the gap persisted anyway, on every single open. That turned out to have a
+   completely separate cause, unrelated to any of the positioning above: CDK's default
+   BlockScrollStrategy toggles <html> to position: fixed (its cdk-global-scrollblock class) on
+   every overlay open/close, and that re-layout of the exact element html's own dvh fix above
+   depends on is what was destabilizing the viewport measurement — not a "freshly-created
+   overlay" issue at all, since it reproduced on every open, not just the first. Fixed in
+   app.config.ts (MAT_BOTTOM_SHEET_DEFAULT_OPTIONS/MobileScrollBlockStrategy) by not using
+   BlockScrollStrategy on mobile at all. This rule's own positioning was correct all along and
+   is still needed — it just wasn't sufficient on its own while that instability was live. */
 .mat-bottom-sheet-container {
   position: fixed !important;
   left: 0 !important;
