@@ -58,10 +58,12 @@
       </mat-select>
     </mat-form-field>
 
+    <mat-checkbox formControlName="invoiced">Faktureres</mat-checkbox>
+
     <p class="field-hint">Omslut tekst med **stjerner** for at fremhæve den med gult, eller skriv [en adresse] for at gøre den til et link.</p>
     <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Beskrivelse (chauffør)</mat-label>
-      <textarea matInput rows="10" formControlName="description"></textarea>
+      <textarea matInput rows="6" formControlName="description"></textarea>
     </mat-form-field>
 
     <mat-form-field class="full-width" subscriptSizing="dynamic">
@@ -69,8 +71,6 @@
       <textarea matInput rows="6" formControlName="officeDescription"></textarea>
       <mat-hint>Kun synlig for administratorer, aldrig for chaufføren.</mat-hint>
     </mat-form-field>
-
-    <mat-checkbox formControlName="invoiced">Faktureres</mat-checkbox>
   </form>
 </mat-dialog-content>
 
