@@ -91,9 +91,11 @@
             <div class="desktop-trip-info">
               <app-rich-text [text]="trip.name"></app-rich-text>
               @if (showOfficeNotes() && trip.officeDescription) {
-                <div class="office-note no-print"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
+                <div class="office-note"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
               }
-              <span class="muted newline" [class.print-only]="hideDescriptionOnScreen()">@if (!hideDescriptionOnScreen()) {<br>}<app-rich-text [text]="trip.description"></app-rich-text></span>
+              @if (!hideDescriptionOnScreen()) {
+                <span class="muted newline"><br><app-rich-text [text]="trip.description"></app-rich-text></span>
+              }
             </div>
             <div class="mobile-trip-info">
               <strong>
@@ -101,13 +103,15 @@
                 <span class="mobile-trip-name"><app-rich-text [text]="trip.name"></app-rich-text></span>
               </strong>
               @if (showOfficeNotes() && trip.officeDescription) {
-                <div class="mobile-line office-note no-print"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
+                <div class="mobile-line office-note"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
               }
               <div class="mobile-line mobile-chips-line">
                 <ng-container [ngTemplateOutlet]="driverChips" [ngTemplateOutletContext]="{applyHideSingle: true}"></ng-container>
                 <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
               </div>
-              <div class="mobile-line newline muted" [class.print-only]="hideDescriptionOnScreen()"><app-rich-text [text]="trip.description"></app-rich-text></div>
+              @if (!hideDescriptionOnScreen()) {
+                <div class="mobile-line newline muted"><app-rich-text [text]="trip.description"></app-rich-text></div>
+              }
               <div class="finish-toggle-side">
                 <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
               </div>

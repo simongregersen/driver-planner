@@ -7,4 +7,9 @@ mark {
   color: #1f2937;
   padding: 0 2px;
   border-radius: 2px;
+  /* Without this, browsers drop background colors when printing by default (their own
+     "print backgrounds" setting is normally off) — the highlight would otherwise silently
+     vanish on a printed Day Plan/Period Plan even though it's clearly visible on screen. */
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
 }

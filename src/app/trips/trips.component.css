@@ -42,9 +42,10 @@
   margin-top: 2px;
 }
 
-/* Admin-only, never printed and never shown to a driver — visually set apart from the
-   driver-facing name/description with a left accent bar and the theme's tertiary color,
-   rather than the plain muted grey used for the driver's own description. */
+/* Admin-only — never shown to a driver on-screen, and printed only when explicitly toggled on
+   (showOfficeNotes), same as the driver-facing description. Visually set apart with a left
+   accent bar and the theme's tertiary color, rather than the plain muted grey used for the
+   driver's own description. */
 .office-note {
   margin-top: 2px;
   padding-left: 6px;
