@@ -152,6 +152,10 @@ export class TimeReportComponent implements OnInit {
     this.periodStartSubject.next(this.periodStartFor(moment()));
   }
 
+  isCurrentPeriod(): boolean {
+    return this.periodStart.isSame(this.periodStartFor(moment()), 'day');
+  }
+
   // Monday of the date's own ISO week, pulled back an extra week if that week is odd-numbered,
   // so the result always lands on the Monday of an even ISO week.
   private periodStartFor(date: Moment): Moment {

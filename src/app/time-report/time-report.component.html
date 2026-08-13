@@ -26,7 +26,7 @@
         <h5 class="section-title periode-heading">Periode</h5>
         <div class="button-row periode-nav" role="group" aria-label="Periode-navigation">
           <button matButton="outlined" type="button" (click)="previousPeriod()">Forrige</button>
-          <button matButton="outlined" type="button" (click)="goToCurrentPeriod()">Indeværende periode</button>
+          <button [matButton]="isCurrentPeriod() ? 'filled' : 'outlined'" type="button" (click)="goToCurrentPeriod()">Indeværende periode</button>
           <button matButton="outlined" type="button" (click)="nextPeriod()">Næste</button>
         </div>
       </div>

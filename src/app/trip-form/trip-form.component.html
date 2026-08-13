@@ -59,6 +59,17 @@
     </mat-form-field>
 
     <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Note (chauffør)</mat-label>
+      <textarea matInput rows="6" formControlName="description"></textarea>
+    </mat-form-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Note (kontor)</mat-label>
+      <textarea matInput rows="6" formControlName="officeDescription"></textarea>
+      <mat-hint>Kun synlig for administratorer, aldrig for chaufføren.</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Mærkater</mat-label>
       <mat-chip-grid #labelGrid aria-label="Mærkater">
         @for (label of tripForm.controls['labels'].value; track label) {
@@ -77,19 +88,11 @@
       </mat-chip-grid>
       <mat-hint>Kun synlig for administratorer, aldrig for chaufføren.</mat-hint>
     </mat-form-field>
-
-    <p class="field-hint">Omslut tekst med **stjerner** for at fremhæve den med gult, eller skriv [en adresse] for at gøre den til et link.</p>
-    <mat-form-field class="full-width" subscriptSizing="dynamic">
-      <mat-label>Note (chauffør)</mat-label>
-      <textarea matInput rows="6" formControlName="description"></textarea>
-    </mat-form-field>
-
-    <mat-form-field class="full-width" subscriptSizing="dynamic">
-      <mat-label>Note (kontor)</mat-label>
-      <textarea matInput rows="6" formControlName="officeDescription"></textarea>
-      <mat-hint>Kun synlig for administratorer, aldrig for chaufføren.</mat-hint>
-    </mat-form-field>
+    
+    <br>
+    <p class="field-hint">Hint: Omslut tekst med to **stjerner** for at fremhæve den med gult, eller skriv [adresse] for at gøre indsætte et Maps link.</p>
   </form>
+
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
