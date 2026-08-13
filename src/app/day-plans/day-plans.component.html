@@ -85,6 +85,13 @@
         </mat-slide-toggle>
       </div>
       <div>
+        <mat-slide-toggle class="labels-toggle"
+                    [checked]="showLabels()"
+                    (change)="showLabels.set($event.checked)">
+          Vis mærkater
+        </mat-slide-toggle>
+      </div>
+      <div>
         <h5 class="section-title">Chauffører</h5>
         <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
                           (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
@@ -94,6 +101,13 @@
         <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
                           (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
       </div>
+      @if (trips$ | async; as trips) {
+      <div>
+        <h5 class="section-title">Mærkater</h5>
+        <app-chip-filter [options]="labelOptions(trips)" [selectedIds]="selectedLabelKeys()"
+                          (selectionChange)="selectedLabelKeys.set($event)"></app-chip-filter>
+      </div>
+      }
     </div>
   </aside>
 
@@ -159,6 +173,13 @@
         </mat-slide-toggle>
       </div>
       <div>
+        <mat-slide-toggle class="labels-toggle"
+                    [checked]="showLabels()"
+                    (change)="showLabels.set($event.checked)">
+          Vis mærkater
+        </mat-slide-toggle>
+      </div>
+      <div>
         <h5 class="section-title">Chauffører</h5>
         <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
                           (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
@@ -168,6 +189,13 @@
         <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
                           (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
       </div>
+      @if (trips$ | async; as trips) {
+      <div>
+        <h5 class="section-title">Mærkater</h5>
+        <app-chip-filter [options]="labelOptions(trips)" [selectedIds]="selectedLabelKeys()"
+                          (selectionChange)="selectedLabelKeys.set($event)"></app-chip-filter>
+      </div>
+      }
     </div>
   </app-collapsible-bottom-bar>
 
@@ -189,6 +217,7 @@
       <app-trips [trips]="filterTrips(trips)"
                  [hideDescriptionOnScreen]="!showDriverNotes()"
                  [showOfficeNotes]="showOfficeNotes()"
+                 [showLabels]="showLabels()"
                  [referenceDate]="selectedDate"
                  (edit)="edit($event)"
                  (removeDriver)="removeDriverFromTrip($event)"

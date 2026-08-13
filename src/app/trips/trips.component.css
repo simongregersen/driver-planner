@@ -15,6 +15,28 @@
   white-space: pre-line;
 }
 
+/* Admin-only labels, next to the trip name — margin on the wrapper (not a gap on a flex
+   container around app-rich-text) since app-rich-text's :host is display:contents, and a flex
+   gap there would leak in between its own internal segments (e.g. a **highlighted** word)
+   rather than just separating it from these chips. */
+.trip-labels {
+  margin-left: 6px;
+}
+
+.trip-label-chip {
+  display: inline-block;
+  background: var(--mat-sys-secondary);
+  color: var(--mat-sys-on-secondary);
+  font-size: 0.7em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
 /* Auto layout only takes Start/Slut/Chauffører/Køretøjer's percentage hints as loose
    suggestions — a long unbroken value in any column (most commonly Tur's description, shown
    inline on My Dag) could still nudge the whole table a few px past 100%, which then showed up

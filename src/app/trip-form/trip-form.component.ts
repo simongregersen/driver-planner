@@ -1,11 +1,13 @@
 import {ChangeDetectionStrategy, Component, OnInit, inject, output} from '@angular/core';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
+import {COMMA, ENTER} from '@angular/cdk/keycodes';
 import {MatButtonModule} from '@angular/material/button';
-import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatChipEditedEvent, MatChipInputEvent, MatChipsModule} from '@angular/material/chips';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import moment, {Moment} from 'moment';
@@ -38,8 +40,8 @@ export type TripFormMode = 'create' | 'edit';
   styleUrls: ['./trip-form.component.css'],
   imports: [
     ReactiveFormsModule, AsyncPipe,
-    MatButtonModule, MatCheckboxModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule,
-    MatInputModule, MatSelectModule, TimeFieldComponent,
+    MatButtonModule, MatChipsModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule,
+    MatIconModule, MatInputModule, MatSelectModule, TimeFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -66,6 +68,7 @@ export class TripFormComponent implements OnInit {
   readonly dialogRef = inject(MatDialogRef<TripFormComponent>);
   readonly breakpoints = inject(BreakpointService);
   readonly minDate = this.dateUtility.minDate(5);
+  readonly labelSeparatorKeyCodes = [ENTER, COMMA];
 
   ngOnInit() {
     const isEdit = this.mode === 'edit';
@@ -82,7 +85,7 @@ export class TripFormComponent implements OnInit {
       vehicles: [isEdit ? this.trip.vehicles : []],
       description: isEdit ? this.trip.description : '',
       officeDescription: isEdit ? this.trip.officeDescription : '',
-      invoiced: isEdit ? (this.trip.invoiced ?? false) : false
+      labels: [isEdit ? (this.trip.labels ?? []) : []]
     }, {validators: this.endAfterStartValidator});
 
     this.availableDrivers$ = this.dataStore.getAllDrivers()
@@ -106,6 +109,34 @@ export class TripFormComponent implements OnInit {
     return (end && !end.isAfter(start)) ? {endBeforeStart: true} : null;
   };
 
+  addLabel(event: MatChipInputEvent): void {
+    const value = (event.value || '').trim();
+    if (value) {
+      const labels: string[] = this.tripForm.controls['labels'].value || [];
+      this.tripForm.controls['labels'].setValue([...labels, value]);
+    }
+    event.chipInput.clear();
+  }
+
+  removeLabel(label: string): void {
+    const labels: string[] = this.tripForm.controls['labels'].value || [];
+    this.tripForm.controls['labels'].setValue(labels.filter(l => l !== label));
+  }
+
+  editLabel(label: string, event: MatChipEditedEvent): void {
+    const value = (event.value || '').trim();
+    const labels: string[] = this.tripForm.controls['labels'].value || [];
+    const index = labels.indexOf(label);
+    if (index === -1) return;
+    if (!value) {
+      this.removeLabel(label);
+      return;
+    }
+    const updated = [...labels];
+    updated[index] = value;
+    this.tripForm.controls['labels'].setValue(updated);
+  }
+
   onSubmit() {
     const val = this.tripForm.value;
     const {start, end} = this.computeStartEnd(val);
@@ -116,7 +147,7 @@ export class TripFormComponent implements OnInit {
       name: val.name || '',
       description: val.description || '',
       officeDescription: val.officeDescription || '',
-      invoiced: val.invoiced || false,
+      labels: val.labels || [],
       drivers: val.drivers || [],
       vehicles: val.vehicles || []
     });

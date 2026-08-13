@@ -90,6 +90,13 @@
           <td class="trip-cell">
             <div class="desktop-trip-info">
               <app-rich-text [text]="trip.name"></app-rich-text>
+              @if (showLabels() && trip.labels?.length) {
+                <span class="trip-labels">
+                  @for (label of trip.labels; track label) {
+                    <span class="trip-label-chip">{{ label }}</span>
+                  }
+                </span>
+              }
               @if (showOfficeNotes() && trip.officeDescription) {
                 <div class="office-note"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
               }
@@ -101,6 +108,13 @@
               <strong>
                 <span class="mobile-trip-time">@if (startsOutsideReference(trip)) { &mdash; } @else { {{ trip.start.toDate() | date:'HH:mm' }} }@if (trip.end) {(&ndash;@if (endsOutsideReference(trip)) { &mdash; } @else { {{ trip.end.toDate() | date:'HH:mm' }} })}</span>
                 <span class="mobile-trip-name"><app-rich-text [text]="trip.name"></app-rich-text></span>
+                @if (showLabels() && trip.labels?.length) {
+                  <span class="trip-labels">
+                    @for (label of trip.labels; track label) {
+                      <span class="trip-label-chip">{{ label }}</span>
+                    }
+                  </span>
+                }
               </strong>
               @if (showOfficeNotes() && trip.officeDescription) {
                 <div class="mobile-line office-note"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>

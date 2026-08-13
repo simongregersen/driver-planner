@@ -8,8 +8,8 @@ export interface Trip extends AngularFireObject {
   description?: string;
   /** Admin-only note, never shown to drivers (see TripsComponent's showOfficeNotes input). */
   officeDescription?: string;
-  /** Admin-only billing flag, never shown to drivers. */
-  invoiced?: boolean;
+  /** Admin-only labels, never shown to drivers (see TripsComponent's showLabels input). */
+  labels?: string[];
   drivers: string[];
   vehicles: string[];
   modified?: Moment;
@@ -27,7 +27,7 @@ export interface NewTrip {
   name: string;
   description?: string;
   officeDescription?: string;
-  invoiced?: boolean;
+  labels?: string[];
   drivers: string[];
   vehicles: string[];
 }

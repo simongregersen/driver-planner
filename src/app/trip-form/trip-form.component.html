@@ -58,7 +58,25 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-checkbox formControlName="invoiced">Faktureres</mat-checkbox>
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Mærkater</mat-label>
+      <mat-chip-grid #labelGrid aria-label="Mærkater">
+        @for (label of tripForm.controls['labels'].value; track label) {
+          <mat-chip-row (removed)="removeLabel(label)" [editable]="true" (edited)="editLabel(label, $event)">
+            {{ label }}
+            <button matChipRemove aria-label="Fjern mærkat">
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip-row>
+        }
+        <input placeholder="Nyt mærkat..."
+               [matChipInputFor]="labelGrid"
+               [matChipInputSeparatorKeyCodes]="labelSeparatorKeyCodes"
+               [matChipInputAddOnBlur]="true"
+               (matChipInputTokenEnd)="addLabel($event)">
+      </mat-chip-grid>
+      <mat-hint>Kun synlig for administratorer, aldrig for chaufføren.</mat-hint>
+    </mat-form-field>
 
     <p class="field-hint">Omslut tekst med **stjerner** for at fremhæve den med gult, eller skriv [en adresse] for at gøre den til et link.</p>
     <mat-form-field class="full-width" subscriptSizing="dynamic">

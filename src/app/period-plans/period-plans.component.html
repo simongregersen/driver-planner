@@ -44,6 +44,13 @@
         </mat-slide-toggle>
       </div>
       <div>
+        <mat-slide-toggle class="labels-toggle"
+                    [checked]="showLabels()"
+                    (change)="showLabels.set($event.checked)">
+          Vis mærkater
+        </mat-slide-toggle>
+      </div>
+      <div>
         <h5 class="section-title">Chauffører</h5>
         <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
                           (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
@@ -63,6 +70,7 @@
           <app-trips [trips]="filterByDate(filterTrips(trips), date)"
                      [hideDescriptionOnScreen]="!showDriverNotes()"
                      [showOfficeNotes]="showOfficeNotes()"
+                     [showLabels]="showLabels()"
                      [referenceDate]="date"
                      (edit)="edit($event)"
                      (removeDriver)="removeDriverFromTrip($event)"

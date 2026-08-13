@@ -58,8 +58,10 @@ export class DayPlansComponent implements OnInit {
 
   readonly selectedDriverKeys = signal<string[]>([]);
   readonly selectedVehicleKeys = signal<string[]>([]);
+  readonly selectedLabelKeys = signal<string[]>([]);
   readonly showOfficeNotes = signal(false);
   readonly showDriverNotes = signal(false);
+  readonly showLabels = signal(false);
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
@@ -207,10 +209,24 @@ export class DayPlansComponent implements OnInit {
     if (!trips) return [];
     const driverKeys = this.selectedDriverKeys();
     const vehicleKeys = this.selectedVehicleKeys();
+    const labelKeys = this.selectedLabelKeys();
     return trips.filter(t =>
       (driverKeys.length === 0 || (t.drivers ?? []).some(k => driverKeys.includes(k))) &&
-      (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k)))
+      (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k))) &&
+      (labelKeys.length === 0 || (t.labels ?? []).some(k => labelKeys.includes(k)))
     );
+  }
+
+  // Labels are freeform strings on each trip, not a fixed entity list like drivers/vehicles —
+  // the filter's own options are just whichever distinct labels actually appear on the day's
+  // trips, derived fresh each time rather than stored anywhere.
+  labelOptions(trips: Trip[] | null): SelectOption[] {
+    if (!trips) return [];
+    const labels = new Set<string>();
+    trips.forEach(t => (t.labels ?? []).forEach(l => labels.add(l)));
+    return Array.from(labels)
+      .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}))
+      .map(l => ({id: l, name: l}));
   }
 
   /** The calendar and the date input both hand back null when a selection is cleared. */

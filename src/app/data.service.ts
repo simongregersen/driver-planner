@@ -94,7 +94,7 @@ export class DataStore {
       name: trip.name,
       description: trip.description || '',
       officeDescription: trip.officeDescription || '',
-      invoiced: trip.invoiced || false,
+      labels: trip.labels || [],
       drivers: trip.drivers || [],
       vehicles: trip.vehicles || [],
       multiDayStart: this.multiDayStart(trip.start, trip.end)
@@ -311,7 +311,7 @@ export class DataStore {
       name: trip.name,
       description: trip.description || '',
       officeDescription: trip.officeDescription || '',
-      invoiced: trip.invoiced || false,
+      labels: trip.labels || [],
       drivers: trip.drivers || [],
       vehicles: trip.vehicles || []
     });

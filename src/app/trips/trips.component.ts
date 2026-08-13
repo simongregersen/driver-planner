@@ -34,6 +34,7 @@ export class TripsComponent implements OnInit {
   highlightModified = input(false);
   hideDescriptionOnScreen = input(false);
   showOfficeNotes = input(false);
+  showLabels = input(false);
   hideSingleDriver = input(false);
   showFinishToggle = input(false);
   /** The single day this list is being shown under, if any (a day-plans/period-plans day-block,
