@@ -1,5 +1,6 @@
 import {Driver} from './driver';
 import {Trip} from './trip';
+import {Note} from './note';
 import {Moment} from 'moment';
 
 export class Utility {
@@ -32,6 +33,13 @@ export class Utility {
   static tripOverlaps(trip: Trip, start: Moment, end: Moment): boolean {
     const effectiveEnd = trip.end ?? trip.start;
     return trip.start.isBefore(end) && effectiveEnd.isSameOrAfter(start);
+  }
+
+  // A note's start/end are both dates (no time), so a given date "applies" whenever it falls
+  // anywhere within that inclusive range — used by both Day Plans (all notes for the day) and
+  // My Day (just the ones assigned to the signed-in driver).
+  static noteAppliesToDate(note: Note, date: Moment): boolean {
+    return !date.isBefore(note.start, 'day') && !date.isAfter(note.end, 'day');
   }
 
 }

@@ -59,6 +59,13 @@
     </app-collapsible-bottom-bar>
 
     <main class="page-main">
+      @if (notes$ | async; as notes) {
+        @for (note of notesForDriver(notes, driver, selectedDate); track note.$key) {
+          <div class="note-alert">
+            <span class="note-alert-text">{{ note.text }}</span>
+          </div>
+        }
+      }
       @if (dayPublic$ | async) {
         @if (trips$ | async; as trips) {
           <app-trips [trips]="filterMyTrips(trips, driver)"

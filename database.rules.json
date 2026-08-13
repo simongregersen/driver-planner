@@ -41,6 +41,11 @@
       }
     },
 
+    "notes": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+
     "trips": {
       ".indexOn": ["start", "multiDayStart"],
       ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",

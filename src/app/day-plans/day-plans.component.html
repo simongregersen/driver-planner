@@ -54,6 +54,9 @@
         <h5 class="section-title">Operationer</h5>
         <div class="toolbar-row">
           <button matButton="filled" type="button" (click)="create()">Opret tur</button>
+          <button matButton="filled" type="button" (click)="createNote()">Opret note</button>
+        </div>
+        <div class="toolbar-row">
           <button matButton="outlined" type="button" [matMenuTriggerFor]="templateMenu">
             Indsæt skabelon
             <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
@@ -125,6 +128,9 @@
         <h5 class="section-title">Operationer</h5>
         <div class="toolbar-row">
           <button matButton="filled" type="button" (click)="create()">Opret tur</button>
+          <button matButton="filled" type="button" (click)="createNote()">Opret note</button>
+        </div>
+        <div class="toolbar-row">
           <button matButton="outlined" type="button" [matMenuTriggerFor]="templateMenuMobile">
             Indsæt skabelon
             <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
@@ -166,6 +172,19 @@
   </app-collapsible-bottom-bar>
 
   <main class="page-main">
+    @if (notes$ | async; as notes) {
+      @for (note of notesForDate(notes, selectedDate); track note.$key) {
+        <div class="note-alert" (click)="editNote(note)">
+          <span class="note-alert-text">{{ note.text }}</span>
+          @if (noteDriverNames(note)) {
+            <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ noteDriverNames(note) }}</span>
+          }
+          @if (noteVehicleNames(note)) {
+            <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ noteVehicleNames(note) }}</span>
+          }
+        </div>
+      }
+    }
     @if (trips$ | async; as trips) {
       <app-trips [trips]="filterTrips(trips)"
                  [hideDescriptionOnScreen]="!showDriverNotes()"

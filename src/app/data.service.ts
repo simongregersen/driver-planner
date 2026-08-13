@@ -11,6 +11,7 @@ import {Vehicle} from './vehicle';
 import {DateUtility} from './date-utility';
 import {Utility} from './utility';
 import {Template} from './template';
+import {NewNote, Note} from './note';
 import {db} from './firebase';
 import {Moment} from 'moment';
 import moment from 'moment';
@@ -32,6 +33,7 @@ export class DataStore {
   private publicRef = ref(db, '/public');
   private usersRef = ref(db, '/users');
   private notificationQueueRef = ref(db, '/notificationQueue');
+  private notesRef = ref(db, '/notes');
 
   constructor(private dateUtility: DateUtility, private notificationDispatch: NotificationDispatchService) {
   }
@@ -352,5 +354,37 @@ export class DataStore {
         t.end = (t.end) ? moment(t.end as any) : null;
       }))
     );
+  }
+
+  // Notes are low-volume (a handful of vacations/shop visits at a time) compared to trips, so
+  // unlike getTrips there's no windowed query here — every caller just fetches all of them and
+  // filters client-side for whichever date(s) it cares about.
+  getAllNotes(): Observable<Note[]> {
+    return listVal<Note>(this.notesRef, {keyField: '$key'}).pipe(
+      tap(ns => ns.forEach(n => {
+        n.start = this.dateUtility.getDate(moment(n.start as any));
+        n.end = this.dateUtility.getDate(moment(n.end as any));
+      }))
+    );
+  }
+
+  addNote(note: NewNote) {
+    return push(this.notesRef, {
+      start: note.start.valueOf(),
+      end: note.end.valueOf(),
+      text: note.text || '',
+      drivers: note.drivers || [],
+      vehicles: note.vehicles || []
+    });
+  }
+
+  updateNote(note: Note, updates: any) {
+    if (updates.start) updates.start = updates.start.valueOf();
+    if (updates.end) updates.end = updates.end.valueOf();
+    return update(child(this.notesRef, note.$key), updates);
+  }
+
+  removeNote(note: Note) {
+    return remove(child(this.notesRef, note.$key));
   }
 }

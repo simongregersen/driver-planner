@@ -413,6 +413,39 @@ body {
   font-weight: 600;
 }
 
+/* A planning note (driver on vacation, vehicle in the shop, ...) — informational context, not
+   a warning or an error, so it gets its own calm color rather than .cell-warning's yellow. Uses
+   the theme's own primary-container tone (same blue family as the toolbar/buttons) rather than
+   a hand-picked hex, so it stays in step with the app's actual color scheme — and, like
+   .row-highlight/.cell-warning above, a flat tint with no border. Shared between Day Plans
+   (clickable, own cursor/hover in day-plans.component.css) and My Day (plain display only).
+   Kept to a single line — text and meta both flow inline and truncate together with an
+   ellipsis rather than wrapping, so a note never takes more vertical space than one row. */
+.note-alert {
+  display: block;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border-radius: var(--mat-sys-corner-medium);
+  padding: 4px 10px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-alert-meta {
+  font-size: 0.85em;
+  opacity: 0.85;
+}
+
+/* Symmetric margin on the separator itself, rather than ambient template whitespace around it
+   (which rendered unevenly — more space on one side than the other) — this is the one thing
+   controlling the gap on both sides, so it can't end up lopsided. */
+.note-alert-sep {
+  margin: 0 4px;
+  opacity: 0.6;
+}
+
 /* The 48px invisible touch target restored on .data-table .mat-mdc-icon-button below extends
    11px past each button's own 26px visible edge — harmless on interior edges where it just
    overlaps already-occupied space, but the last button in a row (almost always right-aligned

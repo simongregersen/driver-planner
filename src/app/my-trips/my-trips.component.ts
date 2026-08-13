@@ -9,6 +9,7 @@ import {MatInputModule} from '@angular/material/input';
 import {Observable} from 'rxjs';
 import moment, {Moment} from 'moment';
 import {Trip} from '../trip';
+import {Note} from '../note';
 import {Driver} from '../driver';
 import {DataStore} from '../data.service';
 import {UserService} from '../user.service';
@@ -41,6 +42,7 @@ export class MyTripsComponent implements OnInit {
 
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
+  notes$!: Observable<Note[]>;
   readonly minDate = this.dateUtility.minDate(5);
   private _selectedDate: Moment = this.dateUtility.today();
 
@@ -72,6 +74,14 @@ export class MyTripsComponent implements OnInit {
       });
 
     this.selectedDate = this.dateUtility.today();
+    this.notes$ = this.dataStore.getAllNotes();
+  }
+
+  // Read-only here — unlike Day Plans, My Day has no edit dialog for notes; a driver sees the
+  // ones that apply to them, not the full set, and can't touch them either way.
+  notesForDriver(notes: Note[] | null, driver: Driver | null, date: Moment): Note[] {
+    if (!notes || !driver) return [];
+    return notes.filter(n => (n.drivers || []).includes(driver.$key) && Utility.noteAppliesToDate(n, date));
   }
 
   isPublicDate(date: Moment, publicDates: string[]): boolean {

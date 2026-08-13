@@ -12,6 +12,8 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {DataStore} from '../data.service';
 import {NewTrip, Trip} from '../trip';
+import {Note} from '../note';
+import {Utility} from '../utility';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
@@ -19,6 +21,7 @@ import {map} from 'rxjs/operators';
 import {Moment} from 'moment';
 import {DateUtility} from '../date-utility';
 import {TripFormComponent} from '../trip-form/trip-form.component';
+import {NoteFormComponent} from '../note-form/note-form.component';
 import {SelectOption} from '../select-option';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
@@ -49,6 +52,7 @@ export class DayPlansComponent implements OnInit {
   availableTemplates$!: Observable<SelectOption[]>;
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
+  notes$!: Observable<Note[]>;
   readonly minDate = this.dateUtility.minDate(5);
   private _selectedDate: Moment = this.dateUtility.today();
 
@@ -90,6 +94,7 @@ export class DayPlansComponent implements OnInit {
     this.selectedDate = this.dateUtility.today();
     this.availableTemplates$ = this.dataStore.getAllTemplates()
       .pipe(map(ts => ts.map(t => ({id: t.$key, name: t.name}))));
+    this.notes$ = this.dataStore.getAllNotes();
   }
 
   isPublicDate(date: Moment, publicDates: string[]): boolean {
@@ -149,6 +154,39 @@ export class DayPlansComponent implements OnInit {
     instance.mode = 'create';
     instance.defaultDate = this.selectedDate;
     instance.save.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
+  }
+
+  // Notes save themselves directly to DataStore (see NoteFormComponent) — no save/remove
+  // output to subscribe to here, unlike trips.
+  createNote() {
+    const instance = this.dialog.open(NoteFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'create';
+    instance.defaultDate = this.selectedDate;
+  }
+
+  editNote(note: Note) {
+    const instance = this.dialog.open(NoteFormComponent, DIALOG_CONFIG).componentInstance;
+    instance.mode = 'edit';
+    instance.note = note;
+  }
+
+  notesForDate(notes: Note[] | null, date: Moment): Note[] {
+    if (!notes) return [];
+    return notes.filter(n => Utility.noteAppliesToDate(n, date));
+  }
+
+  noteDriverNames(note: Note): string {
+    return (note.drivers || [])
+      .map(k => this.driverList().find(d => d.$key === k)?.displayName)
+      .filter((name): name is string => !!name)
+      .join(', ');
+  }
+
+  noteVehicleNames(note: Note): string {
+    return (note.vehicles || [])
+      .map(k => this.vehicleList().find(v => v.$key === k)?.displayName)
+      .filter((name): name is string => !!name)
+      .join(', ');
   }
 
   insertTemplateWithConfirm(templateId: string, templateName: string) {

@@ -43,6 +43,16 @@
   margin-bottom: 16px;
 }
 
+/* .note-alert's colors/layout live in the global styles.css (shared with My Day's read-only
+   display) — only the clickable-here affordance belongs to Day Plans specifically. */
+.note-alert {
+  cursor: pointer;
+}
+
+.note-alert:hover {
+  background: var(--mat-sys-primary-fixed-dim);
+}
+
 .day-public-toggle {
   margin-top: 8px;
   /* Only the track was ever the theme's primary blue — the handle circle and its checkmark
