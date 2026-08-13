@@ -11,3 +11,28 @@
   padding: 15px;
   margin: 16px auto 0;
 }
+
+.install-row {
+  max-width: 330px;
+  padding: 0 15px;
+  margin: 0 auto;
+}
+
+.install-row button mat-icon {
+  margin-right: 4px;
+}
+
+/* Matches .form-signin's own width/centering, so it reads as part of the same block rather
+   than a stray line of text below it. */
+.install-hint {
+  max-width: 330px;
+  padding: 0 15px;
+  margin: 8px auto 0;
+  text-align: center;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.install-hint mat-icon {
+  vertical-align: text-bottom;
+}

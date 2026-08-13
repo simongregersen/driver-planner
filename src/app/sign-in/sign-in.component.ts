@@ -2,22 +2,25 @@ import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core'
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {AuthenticationService} from '../authentication.service';
 import {Router} from '@angular/router';
 import {BrandIconComponent} from '../brand-icon/brand-icon.component';
+import {InstallPromptService} from '../install-prompt.service';
 
 @Component({
   standalone: true,
   selector: 'app-sign-in',
   templateUrl: './sign-in.component.html',
   styleUrls: ['./sign-in.component.css'],
-  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, BrandIconComponent],
+  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, BrandIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignInComponent {
   private readonly authService = inject(AuthenticationService);
   private readonly router = inject(Router);
+  readonly installPrompt = inject(InstallPromptService);
 
   error = signal<string | null>(null);
 

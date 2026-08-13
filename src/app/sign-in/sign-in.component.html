@@ -18,3 +18,19 @@
     Log ind
   </button>
 </form>
+
+@if (!installPrompt.isStandalone()) {
+  @if (installPrompt.canInstall()) {
+    <div class="install-row">
+      <button matButton="outlined" class="full-width" type="button" (click)="installPrompt.install()">
+        <mat-icon>download</mat-icon>
+        Installer app
+      </button>
+    </div>
+  } @else if (installPrompt.isIOS()) {
+    <p class="install-hint">
+      <mat-icon inline>ios_share</mat-icon>
+      Tilføj til hjemmeskærm: tryk på <strong>Del</strong>-knappen, og vælg derefter <strong>"Tilføj til hjemmeskærm"</strong>.
+    </p>
+  }
+}
