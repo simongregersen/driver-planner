@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger note' : 'Opret note' }}</h2>
+<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger note' : 'Opret dagsnote' }}</h2>
 
 <mat-dialog-content>
   <form id="noteForm" class="form-stack" [formGroup]="noteForm" (ngSubmit)="onSubmit(); dialogRef.close()">

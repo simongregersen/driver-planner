@@ -23,10 +23,19 @@
 
 .button-row {
   display: flex;
+  align-items: center;
   gap: 4px;
 }
 
 .button-row > button {
+  flex: 1 1 0;
+}
+
+.visibility-toggles {
+  width: 100%;
+}
+
+.visibility-toggles mat-button-toggle {
   flex: 1 1 0;
 }
 

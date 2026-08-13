@@ -349,6 +349,19 @@ body {
   color: var(--mat-sys-on-error-container);
 }
 
+/* Chips
+   ------------------------------------------------------------------ */
+
+/* Every chip variant (read-only trip-assignment chips, chip-filter's selectable ones, a
+   label chip-grid's editable/removable ones) gets the same light grey outline and muted grey
+   label text — originally just trips.component.css's .trip-chip, now the app-wide default so
+   new chip usages don't have to redeclare it. A chip's own highlighted state (e.g.
+   chip-filter's selected blue chip) uses separate custom properties and is unaffected. */
+mat-chip, mat-chip-option, mat-chip-row {
+  --mat-chip-outline-color: var(--mat-sys-outline-variant);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
 /* Tables
    ------------------------------------------------------------------ */
 

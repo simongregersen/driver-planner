@@ -2,10 +2,10 @@ import {ChangeDetectionStrategy, Component, computed, inject, OnInit, signal} fr
 import {toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {DateRange, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {Moment} from 'moment';
 import {Observable} from 'rxjs';
 import {DateUtility} from '../date-utility';
@@ -17,6 +17,7 @@ import {Utility} from '../utility';
 import {TripFormComponent} from '../trip-form/trip-form.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
+import {SelectOption} from '../select-option';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 
@@ -27,7 +28,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
   styleUrls: ['./period-plans.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatSlideToggleModule,
+    MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule,
     TripsComponent, ChipFilterComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,6 +52,7 @@ export class PeriodPlansComponent implements OnInit {
 
   readonly selectedDriverKeys = signal<string[]>([]);
   readonly selectedVehicleKeys = signal<string[]>([]);
+  readonly selectedLabelKeys = signal<string[]>([]);
   readonly showOfficeNotes = signal(false);
   readonly showDriverNotes = signal(false);
   readonly showLabels = signal(false);
@@ -143,10 +145,24 @@ export class PeriodPlansComponent implements OnInit {
     if (!trips) return [];
     const driverKeys = this.selectedDriverKeys();
     const vehicleKeys = this.selectedVehicleKeys();
+    const labelKeys = this.selectedLabelKeys();
     return trips.filter(t =>
       (driverKeys.length === 0 || (t.drivers ?? []).some(k => driverKeys.includes(k))) &&
-      (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k)))
+      (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k))) &&
+      (labelKeys.length === 0 || (t.labels ?? []).some(k => labelKeys.includes(k)))
     );
+  }
+
+  // Labels are freeform strings on each trip, not a fixed entity list like drivers/vehicles —
+  // the filter's own options are just whichever distinct labels actually appear on the trips
+  // in the currently selected period, derived fresh each time rather than stored anywhere.
+  labelOptions(trips: Trip[] | null): SelectOption[] {
+    if (!trips) return [];
+    const labels = new Set<string>();
+    trips.forEach(t => (t.labels ?? []).forEach(l => labels.add(l)));
+    return Array.from(labels)
+      .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}))
+      .map(l => ({id: l, name: l}));
   }
 
   private updateRange(): void {

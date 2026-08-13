@@ -9,6 +9,14 @@
   border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
+.visibility-toggles {
+  width: 100%;
+}
+
+.visibility-toggles mat-button-toggle {
+  flex: 1 1 0;
+}
+
 .day-heading {
   margin: 24px 0;
   font: var(--mat-sys-title-medium);

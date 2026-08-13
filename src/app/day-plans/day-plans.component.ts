@@ -3,6 +3,7 @@ import {toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -37,7 +38,7 @@ import {BreakpointService} from '../breakpoint.service';
   styleUrls: ['./day-plans.component.css'],
   imports: [
     FormsModule, AsyncPipe, DatePipe,
-    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatIconModule,
+    MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule, MatIconModule,
     MatInputModule, MatMenuModule, MatSlideToggleModule,
     TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
   ],
@@ -113,6 +114,10 @@ export class DayPlansComponent implements OnInit {
 
   goToToday() {
     this.selectedDate = this.dateUtility.today();
+  }
+
+  isToday(): boolean {
+    return this.dateUtility.equals(this.selectedDate, this.dateUtility.today());
   }
 
   removeTrip(trip: Trip) {

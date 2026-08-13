@@ -30,25 +30,18 @@
                     [dateClass]="dateClass">
       </mat-calendar>
       <div>
-        <mat-slide-toggle class="driver-notes-toggle"
-                    [checked]="showDriverNotes()"
-                    (change)="showDriverNotes.set($event.checked)">
-          Vis beskrivelse (chauffør)
-        </mat-slide-toggle>
-      </div>
-      <div>
-        <mat-slide-toggle class="office-notes-toggle"
-                    [checked]="showOfficeNotes()"
-                    (change)="showOfficeNotes.set($event.checked)">
-          Vis beskrivelse (kontor)
-        </mat-slide-toggle>
-      </div>
-      <div>
-        <mat-slide-toggle class="labels-toggle"
-                    [checked]="showLabels()"
-                    (change)="showLabels.set($event.checked)">
-          Vis mærkater
-        </mat-slide-toggle>
+        <h5 class="section-title">Vis</h5>
+        <mat-button-toggle-group multiple class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="showDriverNotes()" (change)="showDriverNotes.set($event.source.checked)">
+            Chaufførnoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="showOfficeNotes()" (change)="showOfficeNotes.set($event.source.checked)">
+            Kontornoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="showLabels()" (change)="showLabels.set($event.source.checked)">
+            Mærkater
+          </mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
       <div>
         <h5 class="section-title">Chauffører</h5>
@@ -60,6 +53,13 @@
         <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
                           (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
       </div>
+      @if (trips$ | async; as trips) {
+      <div>
+        <h5 class="section-title">Mærkater</h5>
+        <app-chip-filter [options]="labelOptions(trips)" [selectedIds]="selectedLabelKeys()"
+                          (selectionChange)="selectedLabelKeys.set($event)"></app-chip-filter>
+      </div>
+      }
     </div>
   </aside>
   <main class="page-main">

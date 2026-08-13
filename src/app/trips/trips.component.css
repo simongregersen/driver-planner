@@ -105,7 +105,6 @@ mat-chip-set {
 
 .trip-chip {
   --mat-chip-container-height: 22px;
-  --mat-chip-outline-color: var(--mat-sys-outline-variant);
   /* Lighter than Material's default (on-surface-variant) so the remove "X" reads as a quiet,
      secondary action rather than competing visually with the chip's own label text. */
   --mat-chip-with-trailing-icon-trailing-icon-color: var(--mat-sys-outline-variant);

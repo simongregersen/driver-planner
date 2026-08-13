@@ -39,7 +39,7 @@
       </mat-form-field>
       <div class="button-row" role="group" aria-label="Dato-navigation">
         <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>
-        <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
+        <button [matButton]="isToday() ? 'filled' : 'outlined'" type="button" (click)="goToToday()">I dag</button>
         <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
       </div>
       <div>
@@ -54,9 +54,7 @@
         <h5 class="section-title">Operationer</h5>
         <div class="toolbar-row">
           <button matButton="filled" type="button" (click)="create()">Opret tur</button>
-          <button matButton="filled" type="button" (click)="createNote()">Opret note</button>
-        </div>
-        <div class="toolbar-row">
+          <button matButton="filled" type="button" (click)="createNote()">Opret dagsnote</button>
           <button matButton="outlined" type="button" [matMenuTriggerFor]="templateMenu">
             Indsæt skabelon
             <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
@@ -71,25 +69,18 @@
       </div>
       }
       <div>
-        <mat-slide-toggle class="driver-notes-toggle"
-                    [checked]="showDriverNotes()"
-                    (change)="showDriverNotes.set($event.checked)">
-          Vis beskrivelse (chauffør)
-        </mat-slide-toggle>
-      </div>
-      <div>
-        <mat-slide-toggle class="office-notes-toggle"
-                    [checked]="showOfficeNotes()"
-                    (change)="showOfficeNotes.set($event.checked)">
-          Vis beskrivelse (kontor)
-        </mat-slide-toggle>
-      </div>
-      <div>
-        <mat-slide-toggle class="labels-toggle"
-                    [checked]="showLabels()"
-                    (change)="showLabels.set($event.checked)">
-          Vis mærkater
-        </mat-slide-toggle>
+        <h5 class="section-title">Vis</h5>
+        <mat-button-toggle-group multiple class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="showDriverNotes()" (change)="showDriverNotes.set($event.source.checked)">
+            Chaufførnoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="showOfficeNotes()" (change)="showOfficeNotes.set($event.source.checked)">
+            Kontornoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="showLabels()" (change)="showLabels.set($event.source.checked)">
+            Mærkater
+          </mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
       <div>
         <h5 class="section-title">Chauffører</h5>
@@ -114,7 +105,7 @@
   <app-collapsible-bottom-bar class="mobile-day-bar no-print">
     <div bar-collapsed class="button-row" role="group" aria-label="Dato-navigation">
       <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>
-      <button matButton="outlined" type="button" (click)="goToToday()">I dag</button>
+      <button [matButton]="isToday() ? 'filled' : 'outlined'" type="button" (click)="goToToday()">I dag</button>
       <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
     </div>
     <div bar-expanded class="mobile-day-bar-expanded">
@@ -142,9 +133,7 @@
         <h5 class="section-title">Operationer</h5>
         <div class="toolbar-row">
           <button matButton="filled" type="button" (click)="create()">Opret tur</button>
-          <button matButton="filled" type="button" (click)="createNote()">Opret note</button>
-        </div>
-        <div class="toolbar-row">
+          <button matButton="filled" type="button" (click)="createNote()">Opret dagsnote</button>
           <button matButton="outlined" type="button" [matMenuTriggerFor]="templateMenuMobile">
             Indsæt skabelon
             <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
@@ -159,25 +148,18 @@
       </div>
       }
       <div>
-        <mat-slide-toggle class="driver-notes-toggle"
-                    [checked]="showDriverNotes()"
-                    (change)="showDriverNotes.set($event.checked)">
-          Vis beskrivelse (chauffør)
-        </mat-slide-toggle>
-      </div>
-      <div>
-        <mat-slide-toggle class="office-notes-toggle"
-                    [checked]="showOfficeNotes()"
-                    (change)="showOfficeNotes.set($event.checked)">
-          Vis beskrivelse (kontor)
-        </mat-slide-toggle>
-      </div>
-      <div>
-        <mat-slide-toggle class="labels-toggle"
-                    [checked]="showLabels()"
-                    (change)="showLabels.set($event.checked)">
-          Vis mærkater
-        </mat-slide-toggle>
+        <h5 class="section-title">Vis</h5>
+        <mat-button-toggle-group multiple class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="showDriverNotes()" (change)="showDriverNotes.set($event.source.checked)">
+            Chaufførnoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="showOfficeNotes()" (change)="showOfficeNotes.set($event.source.checked)">
+            Kontornoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="showLabels()" (change)="showLabels.set($event.source.checked)">
+            Mærkater
+          </mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
       <div>
         <h5 class="section-title">Chauffører</h5>
