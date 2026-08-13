@@ -27,7 +27,7 @@ import {PageHeaderService} from '../page-header.service';
   templateUrl: './my-trips.component.html',
   styleUrls: ['./my-trips.component.css'],
   imports: [
-    FormsModule, AsyncPipe, DatePipe,
+    FormsModule, AsyncPipe,
     MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule,
     TripsComponent, CollapsibleBottomBarComponent,
   ],
@@ -143,11 +143,18 @@ export class MyTripsComponent implements OnInit {
     this._selectedDate = date;
     this.trips$ = this.dataStore.getTrips(date);
     this.dayPublic$ = this.dataStore.getDayPublic(date);
-    this.pageHeader.set('Min dag', this.datePipe.transform(date.toDate(), 'EEEE, d MMMM y'));
+    this.pageHeader.set(this.formattedDate(date));
   }
 
   get selectedDate(): Moment {
     return this._selectedDate;
+  }
+
+  // DatePipe's 'EEEE' gives the weekday lowercase (Danish locale convention) — capitalized here
+  // since it leads the title, unlike the day-in-a-sentence style used elsewhere in this app.
+  formattedDate(date: Moment): string {
+    const formatted = this.datePipe.transform(date.toDate(), 'EEEE, d MMMM y')!;
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
   }
 
 }

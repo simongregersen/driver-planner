@@ -1,0 +1,53 @@
+.field-group {
+  margin-bottom: 12px;
+}
+
+.field-group-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.field-group-title {
+  font-weight: 600;
+}
+
+.field-start .field-group-title {
+  color: #2e7d32;
+}
+
+.field-end .field-group-title {
+  color: var(--mat-sys-error);
+}
+
+/* One "Garagen"/"Kunden" toggle per reading (start, end, start km, end km) — shorter than
+   Material's own default height since there are four of these stacked in the form. The actual
+   height- and line-height-bearing elements are inside MatButtonToggle's own template, past this
+   component's view-encapsulation boundary, so a plain descendant selector here would silently
+   never match — ::ng-deep is required to reach them. */
+.location-toggle {
+  flex: 0 0 auto;
+}
+
+.location-toggle ::ng-deep .mat-button-toggle-button {
+  height: 24px;
+}
+
+.location-toggle ::ng-deep .mat-button-toggle-label-content {
+  line-height: 24px;
+  padding: 0 10px;
+}
+
+.location-toggle ::ng-deep .mat-pseudo-checkbox {
+  width: 14px;
+  height: 14px;
+}
+
+.report-summary {
+  margin: 0 0 8px;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}

@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>Chaufførrapport@if (driver$ | async; as driver) { &ndash; {{ driver.displayName }} }</h2>
+
+<mat-dialog-content>
+  <form id="tripReportForm" class="form-stack" (ngSubmit)="onSubmit(); dialogRef.close()">
+    <div class="field-group field-start">
+      <div class="field-group-header">
+        <span class="field-group-title">Start</span>
+        <mat-button-toggle-group class="location-toggle" name="startLocation"
+                                  [value]="startFromCustomer ? 'customer' : 'garage'"
+                                  (change)="setStartFromCustomer($event)">
+          <mat-button-toggle value="garage">Garagen</mat-button-toggle>
+          <mat-button-toggle value="customer">Kunden</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+      <app-date-time-field [value]="start" (valueChange)="start = $event"></app-date-time-field>
+    </div>
+
+    <div class="field-group field-end">
+      <div class="field-group-header">
+        <span class="field-group-title">Slut</span>
+        <mat-button-toggle-group class="location-toggle" name="endLocation"
+                                  [value]="endFromCustomer ? 'customer' : 'garage'"
+                                  (change)="setEndFromCustomer($event)">
+          <mat-button-toggle value="garage">Garagen</mat-button-toggle>
+          <mat-button-toggle value="customer">Kunden</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+      <app-date-time-field [value]="end" (valueChange)="end = $event"></app-date-time-field>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-header">
+        <span class="field-group-title">Triptæller start</span>
+        <mat-button-toggle-group class="location-toggle" name="startKmLocation"
+                                  [value]="startKmFromCustomer ? 'customer' : 'garage'"
+                                  (change)="setStartKmFromCustomer($event)">
+          <mat-button-toggle value="garage">Garagen</mat-button-toggle>
+          <mat-button-toggle value="customer">Kunden</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+      <mat-form-field class="full-width" subscriptSizing="dynamic">
+        <input matInput type="number" min="0" [(ngModel)]="startKm" name="startKm">
+        <span matSuffix>km</span>
+      </mat-form-field>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-header">
+        <span class="field-group-title">Triptæller slut</span>
+        <mat-button-toggle-group class="location-toggle" name="endKmLocation"
+                                  [value]="endKmFromCustomer ? 'customer' : 'garage'"
+                                  (change)="setEndKmFromCustomer($event)">
+          <mat-button-toggle value="garage">Garagen</mat-button-toggle>
+          <mat-button-toggle value="customer">Kunden</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+      <mat-form-field class="full-width" subscriptSizing="dynamic">
+        <input matInput type="number" min="0" [(ngModel)]="endKm" name="endKm">
+        <span matSuffix>km</span>
+      </mat-form-field>
+    </div>
+
+    @if (durationLabel() || distanceLabel()) {
+      <p class="report-summary">
+        @if (durationLabel()) { Varighed: {{ durationLabel() }} }
+        @if (durationLabel() && distanceLabel()) { &middot; }
+        @if (distanceLabel()) { Afstand: {{ distanceLabel() }} }
+      </p>
+    }
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Bemærkninger</mat-label>
+      <textarea matInput rows="4" [(ngModel)]="note" name="note"></textarea>
+    </mat-form-field>
+
+    @if (error(); as msg) {
+      <div class="app-error">{{ msg }}</div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (hasExistingReport) {
+    <button matButton type="button" class="confirm-danger" (click)="deleteReport()">Slet</button>
+  }
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="tripReportForm" [disabled]="!!error()">Gem</button>
+</mat-dialog-actions>

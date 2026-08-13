@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, inject, input, OnInit, output} from 
 import {AsyncPipe, DatePipe, NgTemplateOutlet} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatChipsModule} from '@angular/material/chips';
+import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatTooltipModule} from '@angular/material/tooltip';
@@ -15,6 +16,9 @@ import {combineLatest, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import moment, {Moment} from 'moment';
 import {RichTextComponent} from '../rich-text/rich-text.component';
+import {TripReportFormComponent} from '../trip-report-form/trip-report-form.component';
+import {TripReportsDialogComponent} from '../trip-reports-dialog/trip-reports-dialog.component';
+import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 @Component({
   standalone: true,
@@ -37,6 +41,18 @@ export class TripsComponent implements OnInit {
   showLabels = input(false);
   hideSingleDriver = input(false);
   showFinishToggle = input(false);
+  /** Min dag, driver-facing: shows a small report-icon-button letting the signed-in driver
+   * (currentDriverKey) add or edit their own report for this trip — see TripReportFormComponent.
+   * Far from every trip needs one, so this is deliberately understated rather than a full
+   * button. */
+  showReportButton = input(false);
+  /** The driver viewing this list — required for showReportButton, to know which of a trip's
+   * (possibly several, one per assigned driver) reports belongs to them. */
+  currentDriverKey = input<string | null>(null);
+  /** Dagsplaner, admin-facing: shows a small icon — only when a trip actually has at least one
+   * report — opening a list of every driver's report for that trip (TripReportsDialogComponent),
+   * editable from there. */
+  showReportsColumn = input(false);
   /** The single day this list is being shown under, if any (a day-plans/period-plans day-block,
    * my-trips' selected day, ...) — lets a multi-day trip's start time be marked with an asterisk
    * and a fuller tooltip on the days it didn't actually start on. Templates/other callers with
@@ -48,6 +64,7 @@ export class TripsComponent implements OnInit {
 
   readonly dataStore = inject(DataStore);
   private readonly finishedTrips = inject(FinishedTripsService);
+  private readonly dialog = inject(MatDialog);
 
   viewModel$!: Observable<{drivers: Driver[]; vehicles: Vehicle[]}>;
 
@@ -79,6 +96,16 @@ export class TripsComponent implements OnInit {
     return !!reference && !!trip.end && !Utility.sameDate(trip.end, reference);
   }
 
+  // Computed in TS rather than inline in the template — the desired "HH:mm–HH:mm" (or just
+  // "HH:mm" with no end) has no room for stray whitespace, which stray whitespace inside
+  // adjacent @if/@else blocks kept introducing.
+  mobileTimeLabel(trip: Trip): string {
+    const start = this.startsOutsideReference(trip) ? '—' : trip.start.format('HH:mm');
+    if (!trip.end) return start;
+    const end = this.endsOutsideReference(trip) ? '—' : trip.end.format('HH:mm');
+    return `${start}–${end}`;
+  }
+
   // Row click is the only way to edit now — there's no separate edit/delete button.
   onRowClick(trip: Trip): void {
     if (!this.readonly()) {
@@ -95,5 +122,31 @@ export class TripsComponent implements OnInit {
   toggleFinished(trip: Trip, event: Event): void {
     event.stopPropagation();
     this.finishedTrips.toggle(trip.$key);
+  }
+
+  hasMyReport(trip: Trip): boolean {
+    const driverKey = this.currentDriverKey();
+    return !!driverKey && !!trip.reports?.[driverKey];
+  }
+
+  hasAnyReport(trip: Trip): boolean {
+    return !!trip.reports && Object.keys(trip.reports).length > 0;
+  }
+
+  // stopPropagation so this never triggers the row's own click-to-edit handler, same as the
+  // finish-toggle above.
+  openMyReport(trip: Trip, event: Event): void {
+    event.stopPropagation();
+    const driverKey = this.currentDriverKey();
+    if (!driverKey) return;
+    const instance = this.dialog.open(TripReportFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
+    instance.trip = trip;
+    instance.driverKey = driverKey;
+  }
+
+  openReports(trip: Trip, event: Event): void {
+    event.stopPropagation();
+    const instance = this.dialog.open(TripReportsDialogComponent, SMALL_DIALOG_CONFIG).componentInstance;
+    instance.trip = trip;
   }
 }

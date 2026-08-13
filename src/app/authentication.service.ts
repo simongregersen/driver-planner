@@ -16,9 +16,14 @@ export class AuthenticationService {
     return signInWithEmailAndPassword(auth, email, password);
   }
 
+  // Navigate away before signing out, not after — every routed component holding a live
+  // Firebase listener (e.g. MyTripsComponent/DayPlansComponent's getDayPublic) needs to be torn
+  // down (unsubscribed) before the auth token is revoked, otherwise the database re-evaluates
+  // those still-attached listeners against the now-signed-out state and pushes a spurious
+  // "permission_denied" console error before the navigation has a chance to detach them.
   logout() {
-    signOut(auth)
-      .then(() => this.router.navigate(['/login']))
+    this.router.navigate(['/login'])
+      .then(() => signOut(auth))
       .catch(err => console.log(err));
   }
 

@@ -1,9 +1,6 @@
 @if (userService.driverProfile$ | async; as driver) {
   <div class="page-header">
-    <h2 class="page-title">
-      Min dag
-      <small>{{ driver.displayName }} &middot; {{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
-    </h2>
+    <h2 class="page-title">{{ formattedDate(selectedDate) }}</h2>
   </div>
   <div class="page-layout">
     <aside class="page-aside no-print">
@@ -73,6 +70,8 @@
                      [highlightModified]="true"
                      [hideSingleDriver]="true"
                      [showFinishToggle]="true"
+                     [showReportButton]="true"
+                     [currentDriverKey]="driver.$key"
                      [referenceDate]="selectedDate"></app-trips>
         }
       } @else {

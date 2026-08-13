@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {child, endAt, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
-import {NewTrip, Trip} from './trip';
+import {NewTrip, Trip, TripReport} from './trip';
 import {ClockRecord} from './clock-record';
 import {Driver} from './driver';
 import {AppUser} from './user';
@@ -82,6 +82,12 @@ export class DataStore {
         t.start = moment(t.start as any);
         t.end = (t.end) ? moment(t.end as any) : null;
         t.modified = (t.modified) ? moment(t.modified as any) : undefined;
+        if (t.reports) {
+          Object.values(t.reports).forEach(r => {
+            r.start = (r.start) ? moment(r.start as any) : null;
+            r.end = (r.end) ? moment(r.end as any) : null;
+          });
+        }
       })),
       map(ts => ts.filter(t => Utility.tripOverlaps(t, fromDate, toDate)))
     );
@@ -123,6 +129,31 @@ export class DataStore {
         }
       });
     });
+  }
+
+  // Always a full replacement of that one driver's report (never a partial update) — matches
+  // "a driver can only make one report per trip", edited as a whole rather than field by field.
+  // Written at trips/$tripKey/reports/$driverKey specifically (not through updateTrip) since
+  // that's its own carve-out in database.rules.json: a driver can write there for their own
+  // driverKey without needing admin-level write access to the trip as a whole.
+  setTripReport(tripKey: string, driverKey: string, report: TripReport) {
+    return update(child(this.tripsRef, `${tripKey}/reports/${driverKey}`), {
+      start: report.start ? report.start.valueOf() : null,
+      startFromCustomer: report.startFromCustomer,
+      end: report.end ? report.end.valueOf() : null,
+      endFromCustomer: report.endFromCustomer,
+      startKm: report.startKm ?? null,
+      startKmFromCustomer: report.startKmFromCustomer,
+      endKm: report.endKm ?? null,
+      endKmFromCustomer: report.endKmFromCustomer,
+      note: report.note || ''
+    });
+  }
+
+  // Same write carve-out as setTripReport above (a delete is still a write at this path), so a
+  // driver can remove their own report without needing admin-level access to the trip as a whole.
+  deleteTripReport(tripKey: string, driverKey: string) {
+    return remove(child(this.tripsRef, `${tripKey}/reports/${driverKey}`));
   }
 
   // The value getTrips' multiDayStart-indexed query above filters on — present (as the trip's

@@ -10,7 +10,7 @@
         <th>Tur</th>
         <th class="col-w-15">Chauffører</th>
         <th class="col-w-15">Køretøjer</th>
-        @if (showFinishToggle()) {
+        @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
           <th class="col-w-5 no-print"></th>
         }
       </tr>
@@ -72,6 +72,27 @@
           }
         </ng-template>
 
+        <ng-template #reportButton>
+          @if (showReportButton()) {
+            <button matIconButton type="button" class="report-toggle no-print"
+                    [class.report-toggle-active]="hasMyReport(trip)"
+                    [matTooltip]="hasMyReport(trip) ? 'Rediger rapport' : 'Tilføj rapport'"
+                    (click)="openMyReport(trip, $event)">
+              <mat-icon>assignment</mat-icon>
+            </button>
+          }
+        </ng-template>
+
+        <ng-template #reportsIndicator>
+          @if (showReportsColumn() && hasAnyReport(trip)) {
+            <button matIconButton type="button" class="reports-indicator no-print"
+                    matTooltip="Se chaufførrapporter"
+                    (click)="openReports(trip, $event)">
+              <mat-icon>assignment</mat-icon>
+            </button>
+          }
+        </ng-template>
+
         <tr class="hoverable"
             [class.row-highlight]="isRecentlyModified(trip)"
             [class.trip-finished]="isFinished(trip)"
@@ -106,7 +127,7 @@
             </div>
             <div class="mobile-trip-info">
               <strong>
-                <span class="mobile-trip-time">@if (startsOutsideReference(trip)) { &mdash; } @else { {{ trip.start.toDate() | date:'HH:mm' }} }@if (trip.end) {(&ndash;@if (endsOutsideReference(trip)) { &mdash; } @else { {{ trip.end.toDate() | date:'HH:mm' }} })}</span>
+                <span class="mobile-trip-time">{{ mobileTimeLabel(trip) }}</span>
                 <span class="mobile-trip-name"><app-rich-text [text]="trip.name"></app-rich-text></span>
                 @if (showLabels() && trip.labels?.length) {
                   <span class="trip-labels">
@@ -123,12 +144,28 @@
                 <ng-container [ngTemplateOutlet]="driverChips" [ngTemplateOutletContext]="{applyHideSingle: true}"></ng-container>
                 <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
               </div>
-              @if (!hideDescriptionOnScreen()) {
-                <div class="mobile-line newline muted"><app-rich-text [text]="trip.description"></app-rich-text></div>
+              @if (!hideDescriptionOnScreen() || showFinishToggle() || showReportButton() || showReportsColumn()) {
+                <div class="mobile-line newline muted trip-footer">
+                  @if (!hideDescriptionOnScreen()) {
+                    <span><app-rich-text [text]="trip.description"></app-rich-text></span>
+                  }
+                  <!-- Floated (see .css), and placed as the LAST element inside the same block as
+                       the description text (not a preceding sibling) — a float only attaches to
+                       the tail end of inline content that comes before it in its own containing
+                       block, so this sits right after the last line of text: beside it if that
+                       line has room (a short description), or wrapped onto its own line — still
+                       at the bottom, never the top — if it doesn't (a long one). Unlike a
+                       reserved-padding corner, this only costs width on the line(s) it actually
+                       shares, not every line of a long description. -->
+                  @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
+                    <div class="trip-card-actions">
+                      <ng-container [ngTemplateOutlet]="reportButton"></ng-container>
+                      <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
+                      <ng-container [ngTemplateOutlet]="reportsIndicator"></ng-container>
+                    </div>
+                  }
+                </div>
               }
-              <div class="finish-toggle-side">
-                <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
-              </div>
             </div>
           </td>
           <td data-label="Chauffører" [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
@@ -137,9 +174,13 @@
           <td data-label="Køretøjer" [class.cell-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
             <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
           </td>
-          @if (showFinishToggle()) {
-            <td class="no-print cell-actions cell-finish-toggle">
-              <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
+          @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
+            <td class="no-print cell-actions cell-trip-actions">
+              <div class="trip-actions-inner">
+                <ng-container [ngTemplateOutlet]="reportButton"></ng-container>
+                <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
+                <ng-container [ngTemplateOutlet]="reportsIndicator"></ng-container>
+              </div>
             </td>
           }
         </tr>

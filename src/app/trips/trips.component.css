@@ -182,6 +182,38 @@ mat-chip-set {
   color: #2e7d32;
 }
 
+/* Deliberately understated relative to the finish-toggle above (far from every trip needs a
+   report) — same grey-off/accent-on pattern, but the app's primary blue rather than green, so
+   the two read as clearly different concerns at a glance. */
+.report-toggle mat-icon {
+  color: var(--mat-sys-outline);
+}
+
+.report-toggle-active mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+/* The admin-facing indicator (Dagsplaner) only ever renders once a trip actually has a report
+   (see hasAnyReport), so it's always this accent color — its mere presence is already the
+   signal, there's no separate "off" state to contrast against. */
+.reports-indicator mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+/* .cell-trip-actions itself stays a plain table cell (no display override) — giving it
+   display: flex directly used to strip out its inherited vertical-align: top (a table-cell-only
+   property that a flex/grid display value no longer applies to), which let it drift out of
+   alignment with the row's other, still top-aligned cells whenever a neighboring cell (usually
+   Tur) made the row taller than this one's own content. The actual flex layout — row, unlike
+   .trip-card-actions below, since these sit side by side rather than in a reserved corner — now
+   lives on this inner wrapper instead, where it can't affect the cell's own alignment. */
+.trip-actions-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
 /* Marking a trip finished is purely a local/on-device thing (see FinishedTripsService) — tints
    the whole row, including its driver/vehicle chips, a light green so "done" reads clearly at
    a glance rather than just a subtle dimming. */
@@ -214,37 +246,73 @@ mat-chip-set {
   }
 
   .data-table tbody tr {
-    position: relative;
     display: block;
     margin-bottom: 8px;
-    padding: 8px 10px;
-    /* Reserved on the right rather than the bottom, so cards stay as short as their content
-       and more of them fit on screen at once — the toggle sits alongside, not underneath. */
-    padding-right: 56px;
+    /* Bottom trimmed well below the other sides — the last line's floated icon (see
+       .trip-card-actions below) has an invisible 48px touch target around a much smaller visible
+       button, and that overlay is deliberately allowed to spill past this padding into the gap
+       toward the next card rather than reserving real space just to keep it inside. */
+    padding: 8px 10px 2px;
     border: 1px solid var(--mat-sys-outline-variant);
     border-radius: var(--mat-sys-corner-medium);
   }
 
-  /* Bottom of the reserved right-hand column, not vertically centered. */
-  .finish-toggle-side {
-    position: absolute;
-    right: 2px;
-    bottom: 2px;
+  /* Floated right, placed inside .trip-footer as the LAST element after the description text
+     (see the .html) — not a preceding sibling. A float only pulls in text that comes after it
+     within its own containing block, so putting it after the text instead attaches it to the
+     tail end of the last line: beside a short description (saving the vertical space a
+     dedicated row would cost), or wrapped onto its own line — still at the bottom of the text,
+     never floating up next to the first line — once a long one's last line has no room left.
+     Still sized for a comfortable thumb tap (see .report-toggle/.finish-toggle below) — real-
+     phone testing found the icons too small and fiddly when squeezed into a corner or a narrow
+     stacked column, which this isn't. No vertical margin of its own: the button's invisible
+     48px touch target is allowed to spill past the card's own border/padding into the gap
+     toward the next card — deliberately, to avoid reserving real layout space just to keep that
+     invisible overlay inside the visible card. */
+  .trip-card-actions {
+    float: right;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 0 8px;
   }
 
-  /* Bigger than the 26px/16px the rest of this table's icon-buttons get (see the global
-     .data-table .mat-mdc-icon-button rule) — this is the one touch target on the card meant
-     to be easy to hit, so it gets its own comfortably larger size. */
-  .finish-toggle-side .finish-toggle {
-    --mat-icon-button-state-layer-size: 56px;
-    --mat-icon-button-icon-size: 40px;
+  .trip-card-actions .report-toggle,
+  .trip-card-actions .finish-toggle,
+  .trip-card-actions .reports-indicator {
+    --mat-icon-button-state-layer-size: 32px;
+    --mat-icon-button-icon-size: 24px;
+  }
+
+  /* The --mat-icon-button-icon-size token above only sizes the button's own padding math — the
+     actual <mat-icon> glyph size is set by the global ".data-table mat-icon" rule (16px, tuned
+     for this table's compact desktop buttons), which otherwise wins here too since it's at least
+     as specific. Left unfixed, that mismatch is exactly what read as "the ripple is centered but
+     the icon isn't": the button pads itself for a 24px icon while the actual glyph renders at a
+     stray 16px inside that space. Matching the glyph's own size here to the token above is what
+     actually centers it. */
+  .trip-card-actions .report-toggle mat-icon,
+  .trip-card-actions .finish-toggle mat-icon,
+  .trip-card-actions .reports-indicator mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
   }
 
   .data-table tbody tr:last-child {
     margin-bottom: 0;
   }
 
+  /* display:block, not just the parent tr — a <td> left at its default display:table-cell here
+     has no table-row parent (the tr above is display:block now), so the browser synthesizes an
+     anonymous table around it sized by shrink-to-fit content instead of the card's full width.
+     That silently capped .trip-cell (and everything inside it, including .trip-card-actions) to
+     whatever its widest text line happened to be — flex-end alignment then lands wherever that
+     narrower box's edge is, not the card's actual right edge, which is what made the actions row
+     appear to drift left on cards whose content didn't happen to run wide. */
   .data-table tbody tr > td {
+    display: block;
     width: auto;
     min-width: 0;
     padding: 0;
@@ -256,7 +324,7 @@ mat-chip-set {
   .data-table tbody tr > td[data-label="Slut"],
   .data-table tbody tr > td[data-label="Chauffører"],
   .data-table tbody tr > td[data-label="Køretøjer"],
-  .data-table tbody tr > td.cell-finish-toggle {
+  .data-table tbody tr > td.cell-trip-actions {
     display: none;
   }
 
@@ -264,7 +332,11 @@ mat-chip-set {
     display: none;
   }
 
+  /* flow-root, not plain block — establishes a new block formatting context so this card
+     properly contains the floated .trip-card-actions' height (a float otherwise doesn't count
+     toward its container's own height at all, which would let the card's border end above the
+     bottom of a description-less or very-short-description card's icon row). */
   .mobile-trip-info {
-    display: block;
+    display: flow-root;
   }
 }
