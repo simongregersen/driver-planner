@@ -54,6 +54,8 @@ export class DayPlansComponent implements OnInit {
 
   readonly selectedDriverKeys = signal<string[]>([]);
   readonly selectedVehicleKeys = signal<string[]>([]);
+  readonly showOfficeNotes = signal(false);
+  readonly showDriverNotes = signal(false);
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});

@@ -16,3 +16,16 @@
   flex: 1 1 160px;
   min-width: 140px;
 }
+
+.form-error {
+  margin: 0;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
+}
+
+/* Placed above its field rather than as a mat-hint below it — read before typing, not after. */
+.field-hint {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}

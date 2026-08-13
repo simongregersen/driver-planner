@@ -36,6 +36,9 @@
       }
       <app-time-field label="Til tid" formControlName="toTime" [minuteStep]="1"></app-time-field>
     </div>
+    @if (tripForm.hasError('endBeforeStart')) {
+      <p class="form-error">Til-tidspunktet skal være efter fra-tidspunktet.</p>
+    }
 
     <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Chauffører</mat-label>
@@ -55,11 +58,19 @@
       </mat-select>
     </mat-form-field>
 
+    <p class="field-hint">Omslut tekst med **stjerner** for at fremhæve den med gult, eller skriv [en adresse] for at gøre den til et link.</p>
     <mat-form-field class="full-width" subscriptSizing="dynamic">
-      <mat-label>Beskrivelse</mat-label>
+      <mat-label>Beskrivelse (chauffør)</mat-label>
       <textarea matInput rows="10" formControlName="description"></textarea>
-      <mat-hint>Omslut tekst med **stjerner** for at fremhæve den med gult, eller skriv [en adresse] for at gøre den til et link.</mat-hint>
     </mat-form-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Beskrivelse (kontor)</mat-label>
+      <textarea matInput rows="6" formControlName="officeDescription"></textarea>
+      <mat-hint>Kun synlig for administratorer, aldrig for chaufføren.</mat-hint>
+    </mat-form-field>
+
+    <mat-checkbox formControlName="invoiced">Faktureres</mat-checkbox>
   </form>
 </mat-dialog-content>
 

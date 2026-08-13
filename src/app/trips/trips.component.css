@@ -42,6 +42,17 @@
   margin-top: 2px;
 }
 
+/* Admin-only, never printed and never shown to a driver — visually set apart from the
+   driver-facing name/description with a left accent bar and the theme's tertiary color,
+   rather than the plain muted grey used for the driver's own description. */
+.office-note {
+  margin-top: 2px;
+  padding-left: 6px;
+  border-left: 2px solid var(--mat-sys-tertiary);
+  color: var(--mat-sys-tertiary);
+  font-style: italic;
+}
+
 /* mat-chip-set is a block-level flex container (display: flex, not inline-flex), so two of
    them stacked in normal flow would each claim the full row width and land on their own line
    regardless of how little content they hold — this row has to lay them out as flex items

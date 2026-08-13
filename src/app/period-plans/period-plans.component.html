@@ -30,6 +30,20 @@
                     [dateClass]="dateClass">
       </mat-calendar>
       <div>
+        <mat-slide-toggle class="driver-notes-toggle"
+                    [checked]="showDriverNotes()"
+                    (change)="showDriverNotes.set($event.checked)">
+          Vis beskrivelse (chauffør)
+        </mat-slide-toggle>
+      </div>
+      <div>
+        <mat-slide-toggle class="office-notes-toggle"
+                    [checked]="showOfficeNotes()"
+                    (change)="showOfficeNotes.set($event.checked)">
+          Vis beskrivelse (kontor)
+        </mat-slide-toggle>
+      </div>
+      <div>
         <h5 class="section-title">Chauffører</h5>
         <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
                           (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
@@ -47,7 +61,8 @@
         <div class="day-block">
           <h5 class="day-heading">{{ date.toDate() | date:'EEEE, d MMMM y'}}</h5>
           <app-trips [trips]="filterByDate(filterTrips(trips), date)"
-                     [hideDescriptionOnScreen]="true"
+                     [hideDescriptionOnScreen]="!showDriverNotes()"
+                     [showOfficeNotes]="showOfficeNotes()"
                      [referenceDate]="date"
                      (edit)="edit($event)"
                      (removeDriver)="removeDriverFromTrip($event)"

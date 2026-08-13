@@ -5,6 +5,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {DateRange, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {Moment} from 'moment';
 import {Observable} from 'rxjs';
 import {DateUtility} from '../date-utility';
@@ -26,7 +27,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
   styleUrls: ['./period-plans.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatDatepickerModule, MatFormFieldModule,
+    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatSlideToggleModule,
     TripsComponent, ChipFilterComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +51,8 @@ export class PeriodPlansComponent implements OnInit {
 
   readonly selectedDriverKeys = signal<string[]>([]);
   readonly selectedVehicleKeys = signal<string[]>([]);
+  readonly showOfficeNotes = signal(false);
+  readonly showDriverNotes = signal(false);
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});

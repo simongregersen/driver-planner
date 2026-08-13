@@ -45,6 +45,13 @@
 
 .day-public-toggle {
   margin-top: 8px;
+  /* Only the track was ever the theme's primary blue — the handle circle and its checkmark
+     are white/on-primary by default and stay that way; overriding those too made the whole
+     switch read as one flat green blob instead of a colored track with a white handle on it. */
+  --mat-slide-toggle-selected-track-color: #2e7d32;
+  --mat-slide-toggle-selected-hover-track-color: #2e7d32;
+  --mat-slide-toggle-selected-focus-track-color: #2e7d32;
+  --mat-slide-toggle-selected-pressed-track-color: #2e7d32;
 }
 
 /* The desktop/tablet sidebar and the mobile collapsible bar below show the same controls, just

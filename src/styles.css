@@ -402,8 +402,10 @@ body {
   background: rgba(255, 193, 7, 0.25);
 }
 
+/* Same yellow "OBS" cue as .row-highlight above, not red — a mismatch or borderline value
+   needs a second look everywhere this class is used, not necessarily an outright error. */
 .data-table .cell-warning {
-  background: var(--mat-sys-error-container);
+  background: rgba(255, 193, 7, 0.25);
 }
 
 .data-table .row-total {

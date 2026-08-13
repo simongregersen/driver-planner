@@ -1,7 +1,8 @@
 import {ChangeDetectionStrategy, Component, OnInit, inject, output} from '@angular/core';
-import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
+import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
@@ -37,8 +38,8 @@ export type TripFormMode = 'create' | 'edit';
   styleUrls: ['./trip-form.component.css'],
   imports: [
     ReactiveFormsModule, AsyncPipe,
-    MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, TimeFieldComponent,
+    MatButtonModule, MatCheckboxModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule,
+    MatInputModule, MatSelectModule, TimeFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -75,12 +76,14 @@ export class TripFormComponent implements OnInit {
       name: [isEdit ? this.trip.name : '', Validators.required],
       fromDate: this.showDate ? [start ? this.dateUtility.getDate(start) : this.defaultDate, Validators.required] : null,
       fromTime: start ? this.dateUtility.getTime(start) : null,
-      toDate: end ? this.dateUtility.getDate(end) : (isEdit ? null : this.defaultDate),
+      toDate: end ? this.dateUtility.getDate(end) : null,
       toTime: end ? this.dateUtility.getTime(end) : null,
       drivers: [isEdit ? this.trip.drivers : []],
       vehicles: [isEdit ? this.trip.vehicles : []],
-      description: isEdit ? this.trip.description : ''
-    });
+      description: isEdit ? this.trip.description : '',
+      officeDescription: isEdit ? this.trip.officeDescription : '',
+      invoiced: isEdit ? (this.trip.invoiced ?? false) : false
+    }, {validators: this.endAfterStartValidator});
 
     this.availableDrivers$ = this.dataStore.getAllDrivers()
       .pipe(map(Utility.filterDeleted), map(ds => ds.map(d => ({id: d.$key, name: d.displayName}))));
@@ -88,16 +91,32 @@ export class TripFormComponent implements OnInit {
       .pipe(map(Utility.filterDeleted), map(vs => vs.map(v => ({id: v.$key, name: v.displayName}))));
   }
 
-  onSubmit() {
-    const val = this.tripForm.value;
+  // Shared by onSubmit and endAfterStartValidator so the two can never disagree on what
+  // start/end a given set of raw form values actually resolves to (a missing toDate falls back
+  // to fromDate's day, matching a same-day trip; showDate=false leaves both dates at the same
+  // fixed epoch, so only the times end up compared).
+  private computeStartEnd(val: any): {start: Moment; end: Moment | null} {
     const start = this.dateUtility.toMoment(val.fromDate || moment('1970-01-01', 'YYYY-MM-DD'), val.fromTime)!;
     const end = (val.toDate || val.toTime) ? this.dateUtility.toMoment(val.toDate || this.dateUtility.getDate(start), val.toTime) : null;
+    return {start, end};
+  }
+
+  private readonly endAfterStartValidator: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
+    const {start, end} = this.computeStartEnd(group.value);
+    return (end && !end.isAfter(start)) ? {endBeforeStart: true} : null;
+  };
+
+  onSubmit() {
+    const val = this.tripForm.value;
+    const {start, end} = this.computeStartEnd(val);
 
     this.save.emit({
       start: start,
       end: (Utility.sameDate(start, end) && !val.toTime) ? null : end,
       name: val.name || '',
       description: val.description || '',
+      officeDescription: val.officeDescription || '',
+      invoiced: val.invoiced || false,
       drivers: val.drivers || [],
       vehicles: val.vehicles || []
     });

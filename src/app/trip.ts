@@ -5,7 +5,11 @@ export interface Trip extends AngularFireObject {
   start: Moment;
   end: Moment | null;
   name: string;
-  description: string;
+  description?: string;
+  /** Admin-only note, never shown to drivers (see TripsComponent's showOfficeNotes input). */
+  officeDescription?: string;
+  /** Admin-only billing flag, never shown to drivers. */
+  invoiced?: boolean;
   drivers: string[];
   vehicles: string[];
   modified?: Moment;
@@ -21,7 +25,9 @@ export interface NewTrip {
   start: Moment;
   end: Moment | null;
   name: string;
-  description: string;
+  description?: string;
+  officeDescription?: string;
+  invoiced?: boolean;
   drivers: string[];
   vehicles: string[];
 }

@@ -90,6 +90,9 @@
           <td class="trip-cell">
             <div class="desktop-trip-info">
               <app-rich-text [text]="trip.name"></app-rich-text>
+              @if (showOfficeNotes() && trip.officeDescription) {
+                <div class="office-note no-print"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
+              }
               <span class="muted newline" [class.print-only]="hideDescriptionOnScreen()">@if (!hideDescriptionOnScreen()) {<br>}<app-rich-text [text]="trip.description"></app-rich-text></span>
             </div>
             <div class="mobile-trip-info">
@@ -97,6 +100,9 @@
                 <span class="mobile-trip-time">@if (startsOutsideReference(trip)) { &mdash; } @else { {{ trip.start.toDate() | date:'HH:mm' }} }@if (trip.end) {(&ndash;@if (endsOutsideReference(trip)) { &mdash; } @else { {{ trip.end.toDate() | date:'HH:mm' }} })}</span>
                 <span class="mobile-trip-name"><app-rich-text [text]="trip.name"></app-rich-text></span>
               </strong>
+              @if (showOfficeNotes() && trip.officeDescription) {
+                <div class="mobile-line office-note no-print"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
+              }
               <div class="mobile-line mobile-chips-line">
                 <ng-container [ngTemplateOutlet]="driverChips" [ngTemplateOutletContext]="{applyHideSingle: true}"></ng-container>
                 <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
