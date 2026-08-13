@@ -30,6 +30,7 @@ import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
 import {BreakpointService} from '../breakpoint.service';
+import {PageHeaderService} from '../page-header.service';
 
 @Component({
   standalone: true,
@@ -42,6 +43,7 @@ import {BreakpointService} from '../breakpoint.service';
     MatInputModule, MatMenuModule, MatSlideToggleModule,
     TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
   ],
+  providers: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DayPlansComponent implements OnInit {
@@ -49,6 +51,8 @@ export class DayPlansComponent implements OnInit {
   readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
   readonly breakpoints = inject(BreakpointService);
+  private readonly pageHeader = inject(PageHeaderService);
+  private readonly datePipe = inject(DatePipe);
 
   availableTemplates$!: Observable<SelectOption[]>;
   trips$!: Observable<Trip[]>;
@@ -243,6 +247,7 @@ export class DayPlansComponent implements OnInit {
     this._selectedDate = date;
     this.trips$ = this.dataStore.getTrips(date);
     this.dayPublic$ = this.dataStore.getDayPublic(date);
+    this.pageHeader.set('Dagsplan', this.datePipe.transform(date.toDate(), 'EEEE, d MMMM y'));
   }
 
   get selectedDate(): Moment {

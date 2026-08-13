@@ -17,6 +17,7 @@ import {TripFormComponent} from '../trip-form/trip-form.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
+import {PageHeaderService} from '../page-header.service';
 
 @Component({
   standalone: true,
@@ -35,6 +36,7 @@ export class TemplatesComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
+  private readonly pageHeader = inject(PageHeaderService);
 
   templates$!: Observable<Template[]>;
   trips$!: Observable<Trip[]>;
@@ -45,6 +47,8 @@ export class TemplatesComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.pageHeader.set('Skabeloner');
+
     this.templates$ = this.dataStore.getAllTemplates();
     // Auto-select the first template once, when the list first arrives.
     this.templates$.pipe(take(1)).subscribe(ts => {

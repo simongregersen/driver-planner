@@ -4,6 +4,13 @@
       <app-brand-icon></app-brand-icon>
     </a>
 
+    <div class="mobile-page-title">
+      <span class="mobile-page-title-main">{{ pageHeader.title() }}</span>
+      @if (pageHeader.subtitle()) {
+        <span class="mobile-page-title-sub">{{ pageHeader.subtitle() }}</span>
+      }
+    </div>
+
     <nav mat-tab-nav-bar class="nav-links" disableRipple [tabPanel]="tabPanel">
       @if (isDriver$ | async) {
         <a mat-tab-link routerLink="/my-trips" routerLinkActive #rlaMyTrips="routerLinkActive"
@@ -28,6 +35,10 @@
     </nav>
 
     <span class="spacer"></span>
+
+    @if (driverName$ | async; as driverName) {
+      <span class="mobile-driver-chip">{{ driverName }}</span>
+    }
 
     <span class="toolbar-actions">
       <button matIconButton (click)="enableNotifications()" matTooltip="Slå notifikationer til" matTooltipPosition="below">

@@ -1,5 +1,5 @@
-import {ChangeDetectionStrategy, Component, computed, inject, OnInit} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit} from '@angular/core';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
@@ -19,6 +19,7 @@ import {ClockRecordEditorComponent, ClockRecordUpdates} from '../clock-record-ed
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 import {RichTextComponent} from '../rich-text/rich-text.component';
+import {PageHeaderService} from '../page-header.service';
 
 interface DayTrip {
   key: string;
@@ -64,6 +65,7 @@ interface PeriodReport {
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, ChipFilterComponent,
     RichTextComponent,
   ],
+  providers: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimeReportComponent implements OnInit {
@@ -71,6 +73,9 @@ export class TimeReportComponent implements OnInit {
   private readonly dataStore = inject(DataStore);
   private readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
+  private readonly pageHeader = inject(PageHeaderService);
+  private readonly datePipe = inject(DatePipe);
+  private readonly destroyRef = inject(DestroyRef);
 
   isAdmin$!: Observable<boolean>;
   effectiveDriverKey$!: Observable<string | null>;
@@ -88,6 +93,8 @@ export class TimeReportComponent implements OnInit {
   private readonly driverKeySubject = new BehaviorSubject<string | null>(null);
 
   ngOnInit(): void {
+    this.periodStartSubject.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.updateHeader());
+
     this.isAdmin$ = this.userService.isAdmin$;
 
     this.effectiveDriverKey$ = combineLatest([this.isAdmin$, this.userService.driverProfile$, this.driverKeySubject]).pipe(
@@ -150,6 +157,12 @@ export class TimeReportComponent implements OnInit {
   private periodStartFor(date: Moment): Moment {
     const monday = date.clone().startOf('isoWeek');
     return monday.isoWeek() % 2 === 0 ? monday : monday.subtract(1, 'week');
+  }
+
+  private updateHeader(): void {
+    const from = this.datePipe.transform(this.periodStart.toDate(), 'd. MMM');
+    const to = this.datePipe.transform(this.periodEnd.toDate(), 'd. MMM y');
+    this.pageHeader.set('Timeseddel', `${from} – ${to}`);
   }
 
   editClockRecord(record: ClockRecord, driverKey: string) {

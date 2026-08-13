@@ -13,6 +13,7 @@ import {DriverFormComponent} from '../driver-form/driver-form.component';
 import {DriverLoginCreatorComponent} from '../driver-login-creator/driver-login-creator.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {PageHeaderService} from '../page-header.service';
 
 @Component({
   standalone: true,
@@ -28,11 +29,13 @@ import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dial
 export class DriversComponent implements OnInit {
   readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
+  private readonly pageHeader = inject(PageHeaderService);
 
   drivers!: Observable<Driver[]>;
   users$!: Observable<Record<string, AppUser>>;
 
   ngOnInit() {
+    this.pageHeader.set('Chauffører');
     this.drivers = this.dataStore.getAllDrivers();
     this.users$ = this.dataStore.getAllUsers();
   }

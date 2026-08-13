@@ -35,6 +35,16 @@
   margin-right: 8px;
 }
 
+/* Mobile-only (see the 1024px breakpoint below) — desktop keeps each page's own in-page
+   title/subtitle untouched, so these stay hidden here by default. */
+.mobile-page-title {
+  display: none;
+}
+
+.mobile-driver-chip {
+  display: none;
+}
+
 /* The tab bar's default M3 tokens resolve against on-surface/primary, which read fine on a
    light surface but disappear against this toolbar's dark inverse-surface background. */
 .nav-links {
@@ -90,14 +100,49 @@
     display: none;
   }
 
-  /* No hamburger button competing for space on the left anymore, but the brand still gets
-     centered rather than left-aligned — the toolbar would otherwise look off-balance with
-     nothing else in it. */
+  /* Smaller and no longer centered — the page title now takes over as the toolbar's primary
+     left-aligned content, so the brand just sits ahead of it as a small identity mark rather
+     than the toolbar's sole content. */
   .brand {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-right: 0;
+    margin-right: 6px;
+  }
+
+  .mobile-page-title {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    line-height: 1.15;
+  }
+
+  .mobile-page-title-main {
+    font-size: 18px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-page-title-sub {
+    font-size: 11px;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-driver-chip {
+    display: inline-block;
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    max-width: 96px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .bottom-nav {

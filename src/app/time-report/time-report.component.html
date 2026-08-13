@@ -11,7 +11,7 @@
   </h5>
 </div>
 <div class="page-layout">
-  <aside class="page-aside no-print">
+  <aside class="page-aside no-print" [class.aside-empty]="!(isAdmin$ | async)">
     <div class="sidebar-stack">
       @if (isAdmin$ | async) {
         <div>

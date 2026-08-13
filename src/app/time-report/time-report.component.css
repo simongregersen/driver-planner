@@ -36,6 +36,17 @@
   .page-main {
     padding-bottom: 68px;
   }
+
+  /* A non-admin driver never sees the Chauffør filter above, and the period nav right below
+     it is pinned out of flow (see .periode-nav above) — .page-aside renders with nothing
+     visible in it at all, making .page-main the effective first thing on the page. Its own
+     24px margin-top (styles.css) would otherwise stack with .container's own top padding
+     (also styles.css), doubling up the gap under the toolbar — same fix as my-trips/day-plans/
+     time-tracking, just conditional here since an admin's driver filter genuinely does need
+     that 24px gap below it. */
+  .page-aside.aside-empty + .page-main {
+    margin-top: 0;
+  }
 }
 
 .loading {

@@ -18,6 +18,7 @@ import {TripFormComponent} from '../trip-form/trip-form.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {SelectOption} from '../select-option';
+import {PageHeaderService} from '../page-header.service';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 
@@ -31,12 +32,15 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
     MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule,
     TripsComponent, ChipFilterComponent,
   ],
+  providers: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PeriodPlansComponent implements OnInit {
   readonly dateUtility = inject(DateUtility);
   readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
+  private readonly pageHeader = inject(PageHeaderService);
+  private readonly datePipe = inject(DatePipe);
 
   from: Moment | null = null;
   to: Moment | null = null;
@@ -167,6 +171,9 @@ export class PeriodPlansComponent implements OnInit {
 
   private updateRange(): void {
     this.selectedRange = new DateRange<Moment>(this.from, this.to);
+    const from = this.from ? this.datePipe.transform(this.from.toDate(), 'EEEE, d MMMM') : '';
+    const to = this.to ? this.datePipe.transform(this.to.toDate(), 'EEEE, d MMMM') : '';
+    this.pageHeader.set('Periodeplan', to ? `${from} - ${to}` : from);
   }
 
 }

@@ -19,6 +19,7 @@ import {DateUtility} from '../date-utility';
 import {TripsComponent} from '../trips/trips.component';
 import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
 import {BreakpointService} from '../breakpoint.service';
+import {PageHeaderService} from '../page-header.service';
 
 @Component({
   standalone: true,
@@ -30,6 +31,7 @@ import {BreakpointService} from '../breakpoint.service';
     MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule,
     TripsComponent, CollapsibleBottomBarComponent,
   ],
+  providers: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MyTripsComponent implements OnInit {
@@ -39,6 +41,8 @@ export class MyTripsComponent implements OnInit {
   private readonly authService = inject(AuthenticationService);
   private readonly destroyRef = inject(DestroyRef);
   readonly breakpoints = inject(BreakpointService);
+  private readonly pageHeader = inject(PageHeaderService);
+  private readonly datePipe = inject(DatePipe);
 
   trips$!: Observable<Trip[]>;
   dayPublic$!: Observable<boolean>;
@@ -139,6 +143,7 @@ export class MyTripsComponent implements OnInit {
     this._selectedDate = date;
     this.trips$ = this.dataStore.getTrips(date);
     this.dayPublic$ = this.dataStore.getDayPublic(date);
+    this.pageHeader.set('Min dag', this.datePipe.transform(date.toDate(), 'EEEE, d MMMM y'));
   }
 
   get selectedDate(): Moment {

@@ -16,6 +16,7 @@ import {MessagingService} from './messaging.service';
 import {UpdateService} from './update.service';
 import {NavMoreSheetComponent, NavMoreSheetData} from './nav-more-sheet/nav-more-sheet.component';
 import {BrandIconComponent} from './brand-icon/brand-icon.component';
+import {PageHeaderService} from './page-header.service';
 
 @Component({
   standalone: true,
@@ -38,11 +39,15 @@ export class AppComponent {
   // Field injection only — this activates UpdateService's constructor (its version-check
   // subscription), nothing here calls it directly.
   private readonly updateService = inject(UpdateService);
+  readonly pageHeader = inject(PageHeaderService);
 
   loggedIn$: Observable<boolean> = this.authService.authState.pipe(map(user => user != null));
   isAdmin$: Observable<boolean> = this.userService.isAdmin$;
   isDriver$: Observable<boolean> = this.userService.driverProfile$.pipe(map(driver => driver != null));
   email$: Observable<string | null> = this.authService.authState.pipe(map(user => user?.email ?? null));
+  // For the mobile top bar's driver-name chip — the signed-in user's own driver profile, not
+  // whichever driver an admin might currently be viewing elsewhere in the app.
+  driverName$: Observable<string | null> = this.userService.driverProfile$.pipe(map(d => d?.displayName ?? null));
 
   async logout() {
     await this.messagingService.unregister();

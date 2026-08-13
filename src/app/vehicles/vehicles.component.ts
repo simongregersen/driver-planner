@@ -12,6 +12,7 @@ import {DataStore} from '../data.service';
 import {VehicleFormComponent} from '../vehicle-form/vehicle-form.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
+import {PageHeaderService} from '../page-header.service';
 
 @Component({
   standalone: true,
@@ -27,10 +28,12 @@ import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 export class VehiclesComponent implements OnInit {
   readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
+  private readonly pageHeader = inject(PageHeaderService);
 
   vehicles!: Observable<Vehicle[]>;
 
   ngOnInit() {
+    this.pageHeader.set('Køretøjer');
     this.vehicles = this.dataStore.getAllVehicles().pipe(map(Utility.filterDeleted));
   }
 

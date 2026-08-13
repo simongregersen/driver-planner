@@ -125,5 +125,9 @@
      not the (internally-scrolling) expanded panel, which overlays rather than pushing this. */
   .page-main {
     padding-bottom: 68px;
+    /* .page-aside is hidden above, so this is the first visible thing on the page — its own
+       24px margin-top (styles.css) would otherwise stack with .container's own top padding
+       (also styles.css), doubling up the gap under the toolbar. */
+    margin-top: 0;
   }
 }

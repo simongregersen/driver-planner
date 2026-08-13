@@ -250,6 +250,23 @@ body {
   color: var(--mat-sys-on-surface-variant);
 }
 
+/* Below the app shell's own mobile breakpoint (app.component.css), the page title moves into
+   the toolbar itself (see PageHeaderService) — this in-page copy would just be redundant,
+   space-wasting duplication there. "screen and" keeps this from ever hiding it in print,
+   regardless of the printing device's reported page width. */
+@media screen and (max-width: 1024px) {
+  .page-header {
+    display: none;
+  }
+
+  /* .page-header's own top margin (below) used to be every page's only source of breathing
+     room under the fixed toolbar — hiding it there left content flush against the toolbar
+     with nothing restoring that gap. */
+  .container {
+    padding-top: 16px;
+  }
+}
+
 .section-title {
   margin: 0 0 8px;
   font: var(--mat-sys-title-medium);
