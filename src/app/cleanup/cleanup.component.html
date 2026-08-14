@@ -1,0 +1,15 @@
+<div class="page-header">
+  <h2 class="page-title">Oprydning</h2>
+</div>
+
+<div class="cleanup-card">
+  <p>
+    Af hensyn til GDPR må turdata ikke opbevares i mere end {{ tripRetentionYears }} år. Klik
+    nedenfor for at slette alle ture, der er ældre end det, samt alle offentliggjorte datoer, der
+    er ældre end {{ publicDateRetentionYears }} år (ingen har brug for at kunne se så langt
+    tilbage). Handlingen kan ikke fortrydes.
+  </p>
+  <button matButton="filled" type="button" [disabled]="running()" (click)="cleanupOldData()">
+    Ryd op i gamle data
+  </button>
+</div>

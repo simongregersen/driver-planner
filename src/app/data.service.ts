@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {child, endAt, limitToLast, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
+import {child, endAt, endBefore, limitToLast, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, Trip, TripReport} from './trip';
 import {ClockRecord} from './clock-record';
@@ -299,6 +299,35 @@ export class DataStore {
     return remove(child(this.tripsRef, trip.$key));
   }
 
+  // Trips whose `start` predates the cutoff — used only by the admin-only /cleanup page (GDPR:
+  // trip/customer data isn't kept longer than a fixed retention period). `start` is always set
+  // (unlike the sparse multiDayStart copy — see addTrip/updateTrip above), so this alone is
+  // sufficient; no multiDayStart union is needed the way getTrips does for its overlap queries.
+  //
+  // Deliberately returns raw {$key, start} pairs rather than hydrated Trip objects: the cleanup
+  // page only ever needs the key (to delete) and the two boundary start timestamps (to report a
+  // date range) — this cutoff can match tens of thousands of trips, so converting every one of
+  // them to a Moment just to discard all but two would be pure waste. The query result is
+  // already ordered by `start` ascending (orderByChild), so the caller can read the oldest/newest
+  // straight off the ends of the array without sorting either.
+  getTripsOlderThan(cutoff: Moment): Observable<{$key: string; start: number}[]> {
+    return listVal<{$key: string; start: number}>(
+      query(this.tripsRef, orderByChild('start'), endAt(cutoff.valueOf() - 1)),
+      {keyField: '$key'},
+    );
+  }
+
+  // One multi-path update rather than one remove() per trip — a single atomic write regardless
+  // of how many trips are being purged. The /trips container's own .write rule (admin-only)
+  // already covers every key in a multi-path update the same way it covers updateTrip's
+  // single-key update, so no database.rules.json change is needed for this.
+  removeTrips(tripKeys: string[]): Promise<void> {
+    if (!tripKeys.length) return Promise.resolve();
+    const updates: Record<string, null> = {};
+    tripKeys.forEach(k => { updates[k] = null; });
+    return update(this.tripsRef, updates);
+  }
+
   private isDayPublic(date: Moment): Observable<boolean> {
     const key = this.dateUtility.dateKey(date);
     return objectVal<boolean>(child(this.publicRef, key)).pipe(map(v => !!v));
@@ -327,6 +356,25 @@ export class DataStore {
     return objectVal<Record<string, boolean> | null>(q).pipe(
       map(dates => Object.keys(dates || {}))
     );
+  }
+
+  // Public-date markers whose key predates the cutoff — used only by the admin-only /cleanup
+  // page. Keys are 'YYYY-MM-DD' date strings, which sort lexicographically the same as
+  // chronologically, so an orderByKey query works the same way getPublicDatesInRange's own does.
+  getPublicDatesOlderThan(cutoff: Moment): Observable<string[]> {
+    const cutoffKey = this.dateUtility.dateKey(cutoff);
+    const q = query(this.publicRef, orderByKey(), endBefore(cutoffKey));
+    return objectVal<Record<string, boolean> | null>(q).pipe(
+      map(dates => Object.keys(dates || {}))
+    );
+  }
+
+  // One multi-path update rather than one remove() per date — same rationale as removeTrips.
+  removePublicDates(dateKeys: string[]): Promise<void> {
+    if (!dateKeys.length) return Promise.resolve();
+    const updates: Record<string, null> = {};
+    dateKeys.forEach(k => { updates[k] = null; });
+    return update(this.publicRef, updates);
   }
 
   getAllDrivers(): Observable<Driver[]> {

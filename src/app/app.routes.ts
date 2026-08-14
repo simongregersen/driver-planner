@@ -46,6 +46,10 @@ export const routes: Routes = [
           {path: 'routes', loadComponent: () => import('./routes/routes.component').then(m => m.RoutesComponent)},
           {path: 'drivers', loadComponent: () => import('./drivers/drivers.component').then(m => m.DriversComponent)},
           {path: 'vehicles', loadComponent: () => import('./vehicles/vehicles.component').then(m => m.VehiclesComponent)},
+          // Deliberately not linked from any nav (desktop tabs, mobile bottom-nav, "Mere" sheet) —
+          // reachable only by navigating to /cleanup directly. Still gated by authGuard/adminGuard
+          // like every other admin page here; "hidden" isn't a substitute for real access control.
+          {path: 'cleanup', loadComponent: () => import('./cleanup/cleanup.component').then(m => m.CleanupComponent)},
         ],
       },
     ],
