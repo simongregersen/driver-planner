@@ -47,11 +47,12 @@ export class FuelReportingComponent {
   readonly showRecentWeek = signal(false);
 
   readonly loading = computed(() => this.rawRecords() === null);
-  // Earliest → latest, matching the admin report's own ordering.
+  // Newest → oldest — unlike the admin report (which stays oldest-first), this driver-facing
+  // table reads top-to-bottom as "most recent refuelling first".
   readonly sortedRecords = computed(() =>
     (this.rawRecords() ?? [])
       .filter(r => r.driverKey === this.driverKey())
-      .sort((a, b) => a.date.valueOf() - b.date.valueOf())
+      .sort((a, b) => b.date.valueOf() - a.date.valueOf())
   );
 
   readonly visibleRecords = computed(() => {
@@ -60,10 +61,10 @@ export class FuelReportingComponent {
       const cutoff = moment().subtract(7, 'days');
       return all.filter(r => r.date.isAfter(cutoff));
     }
-    // sortedRecords is oldest-first, so the most recent `limit` records are the last `limit`
-    // entries — sliced from the end, not the start — while staying oldest-first among themselves.
+    // sortedRecords is newest-first, so the most recent `limit` records are the first `limit`
+    // entries.
     const limit = this.limit();
-    return limit ? all.slice(Math.max(0, all.length - limit)) : all;
+    return limit ? all.slice(0, limit) : all;
   });
 
   // Once expanded, stays capped at the last 7 days rather than the whole (potentially much

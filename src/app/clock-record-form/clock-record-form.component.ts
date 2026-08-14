@@ -86,7 +86,9 @@ export class ClockRecordFormComponent implements OnInit {
     if (this.mode === 'edit') {
       this.dataStore.updateClockRecord(this.driverKey, this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note});
     } else {
-      this.dataStore.addClockRecord(this.driverKey, this.clockIn!, note);
+      // A Slut filled in on create closes the record immediately — otherwise it'd read as still
+      // open ("I gang") and the punch button on Arbejdstid would switch into its recording state.
+      this.dataStore.addClockRecord(this.driverKey, this.clockIn!, note, this.clockOut);
     }
   }
 

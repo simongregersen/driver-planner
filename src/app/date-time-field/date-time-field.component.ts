@@ -31,6 +31,9 @@ export class DateTimeFieldComponent {
   dateLabel = input('Dato');
   timeLabel = input('Tid');
   value = input<Moment | null>(null);
+  /** Date to fall back to when the user enters a time here without ever picking an explicit
+   * date of their own — e.g. Slut defaulting to Start's date when only a Slut time is typed. */
+  defaultDate = input<Moment | null>(null);
   valueChange = output<Moment | null>();
 
   private readonly dateUtility = inject(DateUtility);
@@ -54,6 +57,11 @@ export class DateTimeFieldComponent {
   }
 
   private emit(date: Moment | null, time: Moment | null): void {
+    const fallback = this.defaultDate();
+    if (!date && time && fallback) {
+      date = this.dateUtility.getDate(fallback);
+      this.materialDateControl.setValue(date, {emitEvent: false});
+    }
     this.valueChange.emit(this.dateUtility.toMoment(date, time));
   }
 }

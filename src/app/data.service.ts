@@ -204,8 +204,8 @@ export class DataStore {
     );
   }
 
-  addClockRecord(driverKey: string, clockIn: Moment, note?: string | null) {
-    return push(child(this.clockRecordsRef, driverKey), {clockIn: clockIn.valueOf(), clockOut: null, note: note || null});
+  addClockRecord(driverKey: string, clockIn: Moment, note?: string | null, clockOut?: Moment | null) {
+    return push(child(this.clockRecordsRef, driverKey), {clockIn: clockIn.valueOf(), clockOut: clockOut ? clockOut.valueOf() : null, note: note || null});
   }
 
   updateClockRecord(driverKey: string, record: ClockRecord, updates: {clockIn?: Moment; clockOut?: Moment | null; note?: string | null}) {
