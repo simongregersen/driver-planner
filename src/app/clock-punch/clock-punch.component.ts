@@ -6,7 +6,7 @@ import moment from 'moment';
 import {map, switchMap} from 'rxjs/operators';
 import {DataStore} from '../data.service';
 import {ClockRecord} from '../clock-record';
-import {ClockRecordCreatorComponent} from '../clock-record-creator/clock-record-creator.component';
+import {ClockRecordFormComponent} from '../clock-record-form/clock-record-form.component';
 import {ClockRecordStopComponent} from '../clock-record-stop/clock-record-stop.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 
@@ -47,10 +47,8 @@ export class ClockPunchComponent {
   }
 
   private openStartDialog(): void {
-    const dialogRef = this.dialog.open(ClockRecordCreatorComponent, SMALL_DIALOG_CONFIG);
-    dialogRef.componentInstance.open((clockIn, note) => {
-      this.dataStore.addClockRecord(this.driverKey(), clockIn, note);
-    });
+    const instance = this.dialog.open(ClockRecordFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
+    instance.driverKey = this.driverKey();
   }
 
   private openStopDialog(record: ClockRecord): void {

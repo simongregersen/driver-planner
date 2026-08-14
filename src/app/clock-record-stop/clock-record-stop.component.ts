@@ -6,14 +6,14 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import moment, {Moment} from 'moment';
 import {ClockRecord} from '../clock-record';
-import {ClockRecordUpdates} from '../clock-record-editor/clock-record-editor.component';
+import {ClockRecordUpdates} from '../clock-record-form/clock-record-form.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {DateTimeFieldComponent} from '../date-time-field/date-time-field.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 
-// Separate from ClockRecordEditorComponent on purpose: this is specifically the "confirm and
+// Separate from ClockRecordFormComponent on purpose: this is specifically the "confirm and
 // stop" step (clockOut always defaults to now, primary action is a red "Stop"), whereas the
-// editor is a plain correction form (clockOut stays blank unless the record already has one).
+// form is a plain start/correction form (clockOut stays blank unless the record already has one).
 // Sharing one component made stopping and correcting indistinguishable from each other.
 @Component({
   standalone: true,

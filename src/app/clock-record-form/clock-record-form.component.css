@@ -24,3 +24,9 @@
   color: var(--mat-sys-error);
   margin-right: auto;
 }
+
+/* :not(:disabled) so Material's own greyed-out disabled styling shows through instead of
+   this green override. */
+.start-btn:not(:disabled) {
+  background-color: #2e7d32;
+}

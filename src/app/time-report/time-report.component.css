@@ -69,8 +69,15 @@
   margin-bottom: 16px;
 }
 
-.day-heading {
+.day-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin: 0 0 4px;
+}
+
+.day-heading {
+  margin: 0;
   font: var(--mat-sys-title-medium);
   text-transform: capitalize;
 }

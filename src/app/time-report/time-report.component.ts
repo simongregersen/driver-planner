@@ -15,7 +15,7 @@ import {DateUtility} from '../date-utility';
 import {Driver} from '../driver';
 import {Trip} from '../trip';
 import {ClockRecord} from '../clock-record';
-import {ClockRecordEditorComponent, ClockRecordUpdates} from '../clock-record-editor/clock-record-editor.component';
+import {ClockRecordFormComponent} from '../clock-record-form/clock-record-form.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 import {RichTextComponent} from '../rich-text/rich-text.component';
@@ -170,18 +170,24 @@ export class TimeReportComponent implements OnInit {
   }
 
   editClockRecord(record: ClockRecord, driverKey: string) {
-    const dialogRef = this.dialog.open(ClockRecordEditorComponent, SMALL_DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(
-      record,
-      (r: ClockRecord, updates: ClockRecordUpdates) => this.dataStore.updateClockRecord(driverKey, r, updates),
-      (r: ClockRecord) => this.dataStore.removeClockRecord(driverKey, r),
-    );
+    const instance = this.dialog.open(ClockRecordFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
+    instance.mode = 'edit';
+    instance.driverKey = driverKey;
+    instance.record = record;
+  }
+
+  addClockRecord(date: Moment, driverKey: string) {
+    const instance = this.dialog.open(ClockRecordFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
+    instance.driverKey = driverKey;
+    instance.initialClockIn = date;
   }
 
   private buildReport(trips: Trip[], records: ClockRecord[], periodStart: Moment, periodEnd: Moment): PeriodReport {
+    // Every day of the period is shown, even ones with nothing reported yet — the day heading's
+    // "+" button (see the template) needs somewhere to attach to for adding a first record on
+    // an otherwise-empty day.
     const days = this.dateUtility.range(periodStart, periodEnd)
-      .map(date => this.buildDay(date, trips, records))
-      .filter(d => d.trips.length > 0 || d.records.length > 0);
+      .map(date => this.buildDay(date, trips, records));
 
     const weekMap = new Map<string, DayReport[]>();
     for (const day of days) {

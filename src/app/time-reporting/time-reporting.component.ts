@@ -12,7 +12,7 @@ import moment, {Moment} from 'moment';
 import {ClockRecord} from '../clock-record';
 import {DataStore} from '../data.service';
 import {DateUtility} from '../date-utility';
-import {ClockRecordEditorComponent} from '../clock-record-editor/clock-record-editor.component';
+import {ClockRecordFormComponent} from '../clock-record-form/clock-record-form.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 
 // Purely presentational: no punch/start-stop logic lives here — that's ClockPunchComponent.
@@ -87,11 +87,9 @@ export class TimeReportingComponent {
   }
 
   editRecord(record: ClockRecord) {
-    const dialogRef = this.dialog.open(ClockRecordEditorComponent, SMALL_DIALOG_CONFIG);
-    dialogRef.componentInstance.edit(
-      record,
-      (r, updates) => this.dataStore.updateClockRecord(this.driverKey(), r, updates),
-      (r) => this.dataStore.removeClockRecord(this.driverKey(), r),
-    );
+    const instance = this.dialog.open(ClockRecordFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
+    instance.mode = 'edit';
+    instance.driverKey = this.driverKey();
+    instance.record = record;
   }
 }

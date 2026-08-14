@@ -40,7 +40,13 @@
             <h3 class="week-heading">Uge {{ week.weekNumber }}</h3>
             @for (day of week.days; track day.date.valueOf()) {
               <div class="day-block">
-                <h4 class="day-heading">{{ day.date.toDate() | date:'EEEE d/M' }}</h4>
+                <div class="day-heading-row">
+                  <h4 class="day-heading">{{ day.date.toDate() | date:'EEEE d/M' }}</h4>
+                  <button matIconButton type="button" class="no-print" matTooltip="Tilføj registrering"
+                          (click)="addClockRecord(day.date, driverKey)">
+                    <mat-icon>add_circle</mat-icon>
+                  </button>
+                </div>
 
                 @if (day.trips.length > 0) {
                   <ul class="day-trips no-print">

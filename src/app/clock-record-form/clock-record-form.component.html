@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Rediger registrering</h2>
+<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger registrering' : 'Start tidsregistrering' }}</h2>
 
 <mat-dialog-content>
   <form id="clockRecordForm" class="form-stack" (ngSubmit)="onSubmit(); dialogRef.close()">
@@ -29,7 +29,11 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button matButton class="delete-btn" type="button" (click)="confirmDelete()">Slet</button>
+  @if (mode === 'edit') {
+    <button matButton class="delete-btn" type="button" (click)="confirmDelete()">Slet</button>
+  }
   <button matButton type="button" mat-dialog-close>Annuller</button>
-  <button matButton="filled" type="submit" form="clockRecordForm" [disabled]="!!error()">Gem</button>
+  <button matButton="filled" type="submit" form="clockRecordForm" [class.start-btn]="mode === 'create'" [disabled]="!!error()">
+    {{ mode === 'edit' ? 'Gem' : 'Start' }}
+  </button>
 </mat-dialog-actions>
