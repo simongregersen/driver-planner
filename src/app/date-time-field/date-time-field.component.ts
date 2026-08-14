@@ -13,7 +13,8 @@ import {TimeFieldComponent} from '../time-field/time-field.component';
 // popup) paired with TimeFieldComponent for the time, which does the equivalent mobile/desktop
 // split of its own (see that component).
 //
-// Used only by the clock-record creator/editor/stop dialogs (Tidsregistrering).
+// Used by the clock-record form/stop dialogs (Tidsregistrering) and TripReportFormComponent
+// (Chaufførrapport).
 //
 // Previously had a native <input type=date>/<input type=time> pair as a mobile fallback instead
 // — dropped because mobile browsers don't reliably respect the time input's step attribute (it
@@ -31,9 +32,10 @@ export class DateTimeFieldComponent {
   dateLabel = input('Dato');
   timeLabel = input('Tid');
   value = input<Moment | null>(null);
-  /** Date to fall back to when the user enters a time here without ever picking an explicit
-   * date of their own — e.g. Slut defaulting to Start's date when only a Slut time is typed. */
-  defaultDate = input<Moment | null>(null);
+  /** Value to fall back to for whichever half (date or time) the user hasn't picked yet here —
+   * e.g. Slut defaulting to Start's date when only a Slut time is typed, and to Start's time
+   * when only a Slut date is picked. */
+  fallbackValue = input<Moment | null>(null);
   valueChange = output<Moment | null>();
 
   private readonly dateUtility = inject(DateUtility);
@@ -57,10 +59,14 @@ export class DateTimeFieldComponent {
   }
 
   private emit(date: Moment | null, time: Moment | null): void {
-    const fallback = this.defaultDate();
+    const fallback = this.fallbackValue();
     if (!date && time && fallback) {
       date = this.dateUtility.getDate(fallback);
       this.materialDateControl.setValue(date, {emitEvent: false});
+    }
+    if (!time && date && fallback) {
+      time = fallback;
+      this.materialTimeControl.setValue(time, {emitEvent: false});
     }
     this.valueChange.emit(this.dateUtility.toMoment(date, time));
   }

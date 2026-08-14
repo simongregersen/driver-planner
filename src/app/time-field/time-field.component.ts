@@ -36,6 +36,10 @@ export class TimeFieldComponent implements ControlValueAccessor {
   /** In minutes — 15 to match the interval mat-timepicker was already using; trip start/end
    * times need finer 1-minute control. */
   minuteStep = input(15);
+  /** Seeded into the field the moment it's opened with no time of its own yet — e.g. Slut
+   * opening already showing Start's time instead of blank/now, on both the desktop dropdown and
+   * the mobile wheel dialog. */
+  fallbackTime = input<Moment | null>(null);
 
   readonly breakpoints = inject(BreakpointService);
   private readonly dialog = inject(MatDialog);
@@ -75,6 +79,12 @@ export class TimeFieldComponent implements ControlValueAccessor {
   // Desktop's own mat-timepicker already opens from its own toggle/input clicks independently,
   // so this only needs to act on mobile.
   onFieldClick(): void {
+    if (!this.materialTimeControl.value) {
+      const fallback = this.fallbackTime();
+      if (fallback) {
+        this.materialTimeControl.setValue(fallback);
+      }
+    }
     if (this.breakpoints.isMobile()) {
       this.open();
     }

@@ -5,5 +5,5 @@
     <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
     <mat-datepicker #datePicker [touchUi]="breakpoints.isMobile()"></mat-datepicker>
   </mat-form-field>
-  <app-time-field class="picker-field" [label]="timeLabel()" [formControl]="materialTimeControl"></app-time-field>
+  <app-time-field class="picker-field" [label]="timeLabel()" [fallbackTime]="fallbackValue()" [formControl]="materialTimeControl"></app-time-field>
 </div>

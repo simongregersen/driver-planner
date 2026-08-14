@@ -86,6 +86,10 @@ export class TripsComponent implements OnInit {
     return this.highlightModified() && !!trip.modified && trip.modified.isAfter(moment().subtract(24, 'hours'));
   }
 
+  modifiedTooltip(trip: Trip): string {
+    return trip.modified ? `Ændret ${trip.modified.format('[d.] D. MMMM [kl.] HH:mm')}` : '';
+  }
+
   startsOutsideReference(trip: Trip): boolean {
     const reference = this.referenceDate();
     return !!reference && !Utility.sameDate(trip.start, reference);

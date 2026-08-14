@@ -95,8 +95,13 @@ export class DataStore {
     );
   }
 
+  // Mirrors updateTrip's own public-day check: a trip landing on a day that's already public is
+  // just as much news to whoever already saw that day's plan as an edit to an existing trip
+  // would be, so it gets the same `modified` stamp (and the same "recently modified" highlight —
+  // see TripsComponent.isRecentlyModified) rather than looking indistinguishable from a trip
+  // that was there all along.
   addTrip(trip: NewTrip) {
-    return push(this.tripsRef, {
+    return firstValueFrom(this.isDayPublic(trip.start)).then(isPublic => push(this.tripsRef, {
       start: trip.start.valueOf(),
       end: (trip.end) ? trip.end.valueOf() : null,
       name: trip.name,
@@ -105,8 +110,14 @@ export class DataStore {
       labels: trip.labels || [],
       drivers: trip.drivers || [],
       vehicles: trip.vehicles || [],
-      multiDayStart: this.multiDayStart(trip.start, trip.end)
-    });
+      multiDayStart: this.multiDayStart(trip.start, trip.end),
+      ...(isPublic ? {modified: moment().valueOf()} : {}),
+    }).then(ref => {
+      if (isPublic) {
+        this.enqueueTripChangeNotification(trip.drivers, trip.name, trip.start, 'Der er tilføjet en ny tur');
+      }
+      return ref;
+    }));
   }
 
   updateTrip(trip: Trip, updates: any) {
@@ -166,7 +177,7 @@ export class DataStore {
   }
 
   // Best-effort: a notification failing to enqueue shouldn't fail the trip save itself.
-  private async enqueueTripChangeNotification(driverIds: string[], tripName: string, start: Moment): Promise<void> {
+  private async enqueueTripChangeNotification(driverIds: string[], tripName: string, start: Moment, title = 'Din tur er blevet opdateret'): Promise<void> {
     if (!driverIds?.length) return;
     try {
       const users = await firstValueFrom(this.getAllUsers());
@@ -177,7 +188,7 @@ export class DataStore {
 
       await push(this.notificationQueueRef, {
         uids,
-        title: 'Din tur er blevet opdateret',
+        title,
         body: `${tripName} ${start.format('[d.] D. MMMM [kl.] HH:mm')}`,
         createdAt: Date.now(),
       });

@@ -97,6 +97,7 @@
             [class.row-highlight]="isRecentlyModified(trip)"
             [class.trip-finished]="isFinished(trip)"
             [class.pointer]="!readonly()"
+            [matTooltip]="isRecentlyModified(trip) ? modifiedTooltip(trip) : ''"
             (click)="onRowClick(trip)">
           <td data-label="Start">
             <span [matTooltip]="startsOutsideReference(trip) ? ((trip.start.toDate() | date:'EEE d/M HH:mm') ?? '') : ''">
