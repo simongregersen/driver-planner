@@ -20,6 +20,8 @@
       }
       <a mat-tab-link routerLink="/time-report" routerLinkActive #rlaTimeReport="routerLinkActive"
          [active]="rlaTimeReport.isActive">Timeseddel</a>
+      <a mat-tab-link routerLink="/fuel-tracking" routerLinkActive #rlaFuelTracking="routerLinkActive"
+         [active]="rlaFuelTracking.isActive">Brændstof</a>
       @if (isAdmin$ | async) {
         <a mat-tab-link routerLink="/day-plans" routerLinkActive #rlaDayPlans="routerLinkActive"
            [active]="rlaDayPlans.isActive">Dagsplaner</a>
@@ -64,9 +66,15 @@
         <span>Arbejdstid</span>
       </a>
     }
-    <a class="bottom-nav-link" routerLink="/time-report" routerLinkActive="active">
-      <mat-icon>receipt_long</mat-icon>
-      <span>Timeseddel</span>
+    @if (!(isAdmin$ | async)) {
+      <a class="bottom-nav-link" routerLink="/time-report" routerLinkActive="active">
+        <mat-icon>receipt_long</mat-icon>
+        <span>Timeseddel</span>
+      </a>
+    }
+    <a class="bottom-nav-link" routerLink="/fuel-tracking" routerLinkActive="active">
+      <mat-icon>local_gas_station</mat-icon>
+      <span>Brændstof</span>
     </a>
     @if (isAdmin$ | async) {
       <a class="bottom-nav-link" routerLink="/day-plans" routerLinkActive="active">

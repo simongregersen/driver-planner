@@ -62,6 +62,54 @@
       }
     </div>
   </aside>
+
+  <app-collapsible-bottom-bar class="mobile-period-bar no-print">
+    <div bar-collapsed class="period-picker-row">
+      <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Periode</mat-label>
+        <mat-date-range-input [rangePicker]="rangePickerMobile" [min]="minDate">
+          <input matStartDate readonly placeholder="Fra" [value]="from" (dateChange)="setFrom($event.value)" (click)="rangePickerMobile.open()">
+          <input matEndDate readonly placeholder="Til" [value]="to" (dateChange)="setTo($event.value)" (click)="rangePickerMobile.open()">
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="rangePickerMobile"></mat-datepicker-toggle>
+        <mat-date-range-picker #rangePickerMobile [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
+      </mat-form-field>
+    </div>
+    <div bar-expanded class="mobile-period-bar-expanded">
+      <div>
+        <h5 class="section-title">Vis</h5>
+        <mat-button-toggle-group multiple class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="showDriverNotes()" (change)="showDriverNotes.set($event.source.checked)">
+            Chaufførnoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="showOfficeNotes()" (change)="showOfficeNotes.set($event.source.checked)">
+            Kontornoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="showLabels()" (change)="showLabels.set($event.source.checked)">
+            Mærkater
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+      <div>
+        <h5 class="section-title">Chauffører</h5>
+        <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
+                          (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
+      </div>
+      <div>
+        <h5 class="section-title">Køretøjer</h5>
+        <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
+                          (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
+      </div>
+      @if (trips$ | async; as trips) {
+      <div>
+        <h5 class="section-title">Mærkater</h5>
+        <app-chip-filter [options]="labelOptions(trips)" [selectedIds]="selectedLabelKeys()"
+                          (selectionChange)="selectedLabelKeys.set($event)"></app-chip-filter>
+      </div>
+      }
+    </div>
+  </app-collapsible-bottom-bar>
+
   <main class="page-main">
     @if (trips$ | async; as trips) {
       @for (date of range; track dateUtility.dateKey(date)) {

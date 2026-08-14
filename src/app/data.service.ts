@@ -1,11 +1,12 @@
 import {Injectable} from '@angular/core';
-import {child, endAt, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
+import {child, endAt, limitToLast, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, Trip, TripReport} from './trip';
 import {ClockRecord} from './clock-record';
+import {FuelReport, NewFuelReport} from './fuel-report';
 import {Driver} from './driver';
 import {AppUser} from './user';
-import {combineLatest, firstValueFrom, Observable} from 'rxjs';
+import {combineLatest, firstValueFrom, Observable, of} from 'rxjs';
 import {first, map, tap} from 'rxjs/operators';
 import {Vehicle} from './vehicle';
 import {DateUtility} from './date-utility';
@@ -29,6 +30,7 @@ export class DataStore {
   private vehiclesRef = ref(db, '/vehicles');
   private tripsRef = ref(db, '/trips');
   private clockRecordsRef = ref(db, '/clockRecords');
+  private fuelReportsRef = ref(db, '/fuelReports');
   private templatesRef = ref(db, '/templates');
   private publicRef = ref(db, '/public');
   private usersRef = ref(db, '/users');
@@ -216,6 +218,70 @@ export class DataStore {
 
   removeClockRecord(driverKey: string, record: ClockRecord) {
     return remove(child(this.clockRecordsRef, `${driverKey}/${record.$key}`));
+  }
+
+  // Keyed by vehicle rather than driver (see FuelReport's doc comment) — open-ended above when
+  // `to` is omitted, same rationale as getClockRecords.
+  getFuelReports(vehicleKey: string, from: Moment, to?: Moment): Observable<FuelReport[]> {
+    const fromDate = this.dateUtility.toMoment(from)!;
+    const vehicleRef = child(this.fuelReportsRef, vehicleKey);
+    const q = to
+      ? query(vehicleRef, orderByChild('date'), startAt(fromDate.valueOf()), endAt(this.dateUtility.toMoment(to)!.add(1, 'days').valueOf() - 1))
+      : query(vehicleRef, orderByChild('date'), startAt(fromDate.valueOf()));
+    return listVal<FuelReport>(q, {keyField: '$key'}).pipe(
+      tap(rs => rs.forEach(r => {
+        r.date = moment(r.date as any);
+      }))
+    );
+  }
+
+  addFuelReport(vehicleKey: string, report: NewFuelReport) {
+    return push(child(this.fuelReportsRef, vehicleKey), {
+      date: report.date.valueOf(),
+      driverKey: report.driverKey,
+      odometerKm: report.odometerKm,
+      liters: report.liters,
+      note: report.note || ''
+    });
+  }
+
+  updateFuelReport(vehicleKey: string, record: FuelReport, updates: any) {
+    if (updates.date) updates.date = updates.date.valueOf();
+    return update(child(this.fuelReportsRef, `${vehicleKey}/${record.$key}`), updates);
+  }
+
+  removeFuelReport(vehicleKey: string, record: FuelReport) {
+    return remove(child(this.fuelReportsRef, `${vehicleKey}/${record.$key}`));
+  }
+
+  // For the fuel-tracking page's both branches: an admin passes the vehicles it wants to see
+  // (or all of them), and a driver also passes all vehicles — the .read rule on each report
+  // (see database.rules.json) already restricts what comes back to that driver's own reports,
+  // so there's no need to filter by driver client-side either way.
+  getFuelReportsForVehicles(vehicles: Vehicle[], from: Moment, to?: Moment): Observable<Array<FuelReport & {vehicleKey: string; vehicleName: string}>> {
+    if (!vehicles.length) return of([]);
+    return combineLatest(vehicles.map(v =>
+      this.getFuelReports(v.$key, from, to).pipe(
+        map(rs => rs.map(r => ({...r, vehicleKey: v.$key, vehicleName: v.displayName})))
+      )
+    )).pipe(map(lists => lists.flat()));
+  }
+
+  // The single most recent report strictly before `before` — used only as a distance baseline
+  // when a vehicle has just one reading inside an admin-selected period (see
+  // FuelTrackingComponent.vehicleGroups): a lone in-period reading can't produce a distance on
+  // its own, but diffing it against the last reading before the period can. Never shown as a
+  // report row itself, only folded into that distance/km-per-L computation.
+  getLatestFuelReportBefore(vehicleKey: string, before: Moment): Observable<FuelReport | null> {
+    const vehicleRef = child(this.fuelReportsRef, vehicleKey);
+    const q = query(vehicleRef, orderByChild('date'), endAt(this.dateUtility.toMoment(before)!.valueOf() - 1), limitToLast(1));
+    return listVal<FuelReport>(q, {keyField: '$key'}).pipe(
+      map(rs => {
+        const r = rs[0] ?? null;
+        if (r) r.date = moment(r.date as any);
+        return r;
+      })
+    );
   }
 
   removeTrip(trip: Trip) {

@@ -1,0 +1,143 @@
+<div class="page-header no-print">
+  <h2 class="page-title">
+    Brændstof
+    <small>{{ headerFrom().toDate() | date:'EEEE, d MMMM' }} - {{ headerTo().toDate() | date:'EEEE, d MMMM' }}</small>
+  </h2>
+</div>
+
+@if (userService.isAdmin$ | async) {
+  <div class="page-layout">
+    <aside class="page-aside admin-aside no-print">
+      <div class="sidebar-stack">
+        <mat-calendar class="inline-calendar"
+                      [selected]="selectedRange"
+                      (selectedChange)="onDateChange($event)"
+                      [minDate]="minDate"
+                      [dateClass]="dateClass">
+        </mat-calendar>
+        <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Periode</mat-label>
+          <mat-date-range-input [rangePicker]="rangePicker" [min]="minDate">
+            <input matStartDate readonly placeholder="Fra" [value]="from()" (dateChange)="setFrom($event.value)" (click)="rangePicker.open()">
+            <input matEndDate readonly placeholder="Til" [value]="to()" (dateChange)="setTo($event.value)" (click)="rangePicker.open()">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+          <mat-date-range-picker #rangePicker [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
+        </mat-form-field>
+        <div class="admin-start-tankning-row">
+          <button matButton="filled" type="button" (click)="startFuelingAsAdmin()">Start tankning</button>
+        </div>
+        <div>
+          <h5 class="section-title">Køretøjer</h5>
+          <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()" [multiple]="true"
+                            (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
+        </div>
+      </div>
+    </aside>
+
+    <app-collapsible-bottom-bar class="mobile-admin-bar no-print">
+      <div bar-collapsed class="admin-start-tankning-row">
+        <button matButton="filled" type="button" (click)="startFuelingAsAdmin()">Start tankning</button>
+      </div>
+      <div bar-expanded class="mobile-admin-bar-expanded">
+        <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Periode</mat-label>
+          <mat-date-range-input [rangePicker]="rangePickerMobile" [min]="minDate">
+            <input matStartDate readonly placeholder="Fra" [value]="from()" (dateChange)="setFrom($event.value)" (click)="rangePickerMobile.open()">
+            <input matEndDate readonly placeholder="Til" [value]="to()" (dateChange)="setTo($event.value)" (click)="rangePickerMobile.open()">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="rangePickerMobile"></mat-datepicker-toggle>
+          <mat-date-range-picker #rangePickerMobile [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
+        </mat-form-field>
+        <div>
+          <h5 class="section-title">Køretøjer</h5>
+          <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()" [multiple]="true"
+                            (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
+        </div>
+      </div>
+    </app-collapsible-bottom-bar>
+
+    <main class="page-main admin-main">
+      @if (loadingReports()) {
+        <div class="loading no-print">
+          <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+        </div>
+      } @else if (vehicleGroups().length > 0) {
+        @for (group of vehicleGroups(); track group.vehicleKey) {
+          <div class="day-block">
+            <h4 class="day-heading">{{ group.vehicleName }}</h4>
+            <div class="table-scroll">
+              <table class="data-table">
+                <colgroup>
+                  <col>
+                  <col>
+                  <col>
+                  @if (!breakpoints.isMobile()) { <col> }
+                  <col>
+                  <col class="col-actions no-print">
+                </colgroup>
+                <thead>
+                <tr>
+                  <th>Dato</th>
+                  <th>Triptæller</th>
+                  <th>Brændstof</th>
+                  @if (!breakpoints.isMobile()) { <th>Bemærkning</th> }
+                  <th>Chauffør</th>
+                  <th class="no-print"></th>
+                </tr>
+                </thead>
+                <tbody>
+                @for (row of group.rows; track row.$key) {
+                  <tr class="hoverable">
+                    <td>{{ row.date.toDate() | date:'d/M/y' }}</td>
+                    <td>{{ row.odometerKm | number }}</td>
+                    <td>{{ row.liters | number:'1.0-2' }} L</td>
+                    @if (!breakpoints.isMobile()) {
+                      <td class="muted"><span class="note-cell" [matTooltip]="row.note ?? ''">{{ row.note }}</span></td>
+                    }
+                    <td>{{ row.driverName }}</td>
+                    <td class="no-print cell-actions">
+                      <button matIconButton type="button" matTooltip="Rediger" (click)="editRow(row)">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+                </tbody>
+                <tfoot>
+                <tr class="row-total">
+                  <td>Total</td>
+                  <td>@if (group.distanceKm != null) { {{ group.distanceKm }} km } @else { &mdash; }</td>
+                  <td>{{ group.totalLiters | number:'1.0-2' }} L</td>
+                  <td [attr.colspan]="breakpoints.isMobile() ? 2 : 3">
+                    @if (group.kmPerLiter != null) { {{ group.kmPerLiter | number:'1.1-1' }} km/L }
+                  </td>
+                </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        }
+        <p class="period-total">
+          I alt: {{ grandTotal().totalDistance }} km &middot; {{ grandTotal().totalLiters | number:'1.0-2' }} L
+          @if (grandTotal().kmPerLiter != null) { &middot; {{ grandTotal().kmPerLiter | number:'1.1-1' }} km/L }
+        </p>
+      } @else {
+        <em class="no-print">Ingen tankninger i denne periode.</em>
+      }
+    </main>
+  </div>
+} @else if (userService.driverProfile$ | async; as driver) {
+  <div class="page-layout">
+    <aside class="page-aside no-print">
+      <div class="sidebar-stack">
+        <div class="start-tankning-row">
+          <button matButton="filled" type="button" (click)="startFueling(driver.$key)">Start tankning</button>
+        </div>
+      </div>
+    </aside>
+    <main class="page-main driver-main">
+      <app-fuel-reporting [driverKey]="driver.$key" [from]="recordsWindowStart" [limit]="10"></app-fuel-reporting>
+    </main>
+  </div>
+}

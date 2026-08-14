@@ -32,6 +32,10 @@ export const routes: Routes = [
         loadComponent: () => import('./time-report/time-report.component').then(m => m.TimeReportComponent),
       },
       {
+        path: 'fuel-tracking',
+        loadComponent: () => import('./fuel-tracking/fuel-tracking.component').then(m => m.FuelTrackingComponent),
+      },
+      {
         path: '',
         canActivate: [adminGuard],
         children: [

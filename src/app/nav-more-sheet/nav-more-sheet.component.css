@@ -10,3 +10,12 @@
 a[mat-list-item].active-link {
   font-weight: 700;
 }
+
+/* A little extra breathing room around the notification/sign-out actions specifically — they
+   read as a distinct "account" group from the nav links above (already set off by mat-divider).
+   mat-list-item sets an explicit (not min-) height with box-sizing: border-box, so padding here
+   would just be absorbed into that fixed box rather than adding visible space — margin is what
+   actually grows the row's own footprint. */
+button.account-action {
+  margin: 4px 0;
+}

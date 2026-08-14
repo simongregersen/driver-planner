@@ -68,6 +68,25 @@
       }
     },
 
+    "fuelReports": {
+      // Realtime Database rejects an entire list/range query outright if any child under the
+      // queried path isn't readable per the rules — per-child .read rules don't filter query
+      // results the way Firestore's do, they only gate reading that exact child directly. A
+      // per-record read carve-out (mirroring the .write rule below) would therefore make every
+      // list query here (both the admin's and a driver's own) fail outright the moment a vehicle
+      // has more than one driver's reports under it. So read access is granted at the container
+      // level instead, same as vehicles/trips/drivers/notes elsewhere in this file — a driver's
+      // own recent-refuellings view filters down to their own driverKey client-side (see
+      // FuelReportingComponent) rather than relying on the security rule to do it.
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",
+      "$vehicleKey": {
+        ".indexOn": "date",
+        "$reportKey": {
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === (data.exists() ? data.child('driverKey').val() : newData.child('driverKey').val()))"
+        }
+      }
+    },
+
     "public": {
       ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'driver'",
       ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",

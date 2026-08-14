@@ -1,0 +1,15 @@
+.vehicle-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vehicle-readonly-label {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.date-field {
+  width: 220px;
+  max-width: 100%;
+}

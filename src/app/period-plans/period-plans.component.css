@@ -26,6 +26,65 @@
   opacity: 0.5;
 }
 
+/* The desktop/tablet sidebar and the mobile collapsible bar below show the same controls, just
+   arranged differently — only one of the two is ever in play at a given width. Same recipe as
+   Dagsplaner's .mobile-day-bar. */
+.mobile-period-bar {
+  display: none;
+}
+
+.period-picker-row {
+  display: flex;
+  justify-content: center;
+}
+
+.period-picker-row .compact-date-field {
+  width: 100%;
+}
+
+/* mat-date-range-input auto-sizes each half from a hidden "mirror" span of its own formatted
+   text, but on a narrow container that split can come out uneven — the start date's wrapper
+   ending up a few px too narrow for its own "yyyy-mm-dd" text, clipping the last character(s).
+   min-width overrides that regardless of Material's own computed width, since min-width always
+   wins over width/max-width in the box model. ::ng-deep is required here: .mat-date-range-input-
+   wrapper is rendered inside MatDateRangeInput's own template, a different view-encapsulation
+   boundary than this component's, so a plain scoped rule never actually reaches it. */
+::ng-deep .compact-date-field .mat-date-range-input-wrapper {
+  min-width: 5.8em;
+}
+
+.mobile-period-bar-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+  padding-right: 10px;
+  scrollbar-gutter: stable;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 1024px) {
+  .page-aside {
+    display: none;
+  }
+
+  .mobile-period-bar {
+    display: block;
+  }
+
+  /* Room for the pinned bar above, in addition to the bottom nav it already accounts for via
+     body's own padding (see styles.css) — sized for the bar's collapsed row plus toggle, not the
+     (internally-scrolling) expanded panel, which overlays rather than pushing this. */
+  .page-main {
+    padding-bottom: 68px;
+    /* .page-aside is hidden above, so this is the first visible thing on the page — its own
+       24px margin-top (styles.css) would otherwise stack with .container's own top padding
+       (also styles.css), doubling up the gap under the toolbar. */
+    margin-top: 0;
+  }
+}
+
 @media print {
   .day-block {
     break-after: page;

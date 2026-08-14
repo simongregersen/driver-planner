@@ -17,6 +17,8 @@ import {Utility} from '../utility';
 import {TripFormComponent} from '../trip-form/trip-form.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
+import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
+import {BreakpointService} from '../breakpoint.service';
 import {SelectOption} from '../select-option';
 import {PageHeaderService} from '../page-header.service';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
@@ -30,7 +32,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
   imports: [
     AsyncPipe, DatePipe,
     MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule,
-    TripsComponent, ChipFilterComponent,
+    TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
   ],
   providers: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,6 +40,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
 export class PeriodPlansComponent implements OnInit {
   readonly dateUtility = inject(DateUtility);
   readonly dataStore = inject(DataStore);
+  readonly breakpoints = inject(BreakpointService);
   private readonly dialog = inject(MatDialog);
   private readonly pageHeader = inject(PageHeaderService);
   private readonly datePipe = inject(DatePipe);
@@ -92,6 +95,23 @@ export class PeriodPlansComponent implements OnInit {
       this.from = date;
     }
     this.updateRange();
+  }
+
+  // The compact range field (mobile collapsed bar — see .period-picker-row) sets each end
+  // directly via its own two inputs, rather than through the inline calendar's two-click
+  // sequence above.
+  setFrom(date: Moment | null): void {
+    if (!date) return;
+    this.from = date;
+    this.updateRange();
+    this.fetchTrips();
+  }
+
+  setTo(date: Moment | null): void {
+    if (!date) return;
+    this.to = date;
+    this.updateRange();
+    this.fetchTrips();
   }
 
   removeTrip(trip: Trip) {
