@@ -29,6 +29,15 @@
   color: var(--mat-sys-inverse-on-surface);
 }
 
+/* Print/Log ud are plain matButtons - like the icon button above, their text color and
+   ripple/state-layer both default to theme tokens (on-surface / primary) instead of
+   following the toolbar's inherited color, which read as near-black text with a blue-tinted
+   hover. */
+.toolbar-actions .mat-mdc-button {
+  color: var(--mat-sys-inverse-on-surface);
+  --mat-button-text-state-layer-color: var(--mat-sys-inverse-on-surface);
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
