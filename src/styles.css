@@ -601,11 +601,13 @@ button.confirm-danger.mat-mdc-unelevated-button {
   background: #d4edda;
 }
 
-/* Bigger tap targets on small screens. */
+/* Bigger tap targets on small screens. Font-size deliberately left unchanged —
+   time-wheel.component.css's .wheel-item matches it for visual consistency between the two
+   touch-friendly pickers, independent of this cell's own box size. */
 @media (max-width: 767px) {
   .mat-calendar-body-cell-content {
-    height: 2.5rem;
-    width: 2.5rem;
+    height: 2.75rem;
+    width: 2.75rem;
     font-size: 1.1rem;
   }
 }

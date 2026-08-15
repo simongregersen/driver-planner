@@ -1,4 +1,4 @@
-import {Injectable, computed, inject, signal} from '@angular/core';
+import {Injectable, Signal, computed, inject, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {DataStore} from './data.service';
 import {Driver} from './driver';
@@ -74,33 +74,44 @@ export class TripFilterStateService {
     this.applyFilterChange(() => this.showLabels.set(value));
   }
 
-  filterTrips(trips: Trip[] | null): Trip[] {
-    if (!trips) return [];
-    const driverKeys = this.selectedDriverKeys();
-    const vehicleKeys = this.selectedVehicleKeys();
-    const labelKeys = this.selectedLabelKeys();
-    return trips.filter(t =>
-      (driverKeys.length === 0 || (t.drivers ?? []).some(k => driverKeys.includes(k))) &&
-      (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k))) &&
-      (labelKeys.length === 0 || (t.labels ?? []).some(k => labelKeys.includes(k)))
-    );
+  // Each of these is a factory: called once per host component (typically in a field
+  // initializer, e.g. `readonly filteredTrips = this.filterState.filterTrips(this.trips);`) to
+  // produce a memoized computed() signal, rather than being called directly from a template
+  // expression — the latter would create a brand new computed on every change-detection pass,
+  // defeating the memoization entirely.
+  filterTrips(trips: Signal<Trip[] | null | undefined>): Signal<Trip[]> {
+    return computed(() => {
+      const list = trips();
+      if (!list) return [];
+      const driverKeys = this.selectedDriverKeys();
+      const vehicleKeys = this.selectedVehicleKeys();
+      const labelKeys = this.selectedLabelKeys();
+      return list.filter(t =>
+        (driverKeys.length === 0 || (t.drivers ?? []).some(k => driverKeys.includes(k))) &&
+        (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k))) &&
+        (labelKeys.length === 0 || (t.labels ?? []).some(k => labelKeys.includes(k)))
+      );
+    });
   }
 
   // Computed off the caller's own full, pre-filter trip list — NOT filterTrips's output — so a
   // conflict never depends on whatever driver/vehicle/label chips happen to be selected.
-  tripWarnings(trips: Trip[] | null): Map<string, AssignmentConflicts> {
-    return Utility.computeAssignmentWarnings(trips ?? []);
+  tripWarnings(trips: Signal<Trip[] | null | undefined>): Signal<Map<string, AssignmentConflicts>> {
+    return computed(() => Utility.computeAssignmentWarnings(trips() ?? []));
   }
 
   // Labels are freeform strings on each trip, not a fixed entity list like drivers/vehicles —
   // the filter's own options are just whichever distinct labels actually appear on the trips
   // currently in view, derived fresh each time rather than stored anywhere.
-  labelOptions(trips: Trip[] | null): SelectOption[] {
-    if (!trips) return [];
-    const labels = new Set<string>();
-    trips.forEach(t => (t.labels ?? []).forEach(l => labels.add(l)));
-    return Array.from(labels)
-      .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}))
-      .map(l => ({id: l, name: l}));
+  labelOptions(trips: Signal<Trip[] | null | undefined>): Signal<SelectOption[]> {
+    return computed(() => {
+      const list = trips();
+      if (!list) return [];
+      const labels = new Set<string>();
+      list.forEach(t => (t.labels ?? []).forEach(l => labels.add(l)));
+      return Array.from(labels)
+        .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}))
+        .map(l => ({id: l, name: l}));
+    });
   }
 }

@@ -1,12 +1,12 @@
 import {Injectable, inject} from '@angular/core';
-import {child, endAt, endBefore, limitToLast, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
+import {child, endAt, endBefore, get, limitToLast, orderByChild, orderByKey, push, query, Query, ref, remove, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, Trip, TripReport} from './trip';
 import {ClockRecord} from './clock-record';
 import {FuelReport, NewFuelReport} from './fuel-report';
 import {Driver, NewDriver} from './driver';
 import {AppUser} from './user';
-import {combineLatest, firstValueFrom, Observable, of} from 'rxjs';
+import {combineLatest, firstValueFrom, from as observableFrom, Observable, of} from 'rxjs';
 import {first, map, shareReplay, tap} from 'rxjs/operators';
 import {NewVehicle, Vehicle} from './vehicle';
 import {DateUtility} from './date-utility';
@@ -232,6 +232,14 @@ export class DataStore {
     return remove(child(this.clockRecordsRef, `${driverKey}/${record.$key}`));
   }
 
+  // A one-time read rather than a live listener — unlike trips/clock records, this is a
+  // backward-looking date-range report (see FuelTrackingComponent/FuelReportingComponent) over
+  // data that's only ever written by whichever driver logged it, so another admin/driver
+  // changing it while the report happens to be open is rare enough that a manual reload covers
+  // it. Not worth keeping open the 2×N persistent Firebase connections (N = fleet size,
+  // multiplied by getFuelReportsForVehicles/getLatestFuelReportBefore below) a live listener per
+  // vehicle would cost every time this report is viewed.
+  //
   // Keyed by vehicle rather than driver (see FuelReport's doc comment) — open-ended above when
   // `to` is omitted, same rationale as getClockRecords.
   getFuelReports(vehicleKey: string, from: Moment, to?: Moment): Observable<FuelReport[]> {
@@ -240,11 +248,18 @@ export class DataStore {
     const q = to
       ? query(vehicleRef, orderByChild('date'), startAt(fromDate.valueOf()), endAt(this.dateUtility.toMoment(to)!.add(1, 'days').valueOf() - 1))
       : query(vehicleRef, orderByChild('date'), startAt(fromDate.valueOf()));
-    return listVal<FuelReport>(q, {keyField: '$key'}).pipe(
-      tap(rs => rs.forEach(r => {
-        r.date = moment(r.date as unknown as number);
-      }))
-    );
+    return observableFrom(this.fetchFuelReports(q));
+  }
+
+  private async fetchFuelReports(q: Query): Promise<FuelReport[]> {
+    const snapshot = await get(q);
+    const reports: FuelReport[] = [];
+    snapshot.forEach(child => {
+      const report = {...(child.val() as Record<string, unknown>), $key: child.key} as FuelReport;
+      report.date = moment(report.date as unknown as number);
+      reports.push(report);
+    });
+    return reports;
   }
 
   addFuelReport(vehicleKey: string, report: NewFuelReport) {
@@ -288,13 +303,7 @@ export class DataStore {
   getLatestFuelReportBefore(vehicleKey: string, before: Moment): Observable<FuelReport | null> {
     const vehicleRef = child(this.fuelReportsRef, vehicleKey);
     const q = query(vehicleRef, orderByChild('date'), endAt(this.dateUtility.toMoment(before)!.valueOf() - 1), limitToLast(1));
-    return listVal<FuelReport>(q, {keyField: '$key'}).pipe(
-      map(rs => {
-        const r = rs[0] ?? null;
-        if (r) r.date = moment(r.date as unknown as number);
-        return r;
-      })
-    );
+    return observableFrom(this.fetchFuelReports(q).then(reports => reports[0] ?? null));
   }
 
   removeTrip(trip: Trip) {

@@ -1,12 +1,12 @@
-@if (userService.driverProfile$ | async; as driver) {
+@if (driver(); as driver) {
   <div class="page-header">
-    <h2 class="page-title">{{ formattedDate(selectedDate) }}</h2>
+    <h2 class="page-title">{{ formattedDate(selectedDate()) }}</h2>
   </div>
   <div class="page-layout">
     <aside class="page-aside no-print">
       <div class="sidebar-stack">
         <mat-calendar class="inline-calendar"
-                      [selected]="selectedDate"
+                      [selected]="selectedDate()"
                       (selectedChange)="onDateSelected($event)"
                       [minDate]="minDate"
                       [dateFilter]="dateFilter()"
@@ -19,7 +19,7 @@
                  [matDatepicker]="d"
                  [min]="minDate"
                  [matDatepickerFilter]="dateFilter()"
-                 [ngModel]="selectedDate"
+                 [ngModel]="selectedDate()"
                  (ngModelChange)="onDateSelected($event)"
                  (click)="d.open()">
           <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
@@ -47,7 +47,7 @@
                  [matDatepicker]="dMobile"
                  [min]="minDate"
                  [matDatepickerFilter]="dateFilter()"
-                 [ngModel]="selectedDate"
+                 [ngModel]="selectedDate()"
                  (ngModelChange)="onDateSelected($event)"
                  (click)="dMobile.open()">
           <mat-datepicker-toggle matIconSuffix [for]="dMobile"></mat-datepicker-toggle>
@@ -57,24 +57,22 @@
     </app-collapsible-bottom-bar>
 
     <main class="page-main">
-      @if (notes$ | async; as notes) {
-        @for (note of notesForDriver(notes, driver, selectedDate); track note.$key) {
-          <div class="note-alert">
-            <span class="note-alert-text">{{ note.text }}</span>
-          </div>
-        }
+      @for (note of visibleNotes(); track note.$key) {
+        <div class="note-alert">
+          <span class="note-alert-text">{{ note.text }}</span>
+        </div>
       }
-      @if (dayPublic$ | async) {
-        @if (trips$ | async; as trips) {
-          <app-trips [trips]="filterMyTrips(trips, driver)"
-                     [assignmentWarnings]="tripWarnings(trips)"
+      @if (dayPublic()) {
+        @if (trips()) {
+          <app-trips [trips]="filteredTrips()"
+                     [assignmentWarnings]="tripWarnings()"
                      [readonly]="true"
                      [highlightModified]="true"
                      [hideSingleDriver]="true"
                      [showFinishToggle]="true"
                      [showReportButton]="true"
                      [currentDriverKey]="driver.$key"
-                     [referenceDate]="selectedDate"></app-trips>
+                     [referenceDate]="selectedDate()"></app-trips>
         }
       } @else {
         <p class="muted">Denne dag er endnu ikke gjort synlig af en administrator.</p>

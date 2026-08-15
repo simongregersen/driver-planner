@@ -1,13 +1,13 @@
 <div class="page-header no-print">
   <h2 class="page-title">
     Dagsplan
-    <small>{{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
+    <small>{{ selectedDate().toDate() | date:'EEEE, d MMMM y' }}</small>
   </h2>
 </div>
 <div class="print-only">
   <h5 class="page-title">
     Dagsplan
-    <small>{{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
+    <small>{{ selectedDate().toDate() | date:'EEEE, d MMMM y' }}</small>
   </h5>
   @if (filterState.selectedDriverKeys().length > 0 || filterState.selectedVehicleKeys().length > 0) {
     <h6 class="page-subtitle">
@@ -20,7 +20,7 @@
   <aside class="page-aside no-print">
     <div class="sidebar-stack">
       <mat-calendar class="inline-calendar"
-                    [selected]="selectedDate"
+                    [selected]="selectedDate()"
                     (selectedChange)="onDateSelected($event)"
                     [minDate]="minDate"
                     [dateClass]="dateClass()">
@@ -31,7 +31,7 @@
                readonly
                [matDatepicker]="d"
                [min]="minDate"
-               [ngModel]="selectedDate"
+               [ngModel]="selectedDate()"
                (ngModelChange)="onDateSelected($event)"
                (click)="d.open()">
         <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
@@ -44,12 +44,12 @@
       </div>
       <div>
         <mat-slide-toggle class="day-public-toggle"
-                    [checked]="(dayPublic$ | async) ?? false"
+                    [checked]="dayPublic()"
                     (change)="setDayPublic($event.checked)">
           Synlig for chauffører
         </mat-slide-toggle>
       </div>
-      @if (trips$ | async; as trips) {
+      @if (trips()) {
       <div>
         <h5 class="section-title">Operationer</h5>
         <div class="toolbar-row">
@@ -94,10 +94,10 @@
                           [disabled]="filterState.isFiltering()"
                           (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
-      @if (trips$ | async; as trips) {
+      @if (trips()) {
       <div>
         <h5 class="section-title">Mærkater</h5>
-        <app-chip-filter [options]="filterState.labelOptions(trips)" [selectedIds]="filterState.selectedLabelKeys()"
+        <app-chip-filter [options]="labelOptions()" [selectedIds]="filterState.selectedLabelKeys()"
                           [disabled]="filterState.isFiltering()"
                           (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
       </div>
@@ -118,7 +118,7 @@
                readonly
                [matDatepicker]="dMobile"
                [min]="minDate"
-               [ngModel]="selectedDate"
+               [ngModel]="selectedDate()"
                (ngModelChange)="onDateSelected($event)"
                (click)="dMobile.open()">
         <mat-datepicker-toggle matIconSuffix [for]="dMobile"></mat-datepicker-toggle>
@@ -126,12 +126,12 @@
       </mat-form-field>
       <div>
         <mat-slide-toggle class="day-public-toggle"
-                    [checked]="(dayPublic$ | async) ?? false"
+                    [checked]="dayPublic()"
                     (change)="setDayPublic($event.checked)">
           Synlig for chauffører
         </mat-slide-toggle>
       </div>
-      @if (trips$ | async; as trips) {
+      @if (trips()) {
       <div>
         <h5 class="section-title">Operationer</h5>
         <div class="toolbar-row">
@@ -176,10 +176,10 @@
                           [disabled]="filterState.isFiltering()"
                           (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
-      @if (trips$ | async; as trips) {
+      @if (trips()) {
       <div>
         <h5 class="section-title">Mærkater</h5>
-        <app-chip-filter [options]="filterState.labelOptions(trips)" [selectedIds]="filterState.selectedLabelKeys()"
+        <app-chip-filter [options]="labelOptions()" [selectedIds]="filterState.selectedLabelKeys()"
                           [disabled]="filterState.isFiltering()"
                           (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
       </div>
@@ -188,32 +188,30 @@
   </app-collapsible-bottom-bar>
 
   <main class="page-main">
-    @if (notes$ | async; as notes) {
-      @for (note of notesForDate(notes, selectedDate); track note.$key) {
-        <div class="note-alert" tabindex="0" role="button" (click)="editNote(note)"
-             (keydown.enter)="editNote(note)" (keydown.space)="$event.preventDefault(); editNote(note)">
-          <span class="note-alert-text">{{ note.text }}</span>
-          @if (noteDriverNames(note)) {
-            <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ noteDriverNames(note) }}</span>
-          }
-          @if (noteVehicleNames(note)) {
-            <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ noteVehicleNames(note) }}</span>
-          }
-        </div>
-      }
+    @for (note of visibleNotes(); track note.$key) {
+      <div class="note-alert" tabindex="0" role="button" (click)="editNote(note)"
+           (keydown.enter)="editNote(note)" (keydown.space)="$event.preventDefault(); editNote(note)">
+        <span class="note-alert-text">{{ note.text }}</span>
+        @if (noteNames().get(note.$key)?.drivers; as driverNames) {
+          <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ driverNames }}</span>
+        }
+        @if (noteNames().get(note.$key)?.vehicles; as vehicleNames) {
+          <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ vehicleNames }}</span>
+        }
+      </div>
     }
-    @if (filterState.isFiltering()) {
+    @if (filterState.isFiltering() || isLoadingTrips()) {
       <div class="loading no-print">
         <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
       </div>
-    } @else if (trips$ | async; as trips) {
-      <app-trips [trips]="filterState.filterTrips(trips)"
-                 [assignmentWarnings]="filterState.tripWarnings(trips)"
+    } @else if (trips()) {
+      <app-trips [trips]="filteredTrips()"
+                 [assignmentWarnings]="tripWarnings()"
                  [hideDescriptionOnScreen]="!filterState.showDriverNotes()"
                  [showOfficeNotes]="filterState.showOfficeNotes()"
                  [showLabels]="filterState.showLabels()"
                  [showReportsColumn]="true"
-                 [referenceDate]="selectedDate"
+                 [referenceDate]="selectedDate()"
                  (edit)="tripEditing.edit($event)"
                  (removeDriver)="tripEditing.removeDriverFromTrip($event)"
                  (removeVehicle)="tripEditing.removeVehicleFromTrip($event)">

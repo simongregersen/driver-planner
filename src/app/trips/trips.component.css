@@ -288,7 +288,7 @@ mat-chip-set {
   .trip-card-actions .report-toggle,
   .trip-card-actions .finish-toggle,
   .trip-card-actions .reports-indicator {
-    --mat-icon-button-state-layer-size: 32px;
+    --mat-icon-button-state-layer-size: 44px;
     --mat-icon-button-icon-size: 24px;
   }
 

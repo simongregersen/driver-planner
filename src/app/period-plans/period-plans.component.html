@@ -2,7 +2,7 @@
   <h2 class="page-title">
     Periodeplan
     <small>
-      {{ from?.toDate() | date:'EEEE, d MMMM' }} - {{ to?.toDate() | date:'EEEE, d MMMM' }}
+      {{ from()?.toDate() | date:'EEEE, d MMMM' }} - {{ to()?.toDate() | date:'EEEE, d MMMM' }}
     </small>
   </h2>
 </div>
@@ -10,7 +10,7 @@
   <h5 class="page-title">
     Periodeplan
     <small>
-      {{ from?.toDate() | date:'EEEE, d MMMM' }} - {{ to?.toDate() | date:'EEEE, d MMMM' }}
+      {{ from()?.toDate() | date:'EEEE, d MMMM' }} - {{ to()?.toDate() | date:'EEEE, d MMMM' }}
     </small>
   </h5>
   @if (filterState.selectedDriverKeys().length > 0 || filterState.selectedVehicleKeys().length > 0) {
@@ -55,10 +55,10 @@
                           [disabled]="filterState.isFiltering()"
                           (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
-      @if (trips$ | async; as trips) {
+      @if (trips()) {
       <div>
         <h5 class="section-title">Mærkater</h5>
-        <app-chip-filter [options]="filterState.labelOptions(trips)" [selectedIds]="filterState.selectedLabelKeys()"
+        <app-chip-filter [options]="labelOptions()" [selectedIds]="filterState.selectedLabelKeys()"
                           [disabled]="filterState.isFiltering()"
                           (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
       </div>
@@ -71,8 +71,8 @@
       <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Periode</mat-label>
         <mat-date-range-input [rangePicker]="rangePickerMobile" [min]="minDate">
-          <input matStartDate readonly placeholder="Fra" [value]="from" (dateChange)="setFrom($event.value)" (click)="rangePickerMobile.open()">
-          <input matEndDate readonly placeholder="Til" [value]="to" (dateChange)="setTo($event.value)" (click)="rangePickerMobile.open()">
+          <input matStartDate readonly placeholder="Fra" [value]="from()" (dateChange)="setFrom($event.value)" (click)="rangePickerMobile.open()">
+          <input matEndDate readonly placeholder="Til" [value]="to()" (dateChange)="setTo($event.value)" (click)="rangePickerMobile.open()">
         </mat-date-range-input>
         <mat-datepicker-toggle matIconSuffix [for]="rangePickerMobile"></mat-datepicker-toggle>
         <mat-date-range-picker #rangePickerMobile [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
@@ -105,10 +105,10 @@
                           [disabled]="filterState.isFiltering()"
                           (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
-      @if (trips$ | async; as trips) {
+      @if (trips()) {
       <div>
         <h5 class="section-title">Mærkater</h5>
-        <app-chip-filter [options]="filterState.labelOptions(trips)" [selectedIds]="filterState.selectedLabelKeys()"
+        <app-chip-filter [options]="labelOptions()" [selectedIds]="filterState.selectedLabelKeys()"
                           [disabled]="filterState.isFiltering()"
                           (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
       </div>
@@ -117,17 +117,16 @@
   </app-collapsible-bottom-bar>
 
   <main class="page-main">
-    @if (filterState.isFiltering()) {
+    @if (filterState.isFiltering() || isLoadingTrips()) {
       <div class="loading no-print">
         <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
       </div>
-    } @else if (trips$ | async; as trips) {
-      @let warnings = filterState.tripWarnings(trips);
-      @for (date of range; track dateUtility.dateKey(date)) {
+    } @else if (trips()) {
+      @for (date of range(); track dateUtility.dateKey(date)) {
         <div class="day-block">
           <h5 class="day-heading">{{ date.toDate() | date:'EEEE, d MMMM y'}}</h5>
-          <app-trips [trips]="filterByDate(filterState.filterTrips(trips), date)"
-                     [assignmentWarnings]="warnings"
+          <app-trips [trips]="tripsByDate().get(dateUtility.dateKey(date)) ?? []"
+                     [assignmentWarnings]="tripWarnings()"
                      [hideDescriptionOnScreen]="!filterState.showDriverNotes()"
                      [showOfficeNotes]="filterState.showOfficeNotes()"
                      [showLabels]="filterState.showLabels()"

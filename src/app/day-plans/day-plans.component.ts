@@ -1,5 +1,5 @@
-import {afterRenderEffect, ChangeDetectionStrategy, Component, computed, inject, OnInit, viewChild} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
+import {afterRenderEffect, ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal, viewChild} from '@angular/core';
+import {toObservable, toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
@@ -13,13 +13,12 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {DataStore} from '../data.service';
-import {Trip} from '../trip';
 import {Note} from '../note';
 import {Utility} from '../utility';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {map, switchMap, tap} from 'rxjs/operators';
 import {Moment} from 'moment';
 import {DateUtility} from '../date-utility';
 import {NoteFormComponent} from '../note-form/note-form.component';
@@ -59,16 +58,63 @@ export class DayPlansComponent implements OnInit {
   readonly tripEditing = inject(TripEditingService);
 
   availableTemplates$!: Observable<SelectOption[]>;
-  trips$!: Observable<Trip[]>;
-  dayPublic$!: Observable<boolean>;
-  notes$!: Observable<Note[]>;
   readonly minDate = this.dateUtility.minDate(5);
-  private _selectedDate: Moment = this.dateUtility.today();
+
+  readonly selectedDate = signal<Moment>(this.dateUtility.today());
+
+  // True from the moment a new date is selected until that date's trips actually arrive — lets
+  // the template show the same loading state a filter/view-toggle change does (see
+  // TripFilterStateService.isFiltering), instead of leaving the previous date's trips on screen
+  // while a new Firebase listener spins up.
+  readonly isLoadingTrips = signal(false);
+
+  readonly trips = toSignal(
+    toObservable(this.selectedDate).pipe(
+      tap(() => this.isLoadingTrips.set(true)),
+      switchMap(date => this.dataStore.getTrips(date)),
+      tap(() => this.isLoadingTrips.set(false)),
+    )
+  );
+  readonly dayPublic = toSignal(
+    toObservable(this.selectedDate).pipe(switchMap(date => this.dataStore.getDayPublic(date))),
+    {initialValue: false}
+  );
+
+  // Factory-produced computed()s (see TripFilterStateService) — created once here, referenced
+  // (not called) from the template, so they actually memoize instead of re-filtering/re-scanning
+  // on every change-detection pass.
+  readonly filteredTrips = this.filterState.filterTrips(this.trips);
+  readonly tripWarnings = this.filterState.tripWarnings(this.trips);
+  readonly labelOptions = this.filterState.labelOptions(this.trips);
 
   // Only needed here to resolve a note's driver/vehicle keys to display names — unrelated to
   // trip filtering/editing, so it stays local rather than living on either shared service.
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
+
+  private readonly notes = toSignal(this.dataStore.getAllNotes(), {initialValue: [] as Note[]});
+  readonly visibleNotes = computed(() => this.notes().filter(n => Utility.noteAppliesToDate(n, this.selectedDate())));
+
+  // Driver/vehicle display names for each visible note, keyed by $key — built once per change
+  // instead of re-resolving them per note on every change-detection pass.
+  readonly noteNames = computed(() => {
+    const drivers = this.driverList();
+    const vehicles = this.vehicleList();
+    const names = new Map<string, {drivers: string; vehicles: string}>();
+    for (const note of this.visibleNotes()) {
+      names.set(note.$key, {
+        drivers: (note.drivers || [])
+          .map(k => drivers.find(d => d.$key === k)?.displayName)
+          .filter((name): name is string => !!name)
+          .join(', '),
+        vehicles: (note.vehicles || [])
+          .map(k => vehicles.find(v => v.$key === k)?.displayName)
+          .filter((name): name is string => !!name)
+          .join(', '),
+      });
+    }
+    return names;
+  });
 
   private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
   private readonly publicDates = toSignal(this.dataStore.getPublicDates(), {initialValue: [] as string[]});
@@ -86,13 +132,14 @@ export class DayPlansComponent implements OnInit {
       this.dateClass();
       this.calendar()?.updateTodaysDate();
     });
+    effect(() => {
+      this.pageHeader.set('Dagsplan', this.datePipe.transform(this.selectedDate().toDate(), 'EEEE, d MMMM y'));
+    });
   }
 
   ngOnInit(): void {
-    this.selectedDate = this.dateUtility.today();
     this.availableTemplates$ = this.dataStore.getAllTemplates()
       .pipe(map(ts => ts.map(t => ({id: t.$key, name: t.name}))));
-    this.notes$ = this.dataStore.getAllNotes();
   }
 
   isPublicDate(date: Moment, publicDates: string[]): boolean {
@@ -100,23 +147,23 @@ export class DayPlansComponent implements OnInit {
   }
 
   previousDay() {
-    this.selectedDate = this.dateUtility.addDays(this.selectedDate, -1);
+    this.selectedDate.set(this.dateUtility.addDays(this.selectedDate(), -1));
   }
 
   nextDay() {
-    this.selectedDate = this.dateUtility.addDays(this.selectedDate, 1);
+    this.selectedDate.set(this.dateUtility.addDays(this.selectedDate(), 1));
   }
 
   goToToday() {
-    this.selectedDate = this.dateUtility.today();
+    this.selectedDate.set(this.dateUtility.today());
   }
 
   isToday(): boolean {
-    return this.dateUtility.equals(this.selectedDate, this.dateUtility.today());
+    return this.dateUtility.equals(this.selectedDate(), this.dateUtility.today());
   }
 
   create() {
-    this.tripEditing.create(this.selectedDate);
+    this.tripEditing.create(this.selectedDate());
   }
 
   // Notes save themselves directly to DataStore (see NoteFormComponent) — no save/remove
@@ -124,32 +171,13 @@ export class DayPlansComponent implements OnInit {
   createNote() {
     const instance = this.dialog.open(NoteFormComponent, DIALOG_CONFIG).componentInstance;
     instance.mode = 'create';
-    instance.defaultDate = this.selectedDate;
+    instance.defaultDate = this.selectedDate();
   }
 
   editNote(note: Note) {
     const instance = this.dialog.open(NoteFormComponent, DIALOG_CONFIG).componentInstance;
     instance.mode = 'edit';
     instance.note = note;
-  }
-
-  notesForDate(notes: Note[] | null, date: Moment): Note[] {
-    if (!notes) return [];
-    return notes.filter(n => Utility.noteAppliesToDate(n, date));
-  }
-
-  noteDriverNames(note: Note): string {
-    return (note.drivers || [])
-      .map(k => this.driverList().find(d => d.$key === k)?.displayName)
-      .filter((name): name is string => !!name)
-      .join(', ');
-  }
-
-  noteVehicleNames(note: Note): string {
-    return (note.vehicles || [])
-      .map(k => this.vehicleList().find(v => v.$key === k)?.displayName)
-      .filter((name): name is string => !!name)
-      .join(', ');
   }
 
   insertTemplateWithConfirm(templateId: string, templateName: string) {
@@ -162,28 +190,17 @@ export class DayPlansComponent implements OnInit {
       } as ConfirmDialogData,
     });
     dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) this.dataStore.insertTemplate(this.selectedDate, templateId);
+      if (confirmed) this.dataStore.insertTemplate(this.selectedDate(), templateId);
     });
   }
 
   /** The calendar and the date input both hand back null when a selection is cleared. */
   onDateSelected(date: Moment | null) {
-    if (date) this.selectedDate = date;
-  }
-
-  set selectedDate(date: Moment) {
-    this._selectedDate = date;
-    this.trips$ = this.dataStore.getTrips(date);
-    this.dayPublic$ = this.dataStore.getDayPublic(date);
-    this.pageHeader.set('Dagsplan', this.datePipe.transform(date.toDate(), 'EEEE, d MMMM y'));
-  }
-
-  get selectedDate(): Moment {
-    return this._selectedDate;
+    if (date) this.selectedDate.set(date);
   }
 
   setDayPublic(isPublic: boolean) {
-    this.dataStore.setDayPublic(this.selectedDate, isPublic);
+    this.dataStore.setDayPublic(this.selectedDate(), isPublic);
   }
 
 }

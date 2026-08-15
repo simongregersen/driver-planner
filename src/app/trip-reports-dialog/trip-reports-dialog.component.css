@@ -14,10 +14,9 @@
 }
 
 .report-row-header button {
-  --mdc-icon-button-state-layer-size: 32px;
-  width: 32px;
-  height: 32px;
-  padding: 4px;
+  --mdc-icon-button-state-layer-size: 44px;
+  width: 44px;
+  height: 44px;
 }
 
 .report-row-header mat-icon {
