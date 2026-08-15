@@ -1,4 +1,4 @@
-import {afterRenderEffect, ChangeDetectionStrategy, Component, computed, inject, OnInit, signal, viewChild} from '@angular/core';
+import {afterRenderEffect, ChangeDetectionStrategy, Component, computed, inject, OnInit, viewChild} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
@@ -13,16 +13,15 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {DataStore} from '../data.service';
-import {NewTrip, Trip} from '../trip';
+import {Trip} from '../trip';
 import {Note} from '../note';
-import {AssignmentConflicts, Utility} from '../utility';
+import {Utility} from '../utility';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {Moment} from 'moment';
 import {DateUtility} from '../date-utility';
-import {TripFormComponent} from '../trip-form/trip-form.component';
 import {NoteFormComponent} from '../note-form/note-form.component';
 import {SelectOption} from '../select-option';
 import {TripsComponent} from '../trips/trips.component';
@@ -32,6 +31,8 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
 import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
 import {BreakpointService} from '../breakpoint.service';
 import {PageHeaderService} from '../page-header.service';
+import {TripFilterStateService} from '../trip-filter-state.service';
+import {TripEditingService} from '../trip-editing.service';
 
 @Component({
   standalone: true,
@@ -44,7 +45,7 @@ import {PageHeaderService} from '../page-header.service';
     MatInputModule, MatMenuModule, MatProgressSpinnerModule, MatSlideToggleModule,
     TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
   ],
-  providers: [DatePipe],
+  providers: [DatePipe, TripFilterStateService, TripEditingService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DayPlansComponent implements OnInit {
@@ -54,6 +55,8 @@ export class DayPlansComponent implements OnInit {
   readonly breakpoints = inject(BreakpointService);
   private readonly pageHeader = inject(PageHeaderService);
   private readonly datePipe = inject(DatePipe);
+  readonly filterState = inject(TripFilterStateService);
+  readonly tripEditing = inject(TripEditingService);
 
   availableTemplates$!: Observable<SelectOption[]>;
   trips$!: Observable<Trip[]>;
@@ -62,29 +65,10 @@ export class DayPlansComponent implements OnInit {
   readonly minDate = this.dateUtility.minDate(5);
   private _selectedDate: Moment = this.dateUtility.today();
 
-  readonly selectedDriverKeys = signal<string[]>([]);
-  readonly selectedVehicleKeys = signal<string[]>([]);
-  readonly selectedLabelKeys = signal<string[]>([]);
-  readonly showOfficeNotes = signal(false);
-  readonly showDriverNotes = signal(false);
-  readonly showLabels = signal(true);
-
-  // Re-filtering/re-rendering the whole trip table on a filter/view-toggle change can take long
-  // enough to feel like the app hung, since it happens synchronously within the same change
-  // detection pass as the click. Deferring the actual update to the next macrotask (see
-  // applyFilterChange) lets the browser paint isFiltering's disabled/spinner state first.
-  readonly isFiltering = signal(false);
-
+  // Only needed here to resolve a note's driver/vehicle keys to display names — unrelated to
+  // trip filtering/editing, so it stays local rather than living on either shared service.
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
-  readonly driverOptions = computed(() => this.driverList().map(d => ({id: d.$key, name: d.displayName})));
-  readonly vehicleOptions = computed(() => this.vehicleList().map(v => ({id: v.$key, name: v.displayName})));
-  readonly selectedDriverNames = computed(() =>
-    this.driverOptions().filter(o => this.selectedDriverKeys().includes(o.id)).map(o => o.name).join(', ')
-  );
-  readonly selectedVehicleNames = computed(() =>
-    this.vehicleOptions().filter(o => this.selectedVehicleKeys().includes(o.id)).map(o => o.name).join(', ')
-  );
 
   private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
   private readonly publicDates = toSignal(this.dataStore.getPublicDates(), {initialValue: [] as string[]});
@@ -131,47 +115,8 @@ export class DayPlansComponent implements OnInit {
     return this.dateUtility.equals(this.selectedDate, this.dateUtility.today());
   }
 
-  removeTrip(trip: Trip) {
-    this.dataStore.removeTrip(trip);
-  }
-
-  removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
-    const name = this.driverList().find(d => d.$key === driverKey)?.displayName ?? 'chaufføren';
-    this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen?`, () =>
-      this.dataStore.updateTrip(trip, {drivers: trip.drivers.filter(k => k !== driverKey)}));
-  }
-
-  removeVehicleFromTrip({trip, vehicleKey}: {trip: Trip; vehicleKey: string}) {
-    const name = this.vehicleList().find(v => v.$key === vehicleKey)?.displayName ?? 'køretøjet';
-    this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen?`, () =>
-      this.dataStore.updateTrip(trip, {vehicles: trip.vehicles.filter(k => k !== vehicleKey)}));
-  }
-
-  // Chip removal happens right next to the row-click-to-edit target, and on a phone screen
-  // it's easy to hit by mistake — this catches that before it silently changes the trip.
-  private confirmRemoval(message: string, onConfirm: () => void): void {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      ...CONFIRM_DIALOG_CONFIG,
-      data: {message, confirmLabel: 'Fjern', danger: true} as ConfirmDialogData,
-    });
-    dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) onConfirm();
-    });
-  }
-
-  edit(trip: Trip) {
-    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
-    instance.mode = 'edit';
-    instance.trip = trip;
-    instance.save.subscribe((updates: NewTrip) => this.dataStore.updateTrip(trip, updates));
-    instance.remove.subscribe(() => this.removeTrip(trip));
-  }
-
   create() {
-    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
-    instance.mode = 'create';
-    instance.defaultDate = this.selectedDate;
-    instance.save.subscribe((t: NewTrip) => this.dataStore.addTrip(t));
+    this.tripEditing.create(this.selectedDate);
   }
 
   // Notes save themselves directly to DataStore (see NoteFormComponent) — no save/remove
@@ -219,71 +164,6 @@ export class DayPlansComponent implements OnInit {
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) this.dataStore.insertTemplate(this.selectedDate, templateId);
     });
-  }
-
-  // Marks isFiltering true immediately (so the disabled/spinner state can paint), then defers
-  // the actual signal update — the thing that triggers the expensive re-filter/re-render — to
-  // the next macrotask, rather than running it synchronously within the same click handler.
-  private applyFilterChange(update: () => void): void {
-    this.isFiltering.set(true);
-    setTimeout(() => {
-      update();
-      this.isFiltering.set(false);
-    });
-  }
-
-  setSelectedDriverKeys(keys: string[]): void {
-    this.applyFilterChange(() => this.selectedDriverKeys.set(keys));
-  }
-
-  setSelectedVehicleKeys(keys: string[]): void {
-    this.applyFilterChange(() => this.selectedVehicleKeys.set(keys));
-  }
-
-  setSelectedLabelKeys(keys: string[]): void {
-    this.applyFilterChange(() => this.selectedLabelKeys.set(keys));
-  }
-
-  setShowDriverNotes(value: boolean): void {
-    this.applyFilterChange(() => this.showDriverNotes.set(value));
-  }
-
-  setShowOfficeNotes(value: boolean): void {
-    this.applyFilterChange(() => this.showOfficeNotes.set(value));
-  }
-
-  setShowLabels(value: boolean): void {
-    this.applyFilterChange(() => this.showLabels.set(value));
-  }
-
-  filterTrips(trips: Trip[] | null): Trip[] {
-    if (!trips) return [];
-    const driverKeys = this.selectedDriverKeys();
-    const vehicleKeys = this.selectedVehicleKeys();
-    const labelKeys = this.selectedLabelKeys();
-    return trips.filter(t =>
-      (driverKeys.length === 0 || (t.drivers ?? []).some(k => driverKeys.includes(k))) &&
-      (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k))) &&
-      (labelKeys.length === 0 || (t.labels ?? []).some(k => labelKeys.includes(k)))
-    );
-  }
-
-  // Computed off the day's full, pre-filter trip list — NOT filterTrips's output — so a
-  // conflict never depends on whatever driver/vehicle/label chips happen to be selected.
-  tripWarnings(trips: Trip[] | null): Map<string, AssignmentConflicts> {
-    return Utility.computeAssignmentWarnings(trips ?? []);
-  }
-
-  // Labels are freeform strings on each trip, not a fixed entity list like drivers/vehicles —
-  // the filter's own options are just whichever distinct labels actually appear on the day's
-  // trips, derived fresh each time rather than stored anywhere.
-  labelOptions(trips: Trip[] | null): SelectOption[] {
-    if (!trips) return [];
-    const labels = new Set<string>();
-    trips.forEach(t => (t.labels ?? []).forEach(l => labels.add(l)));
-    return Array.from(labels)
-      .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}))
-      .map(l => ({id: l, name: l}));
   }
 
   /** The calendar and the date input both hand back null when a selection is cleared. */

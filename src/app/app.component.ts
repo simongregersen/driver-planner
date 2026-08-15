@@ -14,6 +14,7 @@ import {AuthenticationService} from './authentication.service';
 import {UserService} from './user.service';
 import {MessagingService} from './messaging.service';
 import {UpdateService} from './update.service';
+import {OnlineStatusService} from './online-status.service';
 import {NavMoreSheetComponent, NavMoreSheetData} from './nav-more-sheet/nav-more-sheet.component';
 import {BrandIconComponent} from './brand-icon/brand-icon.component';
 import {PageHeaderService} from './page-header.service';
@@ -39,6 +40,8 @@ export class AppComponent {
   // Field injection only — this activates UpdateService's constructor (its version-check
   // subscription), nothing here calls it directly.
   private readonly updateService = inject(UpdateService);
+  // Same field-injection-only pattern — activates OnlineStatusService's online/offline listeners.
+  private readonly onlineStatus = inject(OnlineStatusService);
   readonly pageHeader = inject(PageHeaderService);
 
   loggedIn$: Observable<boolean> = this.authService.authState.pipe(map(user => user != null));

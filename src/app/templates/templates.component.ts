@@ -2,11 +2,12 @@ import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core'
 import {AsyncPipe} from '@angular/common';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
-import {MatDialog} from '@angular/material/dialog';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatListModule} from '@angular/material/list';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
 import {Template} from '../template';
@@ -36,6 +37,7 @@ export class TemplatesComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly pageHeader = inject(PageHeaderService);
 
   templates$!: Observable<Template[]>;
@@ -79,23 +81,35 @@ export class TemplatesComponent implements OnInit {
 
   create() {
     if (!this.selectedTemplate) return;
-    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
+    const dialogRef = this.dialog.open(TripFormComponent, DIALOG_CONFIG);
+    const instance = dialogRef.componentInstance;
     instance.mode = 'create';
     instance.showDate = false;
-    instance.save.subscribe((t: NewTrip) => this.dataStore.addTripToTemplate(this.selectedTemplate, t));
+    instance.save.subscribe((t: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.addTripToTemplate(this.selectedTemplate, t)));
   }
 
   removeTrip(trip: Trip) {
-    this.dataStore.removeTripFromTemplate(this.selectedTemplate, trip);
+    return this.dataStore.removeTripFromTemplate(this.selectedTemplate, trip);
+  }
+
+  // Shared by create()/edit()'s save/remove subscriptions: the dialog only closes once the
+  // write actually succeeds — a rejected write (offline, permission denied, ...) leaves it open
+  // with a snackbar instead of silently discarding the edit.
+  private closeOnSave(dialogRef: MatDialogRef<TripFormComponent>, saved: PromiseLike<unknown>): void {
+    saved.then(
+      () => dialogRef.close(),
+      () => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}),
+    );
   }
 
   edit(trip: Trip) {
-    const instance = this.dialog.open(TripFormComponent, DIALOG_CONFIG).componentInstance;
+    const dialogRef = this.dialog.open(TripFormComponent, DIALOG_CONFIG);
+    const instance = dialogRef.componentInstance;
     instance.mode = 'edit';
     instance.showDate = false;
     instance.trip = trip;
-    instance.save.subscribe((updates: NewTrip) => this.dataStore.updateTripFromTemplate(this.selectedTemplate, trip, updates));
-    instance.remove.subscribe(() => this.removeTrip(trip));
+    instance.save.subscribe((updates: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.updateTripFromTemplate(this.selectedTemplate, trip, updates)));
+    instance.remove.subscribe(() => this.closeOnSave(dialogRef, this.removeTrip(trip)));
   }
 
 

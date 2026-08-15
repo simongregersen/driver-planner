@@ -3,7 +3,10 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "analytics": false
+    "analytics": false,
+    "schematicCollections": [
+      "angular-eslint"
+    ]
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -20,7 +23,10 @@
             "browser": "src/main.ts",
             "index": "src/index.html",
             "tsConfig": "tsconfig.app.json",
-            "polyfills": ["@angular/localize/init", "zone.js"],
+            "polyfills": [
+              "@angular/localize/init",
+              "zone.js"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -100,7 +106,17 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "tsConfig": "tsconfig.spec.json",
-            "buildTarget": "::development"
+            "buildTarget": "::development",
+            "providersFile": "src/test-providers.ts"
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
           }
         }
       }

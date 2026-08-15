@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger' : 'Opret tur' }}</h2>
 
 <mat-dialog-content>
-  <form id="tripForm" class="form-stack" [formGroup]="tripForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+  <form id="tripForm" class="form-stack" [formGroup]="tripForm" (ngSubmit)="onSubmit()">
     <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Navn</mat-label>
       <input matInput type="text" formControlName="name">

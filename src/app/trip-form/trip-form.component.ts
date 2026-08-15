@@ -227,7 +227,6 @@ export class TripFormComponent implements OnInit {
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
         this.remove.emit(this.trip);
-        this.dialogRef.close();
       }
     });
   }

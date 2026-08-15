@@ -1,0 +1,83 @@
+import {Injectable, inject} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {Moment} from 'moment';
+import {DataStore} from './data.service';
+import {Driver} from './driver';
+import {Vehicle} from './vehicle';
+import {NewTrip, Trip} from './trip';
+import {TripFormComponent} from './trip-form/trip-form.component';
+import {ConfirmDialogComponent, ConfirmDialogData} from './confirm-dialog/confirm-dialog.component';
+import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from './dialog-config';
+
+// Shared by Day Plans and Period Plans — the regular (non-template) trip create/edit/remove
+// flow through TripFormComponent, persisted via DataStore's plain trip methods (updateTrip/
+// addTrip/removeTrip). Provided per-component (see each host's own `providers: [...]`).
+// Deliberately doesn't cover TemplatesComponent, which drives the same TripFormComponent dialog
+// but persists through a different set of DataStore methods (updateTripFromTemplate/
+// addTripToTemplate) — a genuinely different persistence path, not just a different call site.
+@Injectable()
+export class TripEditingService {
+  private readonly dataStore = inject(DataStore);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+
+  private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
+  private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
+
+  removeTrip(trip: Trip) {
+    return this.dataStore.removeTrip(trip);
+  }
+
+  // Shared by edit()/create()'s save/remove subscriptions: the dialog only closes once the
+  // write actually succeeds — a rejected write (offline, permission denied, ...) leaves it open
+  // with a snackbar instead of silently discarding the edit.
+  private closeOnSave(dialogRef: MatDialogRef<TripFormComponent>, saved: PromiseLike<unknown>): void {
+    saved.then(
+      () => dialogRef.close(),
+      () => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}),
+    );
+  }
+
+  removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
+    const name = this.driverList().find(d => d.$key === driverKey)?.displayName ?? 'chaufføren';
+    this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen?`, () =>
+      this.dataStore.updateTrip(trip, {drivers: trip.drivers.filter(k => k !== driverKey)}));
+  }
+
+  removeVehicleFromTrip({trip, vehicleKey}: {trip: Trip; vehicleKey: string}) {
+    const name = this.vehicleList().find(v => v.$key === vehicleKey)?.displayName ?? 'køretøjet';
+    this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen?`, () =>
+      this.dataStore.updateTrip(trip, {vehicles: trip.vehicles.filter(k => k !== vehicleKey)}));
+  }
+
+  // Chip removal happens right next to the row-click-to-edit target, and on a phone screen
+  // it's easy to hit by mistake — this catches that before it silently changes the trip.
+  private confirmRemoval(message: string, onConfirm: () => void): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...CONFIRM_DIALOG_CONFIG,
+      data: {message, confirmLabel: 'Fjern', danger: true} as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) onConfirm();
+    });
+  }
+
+  edit(trip: Trip) {
+    const dialogRef = this.dialog.open(TripFormComponent, DIALOG_CONFIG);
+    const instance = dialogRef.componentInstance;
+    instance.mode = 'edit';
+    instance.trip = trip;
+    instance.save.subscribe((updates: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.updateTrip(trip, updates)));
+    instance.remove.subscribe(() => this.closeOnSave(dialogRef, this.removeTrip(trip)));
+  }
+
+  create(defaultDate: Moment | null) {
+    const dialogRef = this.dialog.open(TripFormComponent, DIALOG_CONFIG);
+    const instance = dialogRef.componentInstance;
+    instance.mode = 'create';
+    instance.defaultDate = defaultDate;
+    instance.save.subscribe((t: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.addTrip(t)));
+  }
+}

@@ -11,7 +11,10 @@
     "deploy": "ng build --configuration production && firebase deploy",
     "emulators": "ng build --configuration development && firebase emulators:start --import=./.emulator-data --export-on-exit",
     "emulators:pwa": "ng build --configuration pwa-emulator && firebase emulators:start --import=./.emulator-data --export-on-exit",
-    "send-notifications": "node scripts/send-notifications.mjs"
+    "send-notifications": "node scripts/send-notifications.mjs",
+    "lint": "ng lint",
+    "format": "prettier --write \"src/**/*.{ts,html,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css}\""
   },
   "private": true,
   "dependencies": {
@@ -39,11 +42,17 @@
     "@angular/build": "^22.1.2",
     "@angular/cli": "^22.1.2",
     "@angular/compiler-cli": "^22.1.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.0.0",
+    "angular-eslint": "22.1.0",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
     "firebase-admin": "^14.2.0",
     "firebase-tools": "^14.0.0",
     "jsdom": "^28.0.0",
+    "prettier": "^3.9.6",
     "typescript": "~6.0.2",
+    "typescript-eslint": "8.62.1",
     "vitest": "^4.0.8"
   }
 }

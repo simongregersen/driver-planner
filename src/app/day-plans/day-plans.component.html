@@ -9,10 +9,10 @@
     Dagsplan
     <small>{{ selectedDate.toDate() | date:'EEEE, d MMMM y' }}</small>
   </h5>
-  @if (selectedDriverKeys().length > 0 || selectedVehicleKeys().length > 0) {
+  @if (filterState.selectedDriverKeys().length > 0 || filterState.selectedVehicleKeys().length > 0) {
     <h6 class="page-subtitle">
-      @if (selectedDriverKeys().length > 0) { Chauffører: {{ selectedDriverNames() }} }
-      @if (selectedVehicleKeys().length > 0) { Køretøjer: {{ selectedVehicleNames() }} }
+      @if (filterState.selectedDriverKeys().length > 0) { Chauffører: {{ filterState.selectedDriverNames() }} }
+      @if (filterState.selectedVehicleKeys().length > 0) { Køretøjer: {{ filterState.selectedVehicleNames() }} }
     </h6>
   }
 </div>
@@ -70,36 +70,36 @@
       }
       <div>
         <h5 class="section-title">Vis</h5>
-        <mat-button-toggle-group multiple [hideMultipleSelectionIndicator]="true" [disabled]="isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
-          <mat-button-toggle [checked]="showDriverNotes()" (change)="setShowDriverNotes($event.source.checked)">
+        <mat-button-toggle-group multiple [hideMultipleSelectionIndicator]="true" [disabled]="filterState.isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)">
             Chaufførnoter
           </mat-button-toggle>
-          <mat-button-toggle [checked]="showOfficeNotes()" (change)="setShowOfficeNotes($event.source.checked)">
+          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)">
             Kontornoter
           </mat-button-toggle>
-          <mat-button-toggle [checked]="showLabels()" (change)="setShowLabels($event.source.checked)">
+          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)">
             Mærkater
           </mat-button-toggle>
         </mat-button-toggle-group>
       </div>
       <div>
         <h5 class="section-title">Chauffører</h5>
-        <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
-                          [disabled]="isFiltering()"
-                          (selectionChange)="setSelectedDriverKeys($event)"></app-chip-filter>
+        <app-chip-filter [options]="filterState.driverOptions()" [selectedIds]="filterState.selectedDriverKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedDriverKeys($event)"></app-chip-filter>
       </div>
       <div>
         <h5 class="section-title">Køretøjer</h5>
-        <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
-                          [disabled]="isFiltering()"
-                          (selectionChange)="setSelectedVehicleKeys($event)"></app-chip-filter>
+        <app-chip-filter [options]="filterState.vehicleOptions()" [selectedIds]="filterState.selectedVehicleKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
       @if (trips$ | async; as trips) {
       <div>
         <h5 class="section-title">Mærkater</h5>
-        <app-chip-filter [options]="labelOptions(trips)" [selectedIds]="selectedLabelKeys()"
-                          [disabled]="isFiltering()"
-                          (selectionChange)="setSelectedLabelKeys($event)"></app-chip-filter>
+        <app-chip-filter [options]="filterState.labelOptions(trips)" [selectedIds]="filterState.selectedLabelKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
       </div>
       }
     </div>
@@ -152,36 +152,36 @@
       }
       <div>
         <h5 class="section-title">Vis</h5>
-        <mat-button-toggle-group multiple [disabled]="isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
-          <mat-button-toggle [checked]="showDriverNotes()" (change)="setShowDriverNotes($event.source.checked)">
+        <mat-button-toggle-group multiple [disabled]="filterState.isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)">
             Chaufførnoter
           </mat-button-toggle>
-          <mat-button-toggle [checked]="showOfficeNotes()" (change)="setShowOfficeNotes($event.source.checked)">
+          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)">
             Kontornoter
           </mat-button-toggle>
-          <mat-button-toggle [checked]="showLabels()" (change)="setShowLabels($event.source.checked)">
+          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)">
             Mærkater
           </mat-button-toggle>
         </mat-button-toggle-group>
       </div>
       <div>
         <h5 class="section-title">Chauffører</h5>
-        <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
-                          [disabled]="isFiltering()"
-                          (selectionChange)="setSelectedDriverKeys($event)"></app-chip-filter>
+        <app-chip-filter [options]="filterState.driverOptions()" [selectedIds]="filterState.selectedDriverKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedDriverKeys($event)"></app-chip-filter>
       </div>
       <div>
         <h5 class="section-title">Køretøjer</h5>
-        <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
-                          [disabled]="isFiltering()"
-                          (selectionChange)="setSelectedVehicleKeys($event)"></app-chip-filter>
+        <app-chip-filter [options]="filterState.vehicleOptions()" [selectedIds]="filterState.selectedVehicleKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
       @if (trips$ | async; as trips) {
       <div>
         <h5 class="section-title">Mærkater</h5>
-        <app-chip-filter [options]="labelOptions(trips)" [selectedIds]="selectedLabelKeys()"
-                          [disabled]="isFiltering()"
-                          (selectionChange)="setSelectedLabelKeys($event)"></app-chip-filter>
+        <app-chip-filter [options]="filterState.labelOptions(trips)" [selectedIds]="filterState.selectedLabelKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
       </div>
       }
     </div>
@@ -201,21 +201,21 @@
         </div>
       }
     }
-    @if (isFiltering()) {
+    @if (filterState.isFiltering()) {
       <div class="loading no-print">
         <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
       </div>
     } @else if (trips$ | async; as trips) {
-      <app-trips [trips]="filterTrips(trips)"
-                 [assignmentWarnings]="tripWarnings(trips)"
-                 [hideDescriptionOnScreen]="!showDriverNotes()"
-                 [showOfficeNotes]="showOfficeNotes()"
-                 [showLabels]="showLabels()"
+      <app-trips [trips]="filterState.filterTrips(trips)"
+                 [assignmentWarnings]="filterState.tripWarnings(trips)"
+                 [hideDescriptionOnScreen]="!filterState.showDriverNotes()"
+                 [showOfficeNotes]="filterState.showOfficeNotes()"
+                 [showLabels]="filterState.showLabels()"
                  [showReportsColumn]="true"
                  [referenceDate]="selectedDate"
-                 (edit)="edit($event)"
-                 (removeDriver)="removeDriverFromTrip($event)"
-                 (removeVehicle)="removeVehicleFromTrip($event)">
+                 (edit)="tripEditing.edit($event)"
+                 (removeDriver)="tripEditing.removeDriverFromTrip($event)"
+                 (removeVehicle)="tripEditing.removeVehicleFromTrip($event)">
       </app-trips>
     } @else {
       <div class="loading no-print">
