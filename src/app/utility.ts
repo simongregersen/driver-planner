@@ -57,14 +57,22 @@ export class Utility {
   // interval [start, end): two such trips that are merely back-to-back (one's end exactly equal
   // to the other's start) do NOT count as overlapping, matching how every normal same-day
   // schedule hands a driver/vehicle straight from one trip to the next. A trip with no `end` is
-  // instead a single instant, treated as closed/inclusive on both sides of whatever it's compared
-  // against — so a point trip at 9:00 DOES conflict with a 9:00–20:00 trip (touching either of
-  // its boundaries still means the driver/vehicle can't really be in both places at that instant),
-  // and two point trips only conflict when they land on the exact same instant.
+  // instead a single closed instant, [start, start] — checked against that same half-open
+  // convention, so a point trip lands inside another trip's range only from its start up to (but
+  // not including) its end: a point at 9:00 DOES conflict with a 9:00–20:00 trip (its start is
+  // inclusive), but a point at 17:00 does NOT conflict with a 10:00–17:00 trip (its end is
+  // exclusive, same as the back-to-back case above). Two point trips only conflict when they land
+  // on the exact same instant.
   static tripsOverlap(a: TripInterval, b: TripInterval): boolean {
     if (a.end == null && b.end == null) return a.start.isSame(b.start);
-    if (a.end == null) return !a.start.isBefore(b.start) && !a.start.isAfter(b.end ?? b.start);
-    if (b.end == null) return !b.start.isBefore(a.start) && !b.start.isAfter(a.end ?? a.start);
+    if (a.end == null) {
+      const bEnd = b.end ?? b.start;
+      return !a.start.isBefore(b.start) && a.start.isBefore(bEnd);
+    }
+    if (b.end == null) {
+      const aEnd = a.end ?? a.start;
+      return !b.start.isBefore(a.start) && b.start.isBefore(aEnd);
+    }
     return a.start.isBefore(b.end) && b.start.isBefore(a.end);
   }
 
