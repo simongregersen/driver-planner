@@ -70,14 +70,14 @@
       }
       <div>
         <h5 class="section-title">Vis</h5>
-        <mat-button-toggle-group multiple [hideMultipleSelectionIndicator]="true" class="visibility-toggles" aria-label="Vis-indstillinger">
-          <mat-button-toggle [checked]="showDriverNotes()" (change)="showDriverNotes.set($event.source.checked)">
+        <mat-button-toggle-group multiple [hideMultipleSelectionIndicator]="true" [disabled]="isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="showDriverNotes()" (change)="setShowDriverNotes($event.source.checked)">
             Chaufførnoter
           </mat-button-toggle>
-          <mat-button-toggle [checked]="showOfficeNotes()" (change)="showOfficeNotes.set($event.source.checked)">
+          <mat-button-toggle [checked]="showOfficeNotes()" (change)="setShowOfficeNotes($event.source.checked)">
             Kontornoter
           </mat-button-toggle>
-          <mat-button-toggle [checked]="showLabels()" (change)="showLabels.set($event.source.checked)">
+          <mat-button-toggle [checked]="showLabels()" (change)="setShowLabels($event.source.checked)">
             Mærkater
           </mat-button-toggle>
         </mat-button-toggle-group>
@@ -85,18 +85,21 @@
       <div>
         <h5 class="section-title">Chauffører</h5>
         <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
-                          (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
+                          [disabled]="isFiltering()"
+                          (selectionChange)="setSelectedDriverKeys($event)"></app-chip-filter>
       </div>
       <div>
         <h5 class="section-title">Køretøjer</h5>
         <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
-                          (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
+                          [disabled]="isFiltering()"
+                          (selectionChange)="setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
       @if (trips$ | async; as trips) {
       <div>
         <h5 class="section-title">Mærkater</h5>
         <app-chip-filter [options]="labelOptions(trips)" [selectedIds]="selectedLabelKeys()"
-                          (selectionChange)="selectedLabelKeys.set($event)"></app-chip-filter>
+                          [disabled]="isFiltering()"
+                          (selectionChange)="setSelectedLabelKeys($event)"></app-chip-filter>
       </div>
       }
     </div>
@@ -149,14 +152,14 @@
       }
       <div>
         <h5 class="section-title">Vis</h5>
-        <mat-button-toggle-group multiple class="visibility-toggles" aria-label="Vis-indstillinger">
-          <mat-button-toggle [checked]="showDriverNotes()" (change)="showDriverNotes.set($event.source.checked)">
+        <mat-button-toggle-group multiple [disabled]="isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="showDriverNotes()" (change)="setShowDriverNotes($event.source.checked)">
             Chaufførnoter
           </mat-button-toggle>
-          <mat-button-toggle [checked]="showOfficeNotes()" (change)="showOfficeNotes.set($event.source.checked)">
+          <mat-button-toggle [checked]="showOfficeNotes()" (change)="setShowOfficeNotes($event.source.checked)">
             Kontornoter
           </mat-button-toggle>
-          <mat-button-toggle [checked]="showLabels()" (change)="showLabels.set($event.source.checked)">
+          <mat-button-toggle [checked]="showLabels()" (change)="setShowLabels($event.source.checked)">
             Mærkater
           </mat-button-toggle>
         </mat-button-toggle-group>
@@ -164,18 +167,21 @@
       <div>
         <h5 class="section-title">Chauffører</h5>
         <app-chip-filter [options]="driverOptions()" [selectedIds]="selectedDriverKeys()"
-                          (selectionChange)="selectedDriverKeys.set($event)"></app-chip-filter>
+                          [disabled]="isFiltering()"
+                          (selectionChange)="setSelectedDriverKeys($event)"></app-chip-filter>
       </div>
       <div>
         <h5 class="section-title">Køretøjer</h5>
         <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()"
-                          (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
+                          [disabled]="isFiltering()"
+                          (selectionChange)="setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
       @if (trips$ | async; as trips) {
       <div>
         <h5 class="section-title">Mærkater</h5>
         <app-chip-filter [options]="labelOptions(trips)" [selectedIds]="selectedLabelKeys()"
-                          (selectionChange)="selectedLabelKeys.set($event)"></app-chip-filter>
+                          [disabled]="isFiltering()"
+                          (selectionChange)="setSelectedLabelKeys($event)"></app-chip-filter>
       </div>
       }
     </div>
@@ -195,7 +201,11 @@
         </div>
       }
     }
-    @if (trips$ | async; as trips) {
+    @if (isFiltering()) {
+      <div class="loading no-print">
+        <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+      </div>
+    } @else if (trips$ | async; as trips) {
       <app-trips [trips]="filterTrips(trips)"
                  [assignmentWarnings]="tripWarnings(trips)"
                  [hideDescriptionOnScreen]="!showDriverNotes()"
@@ -207,6 +217,10 @@
                  (removeDriver)="removeDriverFromTrip($event)"
                  (removeVehicle)="removeVehicleFromTrip($event)">
       </app-trips>
+    } @else {
+      <div class="loading no-print">
+        <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+      </div>
     }
   </main>
 </div>

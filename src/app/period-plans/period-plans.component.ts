@@ -6,6 +6,7 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {DateRange, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {Moment} from 'moment';
 import {Observable} from 'rxjs';
 import {DateUtility} from '../date-utility';
@@ -31,7 +32,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
   styleUrls: ['./period-plans.component.css'],
   imports: [
     AsyncPipe, DatePipe,
-    MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule,
+    MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule, MatProgressSpinnerModule,
     TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
   ],
   providers: [DatePipe],
@@ -63,6 +64,12 @@ export class PeriodPlansComponent implements OnInit {
   readonly showOfficeNotes = signal(false);
   readonly showDriverNotes = signal(false);
   readonly showLabels = signal(true);
+
+  // Re-filtering/re-rendering the whole period's day-blocks on a filter/view-toggle change can
+  // take long enough to feel like the app hung, since it happens synchronously within the same
+  // change detection pass as the click. Deferring the actual update to the next macrotask (see
+  // applyFilterChange) lets the browser paint isFiltering's disabled/spinner state first.
+  readonly isFiltering = signal(false);
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
@@ -175,6 +182,42 @@ export class PeriodPlansComponent implements OnInit {
       (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k))) &&
       (labelKeys.length === 0 || (t.labels ?? []).some(k => labelKeys.includes(k)))
     );
+  }
+
+  // Marks isFiltering true immediately (so the disabled/spinner state can paint), then defers
+  // the actual signal update — the thing that triggers the expensive re-filter/re-render across
+  // every day-block — to the next macrotask, rather than running it synchronously within the
+  // same click handler.
+  private applyFilterChange(update: () => void): void {
+    this.isFiltering.set(true);
+    setTimeout(() => {
+      update();
+      this.isFiltering.set(false);
+    });
+  }
+
+  setSelectedDriverKeys(keys: string[]): void {
+    this.applyFilterChange(() => this.selectedDriverKeys.set(keys));
+  }
+
+  setSelectedVehicleKeys(keys: string[]): void {
+    this.applyFilterChange(() => this.selectedVehicleKeys.set(keys));
+  }
+
+  setSelectedLabelKeys(keys: string[]): void {
+    this.applyFilterChange(() => this.selectedLabelKeys.set(keys));
+  }
+
+  setShowDriverNotes(value: boolean): void {
+    this.applyFilterChange(() => this.showDriverNotes.set(value));
+  }
+
+  setShowOfficeNotes(value: boolean): void {
+    this.applyFilterChange(() => this.showOfficeNotes.set(value));
+  }
+
+  setShowLabels(value: boolean): void {
+    this.applyFilterChange(() => this.showLabels.set(value));
   }
 
   // Computed once off the whole period's full trip list — before filterByDate/filterTrips ever

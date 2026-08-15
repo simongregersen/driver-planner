@@ -22,6 +22,7 @@ export class ChipFilterComponent {
   selectedIds = input<string[]>([]);
   multiple = input(true);
   label = input('Vælg');
+  disabled = input(false);
   selectionChange = output<string[]>();
 
   // MatChipListboxChange.value is a single value when multiple=false, an array when true —

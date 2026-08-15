@@ -4,6 +4,13 @@
   border-radius: var(--mat-sys-corner-medium);
 }
 
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+}
+
 /* The inline calendar takes over from the compact date field once the sidebar
    sits beside the content, mirroring the previous responsive split. */
 .compact-date-field {

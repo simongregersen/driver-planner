@@ -4,6 +4,13 @@
   border-radius: var(--mat-sys-corner-medium);
 }
 
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+}
+
 .reset-option {
   font-weight: 600;
   border-bottom: 1px solid var(--mat-sys-outline-variant);

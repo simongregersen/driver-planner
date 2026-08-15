@@ -10,6 +10,7 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {DataStore} from '../data.service';
 import {NewTrip, Trip} from '../trip';
@@ -40,7 +41,7 @@ import {PageHeaderService} from '../page-header.service';
   imports: [
     FormsModule, AsyncPipe, DatePipe,
     MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule, MatIconModule,
-    MatInputModule, MatMenuModule, MatSlideToggleModule,
+    MatInputModule, MatMenuModule, MatProgressSpinnerModule, MatSlideToggleModule,
     TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
   ],
   providers: [DatePipe],
@@ -67,6 +68,12 @@ export class DayPlansComponent implements OnInit {
   readonly showOfficeNotes = signal(false);
   readonly showDriverNotes = signal(false);
   readonly showLabels = signal(true);
+
+  // Re-filtering/re-rendering the whole trip table on a filter/view-toggle change can take long
+  // enough to feel like the app hung, since it happens synchronously within the same change
+  // detection pass as the click. Deferring the actual update to the next macrotask (see
+  // applyFilterChange) lets the browser paint isFiltering's disabled/spinner state first.
+  readonly isFiltering = signal(false);
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
@@ -212,6 +219,41 @@ export class DayPlansComponent implements OnInit {
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) this.dataStore.insertTemplate(this.selectedDate, templateId);
     });
+  }
+
+  // Marks isFiltering true immediately (so the disabled/spinner state can paint), then defers
+  // the actual signal update — the thing that triggers the expensive re-filter/re-render — to
+  // the next macrotask, rather than running it synchronously within the same click handler.
+  private applyFilterChange(update: () => void): void {
+    this.isFiltering.set(true);
+    setTimeout(() => {
+      update();
+      this.isFiltering.set(false);
+    });
+  }
+
+  setSelectedDriverKeys(keys: string[]): void {
+    this.applyFilterChange(() => this.selectedDriverKeys.set(keys));
+  }
+
+  setSelectedVehicleKeys(keys: string[]): void {
+    this.applyFilterChange(() => this.selectedVehicleKeys.set(keys));
+  }
+
+  setSelectedLabelKeys(keys: string[]): void {
+    this.applyFilterChange(() => this.selectedLabelKeys.set(keys));
+  }
+
+  setShowDriverNotes(value: boolean): void {
+    this.applyFilterChange(() => this.showDriverNotes.set(value));
+  }
+
+  setShowOfficeNotes(value: boolean): void {
+    this.applyFilterChange(() => this.showOfficeNotes.set(value));
+  }
+
+  setShowLabels(value: boolean): void {
+    this.applyFilterChange(() => this.showLabels.set(value));
   }
 
   filterTrips(trips: Trip[] | null): Trip[] {
