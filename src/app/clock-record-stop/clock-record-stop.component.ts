@@ -4,6 +4,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import moment, {Moment} from 'moment';
 import {ClockRecord} from '../clock-record';
 import {ClockRecordUpdates} from '../clock-record-form/clock-record-form.component';
@@ -28,18 +29,19 @@ import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClockRecordStopComponent {
-  private save!: (record: ClockRecord, updates: ClockRecordUpdates) => void;
-  private removeRecord!: (record: ClockRecord) => void;
+  private save!: (record: ClockRecord, updates: ClockRecordUpdates) => Promise<unknown>;
+  private removeRecord!: (record: ClockRecord) => Promise<unknown>;
   private record!: ClockRecord;
 
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   readonly dialogRef = inject(MatDialogRef<ClockRecordStopComponent>);
 
   clockIn: Moment | null = null;
   clockOut: Moment | null = null;
   note = '';
 
-  public open(record: ClockRecord, save: (record: ClockRecord, updates: ClockRecordUpdates) => void, remove: (record: ClockRecord) => void): void {
+  public open(record: ClockRecord, save: (record: ClockRecord, updates: ClockRecordUpdates) => Promise<unknown>, remove: (record: ClockRecord) => Promise<unknown>): void {
     this.record = record;
     this.save = save;
     this.removeRecord = remove;
@@ -58,7 +60,9 @@ export class ClockRecordStopComponent {
 
   onSubmit(): void {
     if (this.error()) return;
-    this.save(this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note: this.note.trim() || null});
+    this.save(this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note: this.note.trim() || null})
+      .then(() => this.dialogRef.close())
+      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }
 
   confirmDelete(): void {

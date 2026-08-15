@@ -6,6 +6,7 @@ import {MatButtonToggleModule, MatButtonToggleChange} from '@angular/material/bu
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Observable} from 'rxjs';
 import {Moment} from 'moment';
 import {Trip, TripReport} from '../trip';
@@ -43,6 +44,7 @@ export class TripReportFormComponent implements OnInit {
 
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   readonly dialogRef = inject(MatDialogRef<TripReportFormComponent>);
 
   driver$!: Observable<Driver>;
@@ -141,7 +143,9 @@ export class TripReportFormComponent implements OnInit {
       endKmFromCustomer: this.endKmFromCustomer,
       note: this.note.trim(),
     };
-    this.dataStore.setTripReport(this.trip.$key, this.driverKey, report);
+    this.dataStore.setTripReport(this.trip.$key, this.driverKey, report)
+      .then(() => this.dialogRef.close())
+      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }
 
   deleteReport(): void {

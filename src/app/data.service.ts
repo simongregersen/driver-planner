@@ -7,7 +7,7 @@ import {FuelReport, NewFuelReport} from './fuel-report';
 import {Driver} from './driver';
 import {AppUser} from './user';
 import {combineLatest, firstValueFrom, Observable, of} from 'rxjs';
-import {first, map, tap} from 'rxjs/operators';
+import {first, map, shareReplay, tap} from 'rxjs/operators';
 import {Vehicle} from './vehicle';
 import {DateUtility} from './date-utility';
 import {Utility} from './utility';
@@ -383,7 +383,11 @@ export class DataStore {
       map(Utility.sortByDisplayName),
       tap(ds => ds.forEach(d => {
         if (d.birthday) d.birthday = moment(d.birthday as any);
-      }))
+      })),
+      // Called independently from many components (page-level chip filters, nested
+      // TripsComponent, form pickers, ...) with no multicasting otherwise — this keeps a single
+      // live /drivers listener shared across all of them instead of one per caller.
+      shareReplay({bufferSize: 1, refCount: true}),
     );
   }
 
@@ -419,7 +423,9 @@ export class DataStore {
       tap(ds => ds.forEach(d => {
         if (d.latestInspection) d.latestInspection = new Date(d.latestInspection as any) as any;
         d.isRutebus ??= false;
-      }))
+      })),
+      // See getAllDrivers's shareReplay above — same rationale, same duplicate-listener fix.
+      shareReplay({bufferSize: 1, refCount: true}),
     );
   }
 
@@ -432,7 +438,7 @@ export class DataStore {
       isRutebus,
       deleted: false
     };
-    push(this.vehiclesRef, vehicle);
+    return push(this.vehiclesRef, vehicle);
   }
 
   deleteVehicle(vehicle: Vehicle) {
@@ -457,8 +463,10 @@ export class DataStore {
   }
 
   removeTemplate(template: Template) {
-    remove(ref(db, `/tripsInTemplate/${template.$key}`));
-    remove(child(this.templatesRef, template.$key));
+    return Promise.all([
+      remove(ref(db, `/tripsInTemplate/${template.$key}`)),
+      remove(child(this.templatesRef, template.$key)),
+    ]);
   }
 
   addTripToTemplate(template: Template, trip: NewTrip) {

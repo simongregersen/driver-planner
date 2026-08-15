@@ -28,7 +28,7 @@
    than their pale translucent background tint. */
 .field-warning {
   margin: 0;
-  color: #92700c;
+  color: #7a5c0a;
   font: var(--mat-sys-body-small);
 }
 

@@ -5,6 +5,7 @@ import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import moment, {Moment} from 'moment';
 import {ClockRecord} from '../clock-record';
@@ -54,6 +55,7 @@ export class ClockRecordFormComponent implements OnInit {
 
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   readonly dialogRef = inject(MatDialogRef<ClockRecordFormComponent>);
 
   clockIn: Moment | null = null;
@@ -83,13 +85,13 @@ export class ClockRecordFormComponent implements OnInit {
   onSubmit(): void {
     if (this.error()) return;
     const note = this.note.trim() || null;
-    if (this.mode === 'edit') {
-      this.dataStore.updateClockRecord(this.driverKey, this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note});
-    } else {
-      // A Slut filled in on create closes the record immediately — otherwise it'd read as still
-      // open ("I gang") and the punch button on Arbejdstid would switch into its recording state.
-      this.dataStore.addClockRecord(this.driverKey, this.clockIn!, note, this.clockOut);
-    }
+    // A Slut filled in on create closes the record immediately — otherwise it'd read as still
+    // open ("I gang") and the punch button on Arbejdstid would switch into its recording state.
+    const saved = this.mode === 'edit'
+      ? this.dataStore.updateClockRecord(this.driverKey, this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note})
+      : this.dataStore.addClockRecord(this.driverKey, this.clockIn!, note, this.clockOut);
+    saved.then(() => this.dialogRef.close())
+      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }
 
   confirmDelete(): void {

@@ -5,6 +5,7 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import moment, {Moment} from 'moment';
 import {NewVehicle, Vehicle} from '../vehicle';
 import {DateUtility} from '../date-utility';
@@ -49,6 +50,7 @@ export class VehicleFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   readonly dialogRef = inject(MatDialogRef<VehicleFormComponent>);
   readonly minDate = moment('1900-01-01', 'YYYY-MM-DD');
 
@@ -79,11 +81,11 @@ export class VehicleFormComponent implements OnInit {
       latestInspection: this.dateUtility.toMoment(val.latestInspection),
       isRutebus: !!val.isRutebus,
     };
-    if (this.mode === 'edit') {
-      this.dataStore.updateVehicle(this.vehicle, vehicle);
-    } else {
-      this.dataStore.addVehicle(vehicle.displayName, vehicle.brand, vehicle.regNo, vehicle.latestInspection, vehicle.isRutebus);
-    }
+    const saved = this.mode === 'edit'
+      ? this.dataStore.updateVehicle(this.vehicle, vehicle)
+      : this.dataStore.addVehicle(vehicle.displayName, vehicle.brand, vehicle.regNo, vehicle.latestInspection, vehicle.isRutebus);
+    saved.then(() => this.dialogRef.close())
+      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }
 
   deleteVehicle(): void {

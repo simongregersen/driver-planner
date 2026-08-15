@@ -28,10 +28,10 @@
         <td data-label="Type">{{ vehicle.isRutebus ? 'Rutebus' : 'Turistbus' }}</td>
         <td class="no-print cell-actions">
           <div class="row-actions">
-            <button matIconButton type="button" matTooltip="Rediger" (click)="edit(vehicle)">
+            <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger" (click)="edit(vehicle)">
               <mat-icon>edit</mat-icon>
             </button>
-            <button matIconButton type="button" matTooltip="Slet" (click)="removeVehicle(vehicle)">
+            <button matIconButton type="button" aria-label="Slet" matTooltip="Slet" (click)="removeVehicle(vehicle)">
               <mat-icon>delete</mat-icon>
             </button>
           </div>

@@ -4,6 +4,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import moment, {Moment} from 'moment';
 import {Driver, NewDriver} from '../driver';
 import {DateUtility} from '../date-utility';
@@ -48,6 +49,7 @@ export class DriverFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   readonly dialogRef = inject(MatDialogRef<DriverFormComponent>);
   readonly minDate = moment('1900-01-01', 'YYYY-MM-DD');
 
@@ -73,11 +75,11 @@ export class DriverFormComponent implements OnInit {
       name: val.name || '',
       birthday: this.dateUtility.toMoment(val.birthday)
     };
-    if (this.mode === 'edit') {
-      this.dataStore.updateDriver(this.driver, driver);
-    } else {
-      this.dataStore.addDriver(driver.displayName, driver.name, driver.birthday);
-    }
+    const saved = this.mode === 'edit'
+      ? this.dataStore.updateDriver(this.driver, driver)
+      : this.dataStore.addDriver(driver.displayName, driver.name, driver.birthday);
+    saved.then(() => this.dialogRef.close())
+      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }
 
   deleteDriver(): void {

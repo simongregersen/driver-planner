@@ -1,4 +1,5 @@
-import {ChangeDetectionStrategy, Component, OnInit, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
@@ -6,6 +7,7 @@ import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Moment} from 'moment';
 import {Observable} from 'rxjs';
 import {FuelReport, NewFuelReport} from '../fuel-report';
@@ -77,6 +79,8 @@ export class FuelReportFormComponent implements OnInit {
   private readonly dateUtility = inject(DateUtility);
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject(MatDialogRef<FuelReportFormComponent>);
 
   readonly vehicles$: Observable<Vehicle[]> = this.dataStore.getAllVehicles();
@@ -103,7 +107,7 @@ export class FuelReportFormComponent implements OnInit {
     });
 
     if (isEdit) {
-      this.vehicles$.subscribe(vehicles => {
+      this.vehicles$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(vehicles => {
         this.existingVehicleName = vehicles.find(v => v.$key === this.vehicleKey)?.displayName ?? 'Ukendt køretøj';
       });
     }
@@ -116,23 +120,22 @@ export class FuelReportFormComponent implements OnInit {
   onSubmit(): void {
     if (!this.fuelReportForm.valid) return;
     const val = this.fuelReportForm.value;
-    if (this.mode === 'edit') {
-      this.dataStore.updateFuelReport(this.vehicleKey, this.record, {
-        date: val.date,
-        odometerKm: parseDecimal(val.odometerKm),
-        liters: parseDecimal(val.liters),
-        note: val.note || '',
-      });
-    } else {
-      const report: NewFuelReport = {
-        date: val.date,
-        driverKey: this.driverKey ?? val.driverKey,
-        odometerKm: parseDecimal(val.odometerKm)!,
-        liters: parseDecimal(val.liters)!,
-        note: val.note || '',
-      };
-      this.dataStore.addFuelReport(val.vehicleKey, report);
-    }
+    const saved = this.mode === 'edit'
+      ? this.dataStore.updateFuelReport(this.vehicleKey, this.record, {
+          date: val.date,
+          odometerKm: parseDecimal(val.odometerKm),
+          liters: parseDecimal(val.liters),
+          note: val.note || '',
+        })
+      : this.dataStore.addFuelReport(val.vehicleKey, {
+          date: val.date,
+          driverKey: this.driverKey ?? val.driverKey,
+          odometerKm: parseDecimal(val.odometerKm)!,
+          liters: parseDecimal(val.liters)!,
+          note: val.note || '',
+        } as NewFuelReport);
+    saved.then(() => this.dialogRef.close())
+      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }
 
   deleteReport(): void {

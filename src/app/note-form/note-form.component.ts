@@ -6,6 +6,7 @@ import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Moment} from 'moment';
 import {SelectOption} from '../select-option';
 import {DataStore} from '../data.service';
@@ -57,6 +58,7 @@ export class NoteFormComponent implements OnInit {
   private readonly dataStore = inject(DataStore);
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   readonly dialogRef = inject(MatDialogRef<NoteFormComponent>);
 
   ngOnInit() {
@@ -102,11 +104,11 @@ export class NoteFormComponent implements OnInit {
       drivers: val.drivers || [],
       vehicles: val.vehicles || []
     };
-    if (this.mode === 'edit') {
-      this.dataStore.updateNote(this.note, note);
-    } else {
-      this.dataStore.addNote(note);
-    }
+    const saved = this.mode === 'edit'
+      ? this.dataStore.updateNote(this.note, note)
+      : this.dataStore.addNote(note);
+    saved.then(() => this.dialogRef.close())
+      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }
 
   deleteNote(): void {

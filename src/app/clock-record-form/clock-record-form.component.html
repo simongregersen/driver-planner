@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger registrering' : 'Start tidsregistrering' }}</h2>
 
 <mat-dialog-content>
-  <form id="clockRecordForm" class="form-stack" (ngSubmit)="onSubmit(); dialogRef.close()">
+  <form id="clockRecordForm" class="form-stack" (ngSubmit)="onSubmit()">
     <div class="field-group field-start">
       <span class="field-group-title">Start</span>
       <app-date-time-field [value]="clockIn" (valueChange)="clockIn = $event"></app-date-time-field>

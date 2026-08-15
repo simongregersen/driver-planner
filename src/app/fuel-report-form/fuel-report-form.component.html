@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger tankning' : 'Start tankning' }}</h2>
 
 <mat-dialog-content>
-  <form id="fuelReportForm" class="form-stack" [formGroup]="fuelReportForm" (ngSubmit)="onSubmit(); dialogRef.close()">
+  <form id="fuelReportForm" class="form-stack" [formGroup]="fuelReportForm" (ngSubmit)="onSubmit()">
     @if (mode === 'edit') {
       <div class="vehicle-readonly">
         <span class="vehicle-readonly-label">Køretøj</span>

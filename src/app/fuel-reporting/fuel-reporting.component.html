@@ -28,7 +28,7 @@
         <td data-label="Triptæller">{{ record.odometerKm | number }}</td>
         <td data-label="Brændstof">{{ record.liters | number:'1.0-2' }} L</td>
         <td class="no-print cell-actions">
-          <button matIconButton type="button" matTooltip="Rediger" (click)="editRecord(record)">
+          <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger" (click)="editRecord(record)">
             <mat-icon>edit</mat-icon>
           </button>
         </td>

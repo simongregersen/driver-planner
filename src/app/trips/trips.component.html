@@ -69,6 +69,7 @@
           @if (showFinishToggle()) {
             <button matIconButton type="button" class="finish-toggle no-print"
                     [class.finish-toggle-active]="isFinished(trip)"
+                    [attr.aria-label]="isFinished(trip) ? 'Marker som ikke afsluttet' : 'Marker som afsluttet'"
                     [matTooltip]="isFinished(trip) ? 'Marker som ikke afsluttet' : 'Marker som afsluttet'"
                     (click)="toggleFinished(trip, $event)">
               <mat-icon>check</mat-icon>
@@ -80,6 +81,7 @@
           @if (showReportButton()) {
             <button matIconButton type="button" class="report-toggle no-print"
                     [class.report-toggle-active]="hasMyReport(trip)"
+                    [attr.aria-label]="hasMyReport(trip) ? 'Rediger rapport' : 'Tilføj rapport'"
                     [matTooltip]="hasMyReport(trip) ? 'Rediger rapport' : 'Tilføj rapport'"
                     (click)="openMyReport(trip, $event)">
               <mat-icon>assignment</mat-icon>
@@ -90,6 +92,7 @@
         <ng-template #reportsIndicator>
           @if (showReportsColumn() && hasAnyReport(trip)) {
             <button matIconButton type="button" class="reports-indicator no-print"
+                    aria-label="Se chaufførrapporter"
                     matTooltip="Se chaufførrapporter"
                     (click)="openReports(trip, $event)">
               <mat-icon>assignment</mat-icon>

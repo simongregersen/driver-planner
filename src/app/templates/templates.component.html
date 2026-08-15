@@ -11,7 +11,7 @@
             <mat-list-item [class.active-item]="selectedTemplate?.$key === template?.$key">
               <button matListItemTitle type="button" class="template-name"
                       (click)="selectedTemplate = template">{{template.name}}</button>
-              <button matIconButton matListItemMeta type="button" matTooltip="Slet"
+              <button matIconButton matListItemMeta type="button" aria-label="Slet" matTooltip="Slet"
                       (click)="removeTemplate(template)">
                 <mat-icon>delete</mat-icon>
               </button>
@@ -23,7 +23,7 @@
         <mat-form-field class="full-width" subscriptSizing="dynamic">
           <mat-label>Opret skabelon</mat-label>
           <input matInput placeholder="Navn" formControlName="name">
-          <button matIconButton matIconSuffix type="submit" matTooltip="Opret">
+          <button matIconButton matIconSuffix type="submit" aria-label="Opret" matTooltip="Opret">
             <mat-icon>add</mat-icon>
           </button>
         </mat-form-field>

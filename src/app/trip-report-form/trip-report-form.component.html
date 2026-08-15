@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>Chaufførrapport@if (driver$ | async; as driver) { &ndash; {{ driver.displayName }} }</h2>
 
 <mat-dialog-content>
-  <form id="tripReportForm" class="form-stack" (ngSubmit)="onSubmit(); dialogRef.close()">
+  <form id="tripReportForm" class="form-stack" (ngSubmit)="onSubmit()">
     <div class="field-group field-start">
       <div class="field-group-header">
         <span class="field-group-title">Start</span>
@@ -39,7 +39,7 @@
         </mat-button-toggle-group>
       </div>
       <mat-form-field class="full-width" subscriptSizing="dynamic">
-        <input matInput type="number" min="0" [(ngModel)]="startKm" name="startKm">
+        <input matInput type="number" min="0" aria-label="Triptæller start, km" [(ngModel)]="startKm" name="startKm">
         <span matSuffix>km</span>
       </mat-form-field>
     </div>
@@ -55,7 +55,7 @@
         </mat-button-toggle-group>
       </div>
       <mat-form-field class="full-width" subscriptSizing="dynamic">
-        <input matInput type="number" min="0" [(ngModel)]="endKm" name="endKm">
+        <input matInput type="number" min="0" aria-label="Triptæller slut, km" [(ngModel)]="endKm" name="endKm">
         <span matSuffix>km</span>
       </mat-form-field>
     </div>

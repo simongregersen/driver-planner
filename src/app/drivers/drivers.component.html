@@ -37,14 +37,14 @@
           <td class="no-print cell-actions">
             <div class="row-actions">
               @if (!driver.uid) {
-                <button matIconButton type="button" matTooltip="Opret login" (click)="createLogin(driver)">
+                <button matIconButton type="button" aria-label="Opret login" matTooltip="Opret login" (click)="createLogin(driver)">
                   <mat-icon>key</mat-icon>
                 </button>
               }
-              <button matIconButton type="button" matTooltip="Rediger" (click)="edit(driver)">
+              <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger" (click)="edit(driver)">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button matIconButton type="button" matTooltip="Slet" (click)="removeDriver(driver)">
+              <button matIconButton type="button" aria-label="Slet" matTooltip="Slet" (click)="removeDriver(driver)">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>

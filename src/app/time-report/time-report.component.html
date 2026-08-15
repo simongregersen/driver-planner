@@ -42,7 +42,7 @@
               <div class="day-block">
                 <div class="day-heading-row">
                   <h4 class="day-heading">{{ day.date.toDate() | date:'EEEE d/M' }}</h4>
-                  <button matIconButton type="button" class="no-print" matTooltip="Tilføj registrering"
+                  <button matIconButton type="button" class="no-print" aria-label="Tilføj registrering" matTooltip="Tilføj registrering"
                           (click)="addClockRecord(day.date, driverKey)">
                     <mat-icon>add_circle</mat-icon>
                   </button>
@@ -93,7 +93,7 @@
                           </td>
                           <td class="muted note-cell">{{ dayRecord.record.note }}</td>
                           <td class="no-print cell-actions">
-                            <button matIconButton type="button" matTooltip="Rediger"
+                            <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger"
                                     (click)="editClockRecord(dayRecord.record, driverKey)">
                               <mat-icon>edit</mat-icon>
                             </button>

@@ -7,7 +7,7 @@
         <div class="report-row">
           <div class="report-row-header">
             <strong>{{ row.driverName }}</strong>
-            <button matIconButton type="button" matTooltip="Rediger rapport" (click)="editReport(row.driverKey)">
+            <button matIconButton type="button" aria-label="Rediger rapport" matTooltip="Rediger rapport" (click)="editReport(row.driverKey)">
               <mat-icon>edit</mat-icon>
             </button>
           </div>

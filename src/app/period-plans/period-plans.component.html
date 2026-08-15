@@ -122,11 +122,12 @@
         <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
       </div>
     } @else if (trips$ | async; as trips) {
+      @let warnings = tripWarnings(trips);
       @for (date of range; track dateUtility.dateKey(date)) {
         <div class="day-block">
           <h5 class="day-heading">{{ date.toDate() | date:'EEEE, d MMMM y'}}</h5>
           <app-trips [trips]="filterByDate(filterTrips(trips), date)"
-                     [assignmentWarnings]="tripWarnings(trips)"
+                     [assignmentWarnings]="warnings"
                      [hideDescriptionOnScreen]="!showDriverNotes()"
                      [showOfficeNotes]="showOfficeNotes()"
                      [showLabels]="showLabels()"

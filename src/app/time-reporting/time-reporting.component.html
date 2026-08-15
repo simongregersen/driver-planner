@@ -37,7 +37,7 @@
         </td>
         <td data-label="Bemærkning" class="muted note-cell" [matTooltip]="record.note ?? ''">{{ record.note }}</td>
         <td class="no-print cell-actions">
-          <button matIconButton type="button" matTooltip="Rediger" (click)="editRecord(record)">
+          <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger" (click)="editRecord(record)">
             <mat-icon>edit</mat-icon>
           </button>
         </td>
