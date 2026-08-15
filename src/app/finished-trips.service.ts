@@ -17,7 +17,11 @@ export class FinishedTripsService {
 
   toggle(tripKey: string): void {
     const next = new Set(this.finishedKeys());
-    next.has(tripKey) ? next.delete(tripKey) : next.add(tripKey);
+    if (next.has(tripKey)) {
+      next.delete(tripKey);
+    } else {
+      next.add(tripKey);
+    }
     this.finishedKeys.set(next);
     this.save(next);
   }

@@ -118,7 +118,7 @@ export class FuelTrackingComponent {
   private readonly rawReports = toSignal(
     combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from), toObservable(this.to)]).pipe(
       switchMap(([vehicles, from, to]) => this.dataStore.getFuelReportsForVehicles(vehicles, from, to)),
-    ) as Observable<Array<FuelReport & {vehicleKey: string; vehicleName: string}> | null>,
+    ) as Observable<(FuelReport & {vehicleKey: string; vehicleName: string})[] | null>,
     {initialValue: null},
   );
 
@@ -132,7 +132,7 @@ export class FuelTrackingComponent {
             map(r => r ? {vehicleKey: v.$key, odometerKm: r.odometerKm} : null),
           )))
         : of([])),
-    ) as Observable<Array<{vehicleKey: string; odometerKm: number} | null> | null>,
+    ) as Observable<({vehicleKey: string; odometerKm: number} | null)[] | null>,
     {initialValue: null},
   );
 

@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import {signInWithEmailAndPassword, signOut, User} from 'firebase/auth';
 import {authState} from 'rxfire/auth';
 import {Router} from '@angular/router';
@@ -7,10 +7,9 @@ import {auth} from './firebase';
 
 @Injectable({providedIn: 'root'})
 export class AuthenticationService {
-  authState: Observable<User | null> = authState(auth);
+  private readonly router = inject(Router);
 
-  constructor(private router: Router) {
-  }
+  authState: Observable<User | null> = authState(auth);
 
   login(email: string, password: string) {
     return signInWithEmailAndPassword(auth, email, password);

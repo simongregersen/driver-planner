@@ -160,7 +160,7 @@ export class TripFormComponent implements OnInit {
   // start/end a given set of raw form values actually resolves to (a missing toDate falls back
   // to fromDate's day, matching a same-day trip; showDate=false leaves both dates at the same
   // fixed epoch, so only the times end up compared).
-  private computeStartEnd(val: any): {start: Moment; end: Moment | null} {
+  private computeStartEnd(val: {fromDate?: Moment | null; fromTime?: Moment | null; toDate?: Moment | null; toTime?: Moment | null}): {start: Moment; end: Moment | null} {
     const start = this.dateUtility.toMoment(val.fromDate || moment('1970-01-01', 'YYYY-MM-DD'), val.fromTime)!;
     const end = (val.toDate || val.toTime) ? this.dateUtility.toMoment(val.toDate || this.dateUtility.getDate(start), val.toTime) : null;
     return {start, end};

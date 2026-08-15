@@ -1,14 +1,14 @@
-import {Injectable} from '@angular/core';
+import {Injectable, inject} from '@angular/core';
 import {child, endAt, endBefore, limitToLast, orderByChild, orderByKey, push, query, ref, remove, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, Trip, TripReport} from './trip';
 import {ClockRecord} from './clock-record';
 import {FuelReport, NewFuelReport} from './fuel-report';
-import {Driver} from './driver';
+import {Driver, NewDriver} from './driver';
 import {AppUser} from './user';
 import {combineLatest, firstValueFrom, Observable, of} from 'rxjs';
 import {first, map, shareReplay, tap} from 'rxjs/operators';
-import {Vehicle} from './vehicle';
+import {NewVehicle, Vehicle} from './vehicle';
 import {DateUtility} from './date-utility';
 import {Utility} from './utility';
 import {Template} from './template';
@@ -37,8 +37,8 @@ export class DataStore {
   private notificationQueueRef = ref(db, '/notificationQueue');
   private notesRef = ref(db, '/notes');
 
-  constructor(private dateUtility: DateUtility, private notificationDispatch: NotificationDispatchService) {
-  }
+  private readonly dateUtility = inject(DateUtility);
+  private readonly notificationDispatch = inject(NotificationDispatchService);
 
   // Returns trips *overlapping* [from, to) — including a multi-day trip that started before
   // `from`, as long as it hadn't already ended before `from` — not just ones starting in it.
@@ -81,13 +81,13 @@ export class DataStore {
         return [...beforeWindow, ...inWindow];
       }),
       tap(ts => ts.forEach(t => {
-        t.start = moment(t.start as any);
-        t.end = (t.end) ? moment(t.end as any) : null;
-        t.modified = (t.modified) ? moment(t.modified as any) : undefined;
+        t.start = moment(t.start as unknown as number);
+        t.end = (t.end) ? moment(t.end as unknown as number) : null;
+        t.modified = (t.modified) ? moment(t.modified as unknown as number) : undefined;
         if (t.reports) {
           Object.values(t.reports).forEach(r => {
-            r.start = (r.start) ? moment(r.start as any) : null;
-            r.end = (r.end) ? moment(r.end as any) : null;
+            r.start = (r.start) ? moment(r.start as unknown as number) : null;
+            r.end = (r.end) ? moment(r.end as unknown as number) : null;
           });
         }
       })),
@@ -120,23 +120,24 @@ export class DataStore {
     }));
   }
 
-  updateTrip(trip: Trip, updates: any) {
+  updateTrip(trip: Trip, updates: Partial<NewTrip>) {
     // Gates on the destination day (updates.start is always populated by the trip editor on every submit),
     // so this reflects where the trip ends up, not where it was before the edit.
     const effectiveStart: Moment = updates.start || trip.start;
+    const payload: Record<string, unknown> = {...updates};
     if (updates.start) {
       // The trip editor's save always carries both start and end together (never just one of
       // the two), so this can be recomputed from the update alone rather than merged with the
       // existing trip. Explicit null clears a previously-set flag now that this trip no longer
       // spans multiple calendar days — update() only touches keys it's given, so omitting this
       // instead would leave a stale value in place.
-      updates.multiDayStart = this.multiDayStart(updates.start, updates.end);
-      updates.start = updates.start.valueOf();
+      payload.multiDayStart = this.multiDayStart(updates.start, updates.end);
+      payload.start = updates.start.valueOf();
     }
-    if (updates.end) updates.end = updates.end.valueOf();
+    if (updates.end) payload.end = updates.end.valueOf();
     return firstValueFrom(this.isDayPublic(effectiveStart)).then(isPublic => {
-      if (isPublic) updates.modified = moment().valueOf();
-      return update(child(this.tripsRef, trip.$key), updates).then(() => {
+      if (isPublic) payload.modified = moment().valueOf();
+      return update(child(this.tripsRef, trip.$key), payload).then(() => {
         if (isPublic) {
           this.enqueueTripChangeNotification(updates.drivers || trip.drivers, trip.name, trip.start);
         }
@@ -209,8 +210,8 @@ export class DataStore {
       : query(driverRef, orderByChild('clockIn'), startAt(fromDate.valueOf()));
     return listVal<ClockRecord>(q, {keyField: '$key'}).pipe(
       tap(rs => rs.forEach(r => {
-        r.clockIn = moment(r.clockIn as any);
-        r.clockOut = (r.clockOut) ? moment(r.clockOut as any) : null;
+        r.clockIn = moment(r.clockIn as unknown as number);
+        r.clockOut = (r.clockOut) ? moment(r.clockOut as unknown as number) : null;
       }))
     );
   }
@@ -220,7 +221,7 @@ export class DataStore {
   }
 
   updateClockRecord(driverKey: string, record: ClockRecord, updates: {clockIn?: Moment; clockOut?: Moment | null; note?: string | null}) {
-    const payload: any = {};
+    const payload: Record<string, unknown> = {};
     if (updates.clockIn) payload.clockIn = updates.clockIn.valueOf();
     if ('clockOut' in updates) payload.clockOut = updates.clockOut ? updates.clockOut.valueOf() : null;
     if ('note' in updates) payload.note = updates.note || null;
@@ -241,7 +242,7 @@ export class DataStore {
       : query(vehicleRef, orderByChild('date'), startAt(fromDate.valueOf()));
     return listVal<FuelReport>(q, {keyField: '$key'}).pipe(
       tap(rs => rs.forEach(r => {
-        r.date = moment(r.date as any);
+        r.date = moment(r.date as unknown as number);
       }))
     );
   }
@@ -256,9 +257,10 @@ export class DataStore {
     });
   }
 
-  updateFuelReport(vehicleKey: string, record: FuelReport, updates: any) {
-    if (updates.date) updates.date = updates.date.valueOf();
-    return update(child(this.fuelReportsRef, `${vehicleKey}/${record.$key}`), updates);
+  updateFuelReport(vehicleKey: string, record: FuelReport, updates: {date?: Moment; odometerKm?: number | null; liters?: number | null; note?: string}) {
+    const payload: Record<string, unknown> = {...updates};
+    if (updates.date) payload.date = updates.date.valueOf();
+    return update(child(this.fuelReportsRef, `${vehicleKey}/${record.$key}`), payload);
   }
 
   removeFuelReport(vehicleKey: string, record: FuelReport) {
@@ -269,7 +271,7 @@ export class DataStore {
   // (or all of them), and a driver also passes all vehicles — the .read rule on each report
   // (see database.rules.json) already restricts what comes back to that driver's own reports,
   // so there's no need to filter by driver client-side either way.
-  getFuelReportsForVehicles(vehicles: Vehicle[], from: Moment, to?: Moment): Observable<Array<FuelReport & {vehicleKey: string; vehicleName: string}>> {
+  getFuelReportsForVehicles(vehicles: Vehicle[], from: Moment, to?: Moment): Observable<(FuelReport & {vehicleKey: string; vehicleName: string})[]> {
     if (!vehicles.length) return of([]);
     return combineLatest(vehicles.map(v =>
       this.getFuelReports(v.$key, from, to).pipe(
@@ -289,7 +291,7 @@ export class DataStore {
     return listVal<FuelReport>(q, {keyField: '$key'}).pipe(
       map(rs => {
         const r = rs[0] ?? null;
-        if (r) r.date = moment(r.date as any);
+        if (r) r.date = moment(r.date as unknown as number);
         return r;
       })
     );
@@ -382,7 +384,7 @@ export class DataStore {
       map(Utility.filterDeleted),
       map(Utility.sortByDisplayName),
       tap(ds => ds.forEach(d => {
-        if (d.birthday) d.birthday = moment(d.birthday as any);
+        if (d.birthday) d.birthday = moment(d.birthday as unknown as number);
       })),
       // Called independently from many components (page-level chip filters, nested
       // TripsComponent, form pickers, ...) with no multicasting otherwise — this keeps a single
@@ -408,9 +410,10 @@ export class DataStore {
     return update(child(this.usersRef, uid), {role: isAdmin ? 'admin' : 'driver'});
   }
 
-  updateDriver(driver: Driver, updates: any) {
-    if (updates.birthday) updates.birthday = updates.birthday.valueOf();
-    return update(child(this.driversRef, driver.$key), updates);
+  updateDriver(driver: Driver, updates: Partial<NewDriver>) {
+    const payload: Record<string, unknown> = {...updates};
+    if (updates.birthday) payload.birthday = updates.birthday.valueOf();
+    return update(child(this.driversRef, driver.$key), payload);
   }
 
   getDriver(key: string): Observable<Driver> {
@@ -421,7 +424,7 @@ export class DataStore {
     return listVal<Vehicle>(this.vehiclesRef, {keyField: '$key'}).pipe(
       map(Utility.sortByDisplayName),
       tap(ds => ds.forEach(d => {
-        if (d.latestInspection) d.latestInspection = new Date(d.latestInspection as any) as any;
+        if (d.latestInspection) d.latestInspection = new Date(d.latestInspection as unknown as number);
         d.isRutebus ??= false;
       })),
       // See getAllDrivers's shareReplay above — same rationale, same duplicate-listener fix.
@@ -445,9 +448,10 @@ export class DataStore {
     return update(child(this.vehiclesRef, vehicle.$key), {deleted: true});
   }
 
-  updateVehicle(vehicle: Vehicle, updates: any) {
-    if (updates.latestInspection) updates.latestInspection = updates.latestInspection.valueOf();
-    return update(child(this.vehiclesRef, vehicle.$key), updates);
+  updateVehicle(vehicle: Vehicle, updates: Partial<NewVehicle>) {
+    const payload: Record<string, unknown> = {...updates};
+    if (updates.latestInspection) payload.latestInspection = updates.latestInspection.valueOf();
+    return update(child(this.vehiclesRef, vehicle.$key), payload);
   }
 
   getVehicle(key: string): Observable<Vehicle> {
@@ -483,11 +487,12 @@ export class DataStore {
     });
   }
 
-  updateTripFromTemplate(template: Template, trip: Trip, updates: any) {
-    if (updates.start) updates.start = updates.start.valueOf();
-    if (updates.end) updates.end = updates.end.valueOf();
+  updateTripFromTemplate(template: Template, trip: Trip, updates: Partial<NewTrip>) {
+    const payload: Record<string, unknown> = {...updates};
+    if (updates.start) payload.start = updates.start.valueOf();
+    if (updates.end) payload.end = updates.end.valueOf();
     const tripsInTemplateRef = ref(db, `/tripsInTemplate/${template.$key}`);
-    return update(child(tripsInTemplateRef, trip.$key), updates);
+    return update(child(tripsInTemplateRef, trip.$key), payload);
   }
 
   removeTripFromTemplate(template: Template, trip: Trip) {
@@ -499,11 +504,11 @@ export class DataStore {
     listVal<Trip>(tripsInTemplateRef, {keyField: '$key'}).pipe(first()).subscribe(trips => {
       trips.forEach(t => {
         if (t.start) {
-          t.start = moment(t.start as any);
+          t.start = moment(t.start as unknown as number);
           Utility.copyDate(date, t.start);
         }
         if (t.end) {
-          t.end = moment(t.end as any);
+          t.end = moment(t.end as unknown as number);
           Utility.copyDate(date, t.end);
         }
         this.addTrip(t);
@@ -516,8 +521,8 @@ export class DataStore {
     const q = query(ref(db, `/tripsInTemplate/${template.$key}`), orderByChild('start'));
     return listVal<Trip>(q, {keyField: '$key'}).pipe(
       tap(ts => ts.forEach(t => {
-        t.start = moment(t.start as any);
-        t.end = (t.end) ? moment(t.end as any) : null;
+        t.start = moment(t.start as unknown as number);
+        t.end = (t.end) ? moment(t.end as unknown as number) : null;
       }))
     );
   }
@@ -528,8 +533,8 @@ export class DataStore {
   getAllNotes(): Observable<Note[]> {
     return listVal<Note>(this.notesRef, {keyField: '$key'}).pipe(
       tap(ns => ns.forEach(n => {
-        n.start = this.dateUtility.getDate(moment(n.start as any));
-        n.end = this.dateUtility.getDate(moment(n.end as any));
+        n.start = this.dateUtility.getDate(moment(n.start as unknown as number));
+        n.end = this.dateUtility.getDate(moment(n.end as unknown as number));
       }))
     );
   }
@@ -544,10 +549,11 @@ export class DataStore {
     });
   }
 
-  updateNote(note: Note, updates: any) {
-    if (updates.start) updates.start = updates.start.valueOf();
-    if (updates.end) updates.end = updates.end.valueOf();
-    return update(child(this.notesRef, note.$key), updates);
+  updateNote(note: Note, updates: Partial<NewNote>) {
+    const payload: Record<string, unknown> = {...updates};
+    if (updates.start) payload.start = updates.start.valueOf();
+    if (updates.end) payload.end = updates.end.valueOf();
+    return update(child(this.notesRef, note.$key), payload);
   }
 
   removeNote(note: Note) {

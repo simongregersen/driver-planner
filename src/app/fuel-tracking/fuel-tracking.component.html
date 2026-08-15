@@ -107,10 +107,10 @@
                 <tfoot>
                 <tr class="row-total">
                   <td>Total</td>
-                  <td>@if (group.distanceKm != null) { {{ group.distanceKm }} km } @else { &mdash; }</td>
+                  <td>@if (group.distanceKm !== null) { {{ group.distanceKm }} km } @else { &mdash; }</td>
                   <td>{{ group.totalLiters | number:'1.0-2' }} L</td>
                   <td [attr.colspan]="breakpoints.isMobile() ? 2 : 3">
-                    @if (group.kmPerLiter != null) { {{ group.kmPerLiter | number:'1.1-1' }} km/L }
+                    @if (group.kmPerLiter !== null) { {{ group.kmPerLiter | number:'1.1-1' }} km/L }
                   </td>
                 </tr>
                 </tfoot>

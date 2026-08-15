@@ -48,6 +48,9 @@ function onTouchMove(event: TouchEvent): void {
 export class MobileScrollBlockStrategy {
   private isEnabled = false;
 
+  // Required by CDK's ScrollStrategy interface, but this strategy has nothing to do until
+  // enable() actually runs — all of it happens there (and disable()) instead.
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   attach(): void {}
 
   enable(): void {

@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Injectable, inject} from '@angular/core';
 import {child, ref, update} from 'firebase/database';
 import {objectVal} from 'rxfire/database';
 import {deleteApp, initializeApp} from 'firebase/app';
@@ -14,6 +14,8 @@ import {Driver} from './driver';
 
 @Injectable({providedIn: 'root'})
 export class UserService {
+  private readonly authService = inject(AuthenticationService);
+  private readonly dataStore = inject(DataStore);
   private usersRef = ref(db, '/users');
 
   user$: Observable<AppUser | null>;
@@ -21,7 +23,7 @@ export class UserService {
   isAdmin$: Observable<boolean>;
   driverProfile$: Observable<Driver | null>;
 
-  constructor(private authService: AuthenticationService, private dataStore: DataStore) {
+  constructor() {
     this.user$ = this.authService.authState.pipe(
       switchMap(u => u ? objectVal<AppUser>(child(this.usersRef, u.uid)) : of(null))
     );

@@ -22,20 +22,20 @@
             </div>
             <div>
               Triptæller:
-              @if (row.report.startKm != null) { {{ row.report.startKm }} km } @else { &mdash; }
+              @if (row.report.startKm !== null) { {{ row.report.startKm }} km } @else { &mdash; }
               ({{ row.report.startKmFromCustomer ? 'ved kunden' : 'garagen' }})
               &ndash;
-              @if (row.report.endKm != null) { {{ row.report.endKm }} km } @else { &mdash; }
+              @if (row.report.endKm !== null) { {{ row.report.endKm }} km } @else { &mdash; }
               ({{ row.report.endKmFromCustomer ? 'ved kunden' : 'garagen' }})
             </div>
           </div>
           @let duration = durationLabel(row.report);
           @let distance = distanceLabel(row.report);
-          @if (duration || distance != null) {
+          @if (duration || distance !== null) {
             <div class="report-row-summary muted">
               @if (duration) { Varighed: {{ duration }} }
-              @if (duration && distance != null) { &middot; }
-              @if (distance != null) { Afstand: {{ distance }} km }
+              @if (duration && distance !== null) { &middot; }
+              @if (distance !== null) { Afstand: {{ distance }} km }
             </div>
           }
           @if (row.report.note) {

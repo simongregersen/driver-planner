@@ -8,6 +8,12 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{outcome: 'accepted' | 'dismissed'}>;
 }
 
+// iOS Safari's own non-standard "installed as home-screen app" flag — absent from the standard
+// Navigator type, so this exists purely to read it without an `any` cast.
+interface NavigatorWithStandalone extends Navigator {
+  standalone?: boolean;
+}
+
 // iOS Safari has never implemented beforeinstallprompt (and Apple has given no indication it
 // ever will) — there is no programmatic way to trigger "Add to Home Screen" there. The best a
 // page can do is detect it's running there and show instructions for the manual gesture
@@ -46,7 +52,7 @@ export class InstallPromptService {
   }
 
   private static detectStandalone(): boolean {
-    return window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+    return window.matchMedia('(display-mode: standalone)').matches || (navigator as NavigatorWithStandalone).standalone === true;
   }
 
   // iPadOS's Safari presents its UA as a desktop Mac by default — maxTouchPoints is the

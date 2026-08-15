@@ -190,7 +190,8 @@
   <main class="page-main">
     @if (notes$ | async; as notes) {
       @for (note of notesForDate(notes, selectedDate); track note.$key) {
-        <div class="note-alert" (click)="editNote(note)">
+        <div class="note-alert" tabindex="0" role="button" (click)="editNote(note)"
+             (keydown.enter)="editNote(note)" (keydown.space)="$event.preventDefault(); editNote(note)">
           <span class="note-alert-text">{{ note.text }}</span>
           @if (noteDriverNames(note)) {
             <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ noteDriverNames(note) }}</span>

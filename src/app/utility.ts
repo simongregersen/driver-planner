@@ -14,7 +14,7 @@ export interface AssignmentConflicts {
 }
 
 export class Utility {
-  static filterDeleted(arr: any[]): any[] {
+  static filterDeleted<T extends {deleted?: boolean}>(arr: T[]): T[] {
     return arr.filter(d => !d.deleted);
   }
 
@@ -23,7 +23,7 @@ export class Utility {
     return drivers.includes(driver.$key);
   }
 
-  static sortByDisplayName(arr: any[]): any[] {
+  static sortByDisplayName<T extends {displayName: string}>(arr: T[]): T[] {
     return arr.sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, {numeric: true}));
   }
 

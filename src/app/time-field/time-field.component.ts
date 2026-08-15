@@ -47,7 +47,12 @@ export class TimeFieldComponent implements ControlValueAccessor {
   readonly materialTimeControl = new FormControl<Moment | null>(null);
   readonly displayValue = signal('');
 
+  // Real implementations arrive via registerOnChange/registerOnTouched below before Angular
+  // Forms ever calls either — these no-op defaults just cover the brief window before that
+  // registration happens, the standard ControlValueAccessor pattern.
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private onChange: (value: Moment | null) => void = () => {};
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private onTouched: () => void = () => {};
 
   constructor() {
@@ -71,7 +76,11 @@ export class TimeFieldComponent implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    isDisabled ? this.materialTimeControl.disable({emitEvent: false}) : this.materialTimeControl.enable({emitEvent: false});
+    if (isDisabled) {
+      this.materialTimeControl.disable({emitEvent: false});
+    } else {
+      this.materialTimeControl.enable({emitEvent: false});
+    }
   }
 
   // Bound to the whole mat-form-field (not just the input) so clicking the suffix icon opens

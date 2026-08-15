@@ -33,6 +33,25 @@ export class TimeWheelComponent implements AfterViewInit {
     this.valueChange.emit(value);
   }
 
+  // Keyboard equivalent of dragging/clicking the wheel — lives on the scrollable container
+  // (see its own tabindex/role="listbox" in the template) rather than on each item, so a wheel
+  // with many values (e.g. 60 for a minute picker) doesn't turn into 60 separate tab stops.
+  onKeydown(event: KeyboardEvent): void {
+    const values = this.values();
+    const index = values.indexOf(this.value());
+    let nextIndex: number;
+    switch (event.key) {
+      case 'ArrowUp': nextIndex = index - 1; break;
+      case 'ArrowDown': nextIndex = index + 1; break;
+      case 'Home': nextIndex = 0; break;
+      case 'End': nextIndex = values.length - 1; break;
+      default: return;
+    }
+    event.preventDefault();
+    const clamped = Math.min(Math.max(nextIndex, 0), values.length - 1);
+    this.selectByClick(values[clamped]);
+  }
+
   // scroll-snap-type (see CSS) does the actual settling to the nearest item natively — this
   // just reads where that landed so the "selected" highlight and the emitted value track it
   // continuously as the user scrolls, not only once scrolling has fully stopped.
