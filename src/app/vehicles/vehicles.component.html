@@ -14,6 +14,7 @@
       <th class="col-w-25">Mærke</th>
       <th class="col-w-25">Reg. nr.</th>
       <th class="col-w-25">Sidst synet</th>
+      <th class="col-w-25">Type</th>
       <th class="col-w-5 no-print"></th>
     </tr>
     </thead>
@@ -24,6 +25,7 @@
         <td data-label="Mærke">{{vehicle.brand}}</td>
         <td data-label="Reg. nr.">{{vehicle.regNo}}</td>
         <td data-label="Sidst synet">{{vehicle.latestInspection | date }}</td>
+        <td data-label="Type">{{ vehicle.isRutebus ? 'Rutebus' : 'Turistbus' }}</td>
         <td class="no-print cell-actions">
           <div class="row-actions">
             <button matIconButton type="button" matTooltip="Rediger" (click)="edit(vehicle)">

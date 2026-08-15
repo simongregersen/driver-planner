@@ -30,12 +30,30 @@ type FuelReportRow = FuelReport & {vehicleKey: string; vehicleName: string; driv
 interface VehicleGroup {
   vehicleKey: string;
   vehicleName: string;
+  isRutebus: boolean;
   rows: FuelReportRow[];
   /** Computable with at least two readings in the period, or one plus a reading just before it
    * (see beforePeriodReadings) — otherwise there's nothing to take a delta against. */
   distanceKm: number | null;
   totalLiters: number;
   kmPerLiter: number | null;
+}
+
+interface CategoryTotal {
+  totalDistance: number;
+  totalLiters: number;
+  kmPerLiter: number | null;
+}
+
+function summarizeGroups(groups: VehicleGroup[]): CategoryTotal {
+  const totalDistance = groups.reduce((sum, g) => sum + (g.distanceKm ?? 0), 0);
+  const totalLiters = groups.reduce((sum, g) => sum + g.totalLiters, 0);
+  const hasDistance = groups.some(g => g.distanceKm != null);
+  return {
+    totalDistance,
+    totalLiters,
+    kmPerLiter: (hasDistance && totalDistance > 0 && totalLiters > 0) ? totalDistance / totalLiters : null,
+  };
 }
 
 // One routed page shared by both roles, following TimeReportComponent's precedent: an admin
@@ -147,6 +165,7 @@ export class FuelTrackingComponent {
         return {
           vehicleKey,
           vehicleName: groupRows[0].vehicleName,
+          isRutebus: this.vehicleList().find(v => v.$key === vehicleKey)?.isRutebus ?? false,
           rows: [...groupRows].sort((a, b) => a.date.valueOf() - b.date.valueOf()),
           distanceKm,
           totalLiters,
@@ -160,15 +179,15 @@ export class FuelTrackingComponent {
   // delta against) — their fuel still counts toward the total liters, just not the total km.
   // kmPerLiter stays null (not a misleading "0.0") when not a single vehicle had enough readings
   // to contribute a distance at all, same as a single vehicle group's own kmPerLiter above.
-  readonly grandTotal = computed(() => {
+  readonly grandTotal = computed(() => summarizeGroups(this.vehicleGroups()));
+
+  // Same grand total, split by rute/turist so an admin can see each fleet's contribution
+  // separately rather than only the combined figure.
+  readonly categoryTotals = computed(() => {
     const groups = this.vehicleGroups();
-    const totalDistance = groups.reduce((sum, g) => sum + (g.distanceKm ?? 0), 0);
-    const totalLiters = groups.reduce((sum, g) => sum + g.totalLiters, 0);
-    const hasDistance = groups.some(g => g.distanceKm != null);
     return {
-      totalDistance,
-      totalLiters,
-      kmPerLiter: (hasDistance && totalDistance > 0 && totalLiters > 0) ? totalDistance / totalLiters : null,
+      rute: summarizeGroups(groups.filter(g => g.isRutebus)),
+      turist: summarizeGroups(groups.filter(g => !g.isRutebus)),
     };
   });
 

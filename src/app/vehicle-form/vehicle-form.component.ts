@@ -1,6 +1,7 @@
 import {ChangeDetectionStrategy, Component, OnInit, inject} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
+import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
@@ -34,7 +35,7 @@ export type VehicleFormMode = 'create' | 'edit';
   styleUrls: ['./vehicle-form.component.css'],
   imports: [
     ReactiveFormsModule,
-    MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+    MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
     DateFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,7 +61,8 @@ export class VehicleFormComponent implements OnInit {
       brand: isEdit ? this.vehicle.brand : '',
       regNo: isEdit ? this.vehicle.regNo : '',
       latestInspection: (isEdit && this.vehicle.latestInspection)
-        ? this.dateUtility.getDate(moment(this.vehicle.latestInspection)) : null
+        ? this.dateUtility.getDate(moment(this.vehicle.latestInspection)) : null,
+      isRutebus: isEdit ? this.vehicle.isRutebus : false,
     });
   }
 
@@ -74,12 +76,13 @@ export class VehicleFormComponent implements OnInit {
       displayName: val.displayName || '',
       brand: val.brand || '',
       regNo: val.regNo || '',
-      latestInspection: this.dateUtility.toMoment(val.latestInspection)
+      latestInspection: this.dateUtility.toMoment(val.latestInspection),
+      isRutebus: !!val.isRutebus,
     };
     if (this.mode === 'edit') {
       this.dataStore.updateVehicle(this.vehicle, vehicle);
     } else {
-      this.dataStore.addVehicle(vehicle.displayName, vehicle.brand, vehicle.regNo, vehicle.latestInspection);
+      this.dataStore.addVehicle(vehicle.displayName, vehicle.brand, vehicle.regNo, vehicle.latestInspection, vehicle.isRutebus);
     }
   }
 

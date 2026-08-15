@@ -23,6 +23,8 @@
     <app-date-field class="date-field" label="Sidst synet"
                      [value]="vehicleForm.controls['latestInspection'].value" [minDate]="minDate"
                      (valueChange)="setLatestInspection($event)"></app-date-field>
+
+    <mat-checkbox formControlName="isRutebus">Rutebus</mat-checkbox>
   </form>
 </mat-dialog-content>
 

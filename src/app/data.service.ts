@@ -418,16 +418,18 @@ export class DataStore {
       map(Utility.sortByDisplayName),
       tap(ds => ds.forEach(d => {
         if (d.latestInspection) d.latestInspection = new Date(d.latestInspection as any) as any;
+        d.isRutebus ??= false;
       }))
     );
   }
 
-  addVehicle(displayName: string, brand: string, regNo: string, latestInspection: Moment | null) {
+  addVehicle(displayName: string, brand: string, regNo: string, latestInspection: Moment | null, isRutebus: boolean) {
     const vehicle = {
       displayName,
       brand,
       regNo,
       latestInspection: (latestInspection) ? latestInspection.valueOf() : null,
+      isRutebus,
       deleted: false
     };
     push(this.vehiclesRef, vehicle);

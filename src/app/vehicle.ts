@@ -6,6 +6,7 @@ export interface Vehicle extends AngularFireObject {
   brand: string;
   regNo: string;
   latestInspection: Date | null;
+  isRutebus: boolean;
   deleted: boolean;
 }
 
@@ -14,4 +15,5 @@ export interface NewVehicle {
   brand: string;
   regNo: string;
   latestInspection: Moment | null;
+  isRutebus: boolean;
 }

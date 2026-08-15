@@ -65,7 +65,7 @@
       } @else if (vehicleGroups().length > 0) {
         @for (group of vehicleGroups(); track group.vehicleKey) {
           <div class="day-block">
-            <h4 class="day-heading">{{ group.vehicleName }}</h4>
+            <h4 class="day-heading">{{ group.vehicleName }} <span class="muted">({{ group.isRutebus ? 'Rutebus' : 'Turistbus' }})</span></h4>
             <div class="table-scroll">
               <table class="data-table">
                 <colgroup>
@@ -121,6 +121,16 @@
         <p class="period-total">
           I alt: {{ grandTotal().totalDistance }} km &middot; {{ grandTotal().totalLiters | number:'1.0-2' }} L
         </p>
+        @if (vehicleGroups().some(g => g.isRutebus)) {
+          <p class="period-total muted">
+            Heraf rutebusser: {{ categoryTotals().rute.totalDistance }} km &middot; {{ categoryTotals().rute.totalLiters | number:'1.0-2' }} L
+          </p>
+        }
+        @if (vehicleGroups().some(g => !g.isRutebus)) {
+          <p class="period-total muted">
+            Heraf turistbusser: {{ categoryTotals().turist.totalDistance }} km &middot; {{ categoryTotals().turist.totalLiters | number:'1.0-2' }} L
+          </p>
+        }
       } @else {
         <em class="no-print">Ingen tankninger i denne periode.</em>
       }
