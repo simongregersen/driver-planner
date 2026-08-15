@@ -120,7 +120,6 @@
         }
         <p class="period-total">
           I alt: {{ grandTotal().totalDistance }} km &middot; {{ grandTotal().totalLiters | number:'1.0-2' }} L
-          @if (grandTotal().kmPerLiter != null) { &middot; {{ grandTotal().kmPerLiter | number:'1.1-1' }} km/L }
         </p>
       } @else {
         <em class="no-print">Ingen tankninger i denne periode.</em>
