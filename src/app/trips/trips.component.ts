@@ -11,7 +11,7 @@ import {DataStore} from '../data.service';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {FinishedTripsService} from '../finished-trips.service';
-import {Utility} from '../utility';
+import {AssignmentConflicts, Utility} from '../utility';
 import {combineLatest, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import moment, {Moment} from 'moment';
@@ -58,6 +58,12 @@ export class TripsComponent implements OnInit {
    * and a fuller tooltip on the days it didn't actually start on. Templates/other callers with
    * no such day context simply leave this unset, and no trip ever gets marked. */
   referenceDate = input<Moment | null>(null);
+  /** Precomputed by the caller (Day Plans/Period Plans/My Trips) off its own full, pre-filter
+   * trip list — see Utility.computeAssignmentWarnings. Must NOT be derived from `trips()` itself,
+   * since that's already narrowed by whatever chip/day filters the caller applies, which would
+   * make a conflict inconsistently appear or disappear depending on the current filter. Left
+   * unset (null) by callers — e.g. Templates — where trips aren't real calendar bookings. */
+  assignmentWarnings = input<Map<string, AssignmentConflicts> | null>(null);
   edit = output<Trip>();
   removeDriver = output<{trip: Trip; driverKey: string}>();
   removeVehicle = output<{trip: Trip; vehicleKey: string}>();
@@ -80,6 +86,32 @@ export class TripsComponent implements OnInit {
 
   getVehicle(vehicles: Vehicle[] | null, key: string): Vehicle | undefined {
     return vehicles?.find(v => v.$key === key);
+  }
+
+  hasDriverCountMismatch(trip: Trip): boolean {
+    return !trip.drivers || trip.drivers.length < (trip.vehicles?.length ?? 0);
+  }
+
+  hasVehicleCountMismatch(trip: Trip): boolean {
+    return !trip.vehicles || (trip.drivers?.length ?? 0) > trip.vehicles.length;
+  }
+
+  countMismatchTooltip(): string {
+    return 'Antallet af chauffører og køretøjer stemmer ikke overens.';
+  }
+
+  driverConflicts(trip: Trip, driverKey: string): Trip[] {
+    return this.assignmentWarnings()?.get(trip.$key)?.driverConflicts.get(driverKey) ?? [];
+  }
+
+  vehicleConflicts(trip: Trip, vehicleKey: string): Trip[] {
+    return this.assignmentWarnings()?.get(trip.$key)?.vehicleConflicts.get(vehicleKey) ?? [];
+  }
+
+  conflictTooltip(name: string | undefined, conflicts: Trip[]): string {
+    if (!conflicts.length) return '';
+    const parts = conflicts.map(t => `'${t.name}' ${Utility.timeRangeLabel(t)}`).join(', ');
+    return `${name ?? 'Ressourcen'} er også tildelt: ${parts}.`;
   }
 
   isRecentlyModified(trip: Trip): boolean {

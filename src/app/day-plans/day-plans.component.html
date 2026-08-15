@@ -197,6 +197,7 @@
     }
     @if (trips$ | async; as trips) {
       <app-trips [trips]="filterTrips(trips)"
+                 [assignmentWarnings]="tripWarnings(trips)"
                  [hideDescriptionOnScreen]="!showDriverNotes()"
                  [showOfficeNotes]="showOfficeNotes()"
                  [showLabels]="showLabels()"

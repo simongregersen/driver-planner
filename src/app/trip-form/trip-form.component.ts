@@ -15,8 +15,8 @@ import {SelectOption} from '../select-option';
 import {DataStore} from '../data.service';
 import {Utility} from '../utility';
 import {NewTrip, Trip} from '../trip';
-import {Observable} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {combineLatest, Observable} from 'rxjs';
+import {distinctUntilChanged, map, startWith, switchMap} from 'rxjs/operators';
 import {DateUtility} from '../date-utility';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
@@ -60,6 +60,11 @@ export class TripFormComponent implements OnInit {
   availableDrivers$!: Observable<SelectOption[]>;
   availableVehicles$!: Observable<SelectOption[]>;
   tripForm!: FormGroup;
+  /** One warning line per currently-selected driver/vehicle that's also assigned to another,
+   * time-overlapping trip — purely informational (see trip-form.component.html), never wired
+   * into a validator, so it never affects tripForm.valid or blocks submission. */
+  driverWarningMessages$!: Observable<string[]>;
+  vehicleWarningMessages$!: Observable<string[]>;
 
   private readonly dataStore = inject(DataStore);
   private readonly fb = inject(FormBuilder);
@@ -69,6 +74,11 @@ export class TripFormComponent implements OnInit {
   readonly breakpoints = inject(BreakpointService);
   readonly minDate = this.dateUtility.minDate(5);
   readonly labelSeparatorKeyCodes = [ENTER, COMMA];
+
+  private readonly driverNames$ = this.dataStore.getAllDrivers()
+    .pipe(map(ds => new Map(ds.map(d => [d.$key, d.displayName]))));
+  private readonly vehicleNames$ = this.dataStore.getAllVehicles()
+    .pipe(map(vs => new Map(vs.map(v => [v.$key, v.displayName]))));
 
   ngOnInit() {
     const isEdit = this.mode === 'edit';
@@ -92,6 +102,58 @@ export class TripFormComponent implements OnInit {
       .pipe(map(Utility.filterDeleted), map(ds => ds.map(d => ({id: d.$key, name: d.displayName}))));
     this.availableVehicles$ = this.dataStore.getAllVehicles()
       .pipe(map(Utility.filterDeleted), map(vs => vs.map(v => ({id: v.$key, name: v.displayName}))));
+
+    // Refetches candidate trips only when start/end/drivers/vehicles actually change (not on
+    // every keystroke in name/description/labels) — computeStartEnd is the same shared helper
+    // onSubmit/endAfterStartValidator use, so this can never disagree with them about what
+    // start/end the form currently resolves to.
+    const relevantChanges$ = this.tripForm.valueChanges.pipe(
+      startWith(this.tripForm.value),
+      map(val => {
+        const {start, end} = this.computeStartEnd(val);
+        return {start, end, drivers: (val.drivers ?? []) as string[], vehicles: (val.vehicles ?? []) as string[]};
+      }),
+      distinctUntilChanged((a, b) => this.relevantChangeKey(a) === this.relevantChangeKey(b)),
+    );
+
+    const conflicts$ = relevantChanges$.pipe(
+      switchMap(({start, end, drivers, vehicles}) =>
+        this.dataStore.getTrips(start, end ?? start).pipe(
+          map(candidates => ({
+            drivers, vehicles,
+            conflicts: Utility.findAssignmentConflicts(
+              {key: this.mode === 'edit' ? this.trip.$key : undefined, start, end, drivers, vehicles},
+              candidates
+            ),
+          }))
+        )
+      )
+    );
+
+    this.driverWarningMessages$ = combineLatest([conflicts$, this.driverNames$]).pipe(
+      map(([{drivers, conflicts}, names]) =>
+        drivers.filter(key => conflicts.driverConflicts.has(key))
+          .map(key => this.conflictMessage(names.get(key), conflicts.driverConflicts.get(key)!))
+      )
+    );
+    this.vehicleWarningMessages$ = combineLatest([conflicts$, this.vehicleNames$]).pipe(
+      map(([{vehicles, conflicts}, names]) =>
+        vehicles.filter(key => conflicts.vehicleConflicts.has(key))
+          .map(key => this.conflictMessage(names.get(key), conflicts.vehicleConflicts.get(key)!))
+      )
+    );
+  }
+
+  // Cheap order-insensitive equality key for relevantChanges$'s distinctUntilChanged — the
+  // drivers/vehicles arrays' own order can shift as chips are added/removed without the actual
+  // assignment set changing.
+  private relevantChangeKey(v: {start: Moment; end: Moment | null; drivers: string[]; vehicles: string[]}): string {
+    return JSON.stringify([v.start.valueOf(), v.end ? v.end.valueOf() : null, [...v.drivers].sort(), [...v.vehicles].sort()]);
+  }
+
+  private conflictMessage(name: string | undefined, conflicts: Trip[]): string {
+    const parts = conflicts.map(t => `'${t.name}' ${Utility.timeRangeLabel(t)}`).join(', ');
+    return `${name ?? 'Denne ressource'} er allerede tildelt: ${parts}.`;
   }
 
   // Shared by onSubmit and endAfterStartValidator so the two can never disagree on what

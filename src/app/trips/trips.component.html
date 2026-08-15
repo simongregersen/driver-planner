@@ -21,6 +21,8 @@
           <mat-chip-set class="no-print">
             @for (key of trip.vehicles; track key) {
               <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
+                        [class.chip-warning]="vehicleConflicts(trip, key).length > 0"
+                        [matTooltip]="conflictTooltip(getVehicle(vehicles, key)?.displayName, vehicleConflicts(trip, key))"
                         (removed)="removeVehicle.emit({trip, vehicleKey: key})">
                 {{ getVehicle(vehicles, key)?.displayName }}
                 @if (!readonly()) {
@@ -43,6 +45,8 @@
             <mat-chip-set class="no-print">
               @for (key of trip.drivers; track key) {
                 <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
+                          [class.chip-warning]="driverConflicts(trip, key).length > 0"
+                          [matTooltip]="conflictTooltip(getDriver(drivers, key)?.displayName, driverConflicts(trip, key))"
                           (removed)="removeDriver.emit({trip, driverKey: key})">
                   {{ getDriver(drivers, key)?.displayName }}
                   @if (!readonly()) {
@@ -169,10 +173,12 @@
               }
             </div>
           </td>
-          <td data-label="Chauffører" [class.cell-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
+          <td data-label="Chauffører" [class.cell-warning]="hasDriverCountMismatch(trip)"
+              [matTooltip]="hasDriverCountMismatch(trip) ? countMismatchTooltip() : ''">
             <ng-container [ngTemplateOutlet]="driverChips"></ng-container>
           </td>
-          <td data-label="Køretøjer" [class.cell-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
+          <td data-label="Køretøjer" [class.cell-warning]="hasVehicleCountMismatch(trip)"
+              [matTooltip]="hasVehicleCountMismatch(trip) ? countMismatchTooltip() : ''">
             <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
           </td>
           @if (showFinishToggle() || showReportButton() || showReportsColumn()) {

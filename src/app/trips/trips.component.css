@@ -163,6 +163,13 @@ mat-chip-set {
   opacity: 0 !important;
 }
 
+/* Same amber "OBS" cue as .cell-warning/.row-highlight (styles.css) — this driver/vehicle is
+   also assigned to another, time-overlapping trip. Chip-level (not the whole cell) since only
+   some of a trip's assigned drivers/vehicles are typically the conflicting ones. */
+.chip-warning {
+  --mat-chip-elevated-container-color: rgba(255, 193, 7, 0.25);
+}
+
 .loading {
   display: flex;
   justify-content: center;

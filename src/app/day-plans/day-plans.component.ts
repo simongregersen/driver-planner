@@ -14,7 +14,7 @@ import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {DataStore} from '../data.service';
 import {NewTrip, Trip} from '../trip';
 import {Note} from '../note';
-import {Utility} from '../utility';
+import {AssignmentConflicts, Utility} from '../utility';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
@@ -224,6 +224,12 @@ export class DayPlansComponent implements OnInit {
       (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k))) &&
       (labelKeys.length === 0 || (t.labels ?? []).some(k => labelKeys.includes(k)))
     );
+  }
+
+  // Computed off the day's full, pre-filter trip list — NOT filterTrips's output — so a
+  // conflict never depends on whatever driver/vehicle/label chips happen to be selected.
+  tripWarnings(trips: Trip[] | null): Map<string, AssignmentConflicts> {
+    return Utility.computeAssignmentWarnings(trips ?? []);
   }
 
   // Labels are freeform strings on each trip, not a fixed entity list like drivers/vehicles —

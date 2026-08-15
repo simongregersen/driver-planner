@@ -14,7 +14,7 @@ import {Driver} from '../driver';
 import {DataStore} from '../data.service';
 import {UserService} from '../user.service';
 import {AuthenticationService} from '../authentication.service';
-import {Utility} from '../utility';
+import {AssignmentConflicts, Utility} from '../utility';
 import {DateUtility} from '../date-utility';
 import {TripsComponent} from '../trips/trips.component';
 import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
@@ -132,6 +132,12 @@ export class MyTripsComponent implements OnInit {
   filterMyTrips(trips: Trip[] | null, driver: Driver | null): Trip[] {
     if (!trips || !driver) return [];
     return trips.filter(t => Utility.isAssigned(driver, t));
+  }
+
+  // Computed off the day's full trip list — before filterMyTrips narrows it to just this
+  // driver's own trips — so a vehicle double-booked with a different driver's trip still shows.
+  tripWarnings(trips: Trip[] | null): Map<string, AssignmentConflicts> {
+    return Utility.computeAssignmentWarnings(trips ?? []);
   }
 
   /** The calendar and the date input both hand back null when a selection is cleared. */

@@ -66,6 +66,7 @@
       @if (dayPublic$ | async) {
         @if (trips$ | async; as trips) {
           <app-trips [trips]="filterMyTrips(trips, driver)"
+                     [assignmentWarnings]="tripWarnings(trips)"
                      [readonly]="true"
                      [highlightModified]="true"
                      [hideSingleDriver]="true"

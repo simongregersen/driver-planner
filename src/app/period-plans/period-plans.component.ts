@@ -13,7 +13,7 @@ import {DataStore} from '../data.service';
 import {NewTrip, Trip} from '../trip';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
-import {Utility} from '../utility';
+import {AssignmentConflicts, Utility} from '../utility';
 import {TripFormComponent} from '../trip-form/trip-form.component';
 import {TripsComponent} from '../trips/trips.component';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
@@ -175,6 +175,13 @@ export class PeriodPlansComponent implements OnInit {
       (vehicleKeys.length === 0 || (t.vehicles ?? []).some(k => vehicleKeys.includes(k))) &&
       (labelKeys.length === 0 || (t.labels ?? []).some(k => labelKeys.includes(k)))
     );
+  }
+
+  // Computed once off the whole period's full trip list — before filterByDate/filterTrips ever
+  // narrow it per day-block — so a multi-day trip shown across several day-blocks always sees
+  // the same conflicts, regardless of which block is currently rendering it.
+  tripWarnings(trips: Trip[] | null): Map<string, AssignmentConflicts> {
+    return Utility.computeAssignmentWarnings(trips ?? []);
   }
 
   // Labels are freeform strings on each trip, not a fixed entity list like drivers/vehicles —
