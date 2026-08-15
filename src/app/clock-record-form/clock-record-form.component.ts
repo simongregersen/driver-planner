@@ -5,6 +5,7 @@ import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import moment, {Moment} from 'moment';
@@ -20,6 +21,7 @@ export interface ClockRecordUpdates {
   clockIn: Moment;
   clockOut: Moment | null;
   note: string | null;
+  dognbetaling: boolean;
 }
 
 // Create and edit share one form, following DriverFormComponent/FuelReportFormComponent's
@@ -39,7 +41,7 @@ export interface ClockRecordUpdates {
   styleUrls: ['./clock-record-form.component.css'],
   imports: [
     FormsModule,
-    MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTooltipModule,
+    MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSlideToggleModule, MatTooltipModule,
     DateTimeFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,6 +63,7 @@ export class ClockRecordFormComponent implements OnInit {
   clockIn: Moment | null = null;
   clockOut: Moment | null = null;
   note = '';
+  dognbetaling = false;
 
   ngOnInit(): void {
     const isEdit = this.mode === 'edit';
@@ -69,6 +72,7 @@ export class ClockRecordFormComponent implements OnInit {
       : (this.initialClockIn ? this.initialClockIn.clone() : this.roundToFiveMinutes(moment()));
     this.clockOut = (isEdit && this.record.clockOut) ? moment(this.record.clockOut) : null;
     this.note = isEdit ? (this.record.note ?? '') : '';
+    this.dognbetaling = isEdit ? !!this.record.dognbetaling : false;
   }
 
   clearClockOut(): void {
@@ -88,8 +92,8 @@ export class ClockRecordFormComponent implements OnInit {
     // A Slut filled in on create closes the record immediately — otherwise it'd read as still
     // open ("I gang") and the punch button on Arbejdstid would switch into its recording state.
     const saved = this.mode === 'edit'
-      ? this.dataStore.updateClockRecord(this.driverKey, this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note})
-      : this.dataStore.addClockRecord(this.driverKey, this.clockIn!, note, this.clockOut);
+      ? this.dataStore.updateClockRecord(this.driverKey, this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note, dognbetaling: this.dognbetaling})
+      : this.dataStore.addClockRecord(this.driverKey, this.clockIn!, note, this.clockOut, this.dognbetaling);
     saved.then(() => this.dialogRef.close())
       .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }

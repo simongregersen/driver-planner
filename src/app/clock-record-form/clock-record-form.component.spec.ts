@@ -58,7 +58,7 @@ describe('ClockRecordFormComponent', () => {
       c.note = 'Morgenvagt';
       c.onSubmit();
       await fixture.whenStable();
-      expect(dataStore.addClockRecord).toHaveBeenCalledWith('d1', c.clockIn, 'Morgenvagt', null);
+      expect(dataStore.addClockRecord).toHaveBeenCalledWith('d1', c.clockIn, 'Morgenvagt', null, false);
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
@@ -91,15 +91,22 @@ describe('ClockRecordFormComponent', () => {
       expect(c.clockIn!.isSame(record.clockIn)).toBe(true);
       expect(c.clockOut!.isSame(record.clockOut!)).toBe(true);
       expect(c.note).toBe('Vagt');
+      expect(c.dognbetaling).toBe(false);
+    });
+
+    it('pre-fills dognbetaling from the existing record', () => {
+      const fixture = create('edit', {record: {...record, dognbetaling: true}});
+      expect(fixture.componentInstance.dognbetaling).toBe(true);
     });
 
     it('updates the record and closes the dialog on success', async () => {
       const fixture = create('edit', {record});
       const c = fixture.componentInstance;
       c.note = 'Opdateret';
+      c.dognbetaling = true;
       c.onSubmit();
       await fixture.whenStable();
-      expect(dataStore.updateClockRecord).toHaveBeenCalledWith('d1', record, expect.objectContaining({note: 'Opdateret'}));
+      expect(dataStore.updateClockRecord).toHaveBeenCalledWith('d1', record, expect.objectContaining({note: 'Opdateret', dognbetaling: true}));
       expect(dialogRefClose).toHaveBeenCalled();
     });
 

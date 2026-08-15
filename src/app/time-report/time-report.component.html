@@ -115,14 +115,27 @@
                       <td class="no-print"></td>
                       <td class="col-computed">{{ day.totalLabel }}</td>
                     </tr>
+                    @if (day.dognCount > 0) {
+                      <tr class="row-total">
+                        <td colspan="3">Døgnbetaling</td>
+                        <td class="no-print"></td>
+                        <td class="col-computed">{{ day.dognCount }} døgn</td>
+                      </tr>
+                    }
                     </tfoot>
                   </table>
                 </div>
               </div>
             }
             <p class="week-total">Total (uge {{ week.weekNumber }}): {{ week.totalLabel }}</p>
+            @if (week.dognCount > 0) {
+              <p class="week-total">Døgnbetaling (uge {{ week.weekNumber }}): {{ week.dognCount }} døgn</p>
+            }
           }
           <p class="period-total">I alt: {{ report.totalLabel }}</p>
+          @if (report.dognCount > 0) {
+            <p class="period-total">Døgnbetaling i alt: {{ report.dognCount }} døgn</p>
+          }
         } @else {
           <em class="no-print">Ingen ture eller registreringer i denne periode.</em>
         }

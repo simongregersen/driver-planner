@@ -22,6 +22,8 @@
       <input matInput [(ngModel)]="note" name="note" placeholder="Fx kunde eller destination">
     </mat-form-field>
 
+    <mat-slide-toggle [(ngModel)]="dognbetaling" name="dognbetaling">Døgnbetaling</mat-slide-toggle>
+
     @if (error(); as msg) {
       <div class="app-error">{{ msg }}</div>
     }

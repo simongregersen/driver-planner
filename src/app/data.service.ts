@@ -216,15 +216,16 @@ export class DataStore {
     );
   }
 
-  addClockRecord(driverKey: string, clockIn: Moment, note?: string | null, clockOut?: Moment | null) {
-    return push(child(this.clockRecordsRef, driverKey), {clockIn: clockIn.valueOf(), clockOut: clockOut ? clockOut.valueOf() : null, note: note || null});
+  addClockRecord(driverKey: string, clockIn: Moment, note?: string | null, clockOut?: Moment | null, dognbetaling?: boolean) {
+    return push(child(this.clockRecordsRef, driverKey), {clockIn: clockIn.valueOf(), clockOut: clockOut ? clockOut.valueOf() : null, note: note || null, dognbetaling: dognbetaling || null});
   }
 
-  updateClockRecord(driverKey: string, record: ClockRecord, updates: {clockIn?: Moment; clockOut?: Moment | null; note?: string | null}) {
+  updateClockRecord(driverKey: string, record: ClockRecord, updates: {clockIn?: Moment; clockOut?: Moment | null; note?: string | null; dognbetaling?: boolean}) {
     const payload: Record<string, unknown> = {};
     if (updates.clockIn) payload.clockIn = updates.clockIn.valueOf();
     if ('clockOut' in updates) payload.clockOut = updates.clockOut ? updates.clockOut.valueOf() : null;
     if ('note' in updates) payload.note = updates.note || null;
+    if ('dognbetaling' in updates) payload.dognbetaling = updates.dognbetaling || null;
     return update(child(this.clockRecordsRef, `${driverKey}/${record.$key}`), payload);
   }
 

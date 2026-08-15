@@ -40,6 +40,9 @@ export class ClockRecordStopComponent {
   clockIn: Moment | null = null;
   clockOut: Moment | null = null;
   note = '';
+  // No UI for this here — stopping a record shouldn't change its Døgnbetaling scheme, only
+  // ClockRecordFormComponent's "correct a record" form lets that be set.
+  private dognbetaling = false;
 
   public open(record: ClockRecord, save: (record: ClockRecord, updates: ClockRecordUpdates) => Promise<unknown>, remove: (record: ClockRecord) => Promise<unknown>): void {
     this.record = record;
@@ -49,6 +52,7 @@ export class ClockRecordStopComponent {
     this.clockIn = moment(record.clockIn);
     this.clockOut = this.roundToFiveMinutes(moment());
     this.note = record.note ?? '';
+    this.dognbetaling = !!record.dognbetaling;
   }
 
   error(): string | null {
@@ -60,7 +64,7 @@ export class ClockRecordStopComponent {
 
   onSubmit(): void {
     if (this.error()) return;
-    this.save(this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note: this.note.trim() || null})
+    this.save(this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note: this.note.trim() || null, dognbetaling: this.dognbetaling})
       .then(() => this.dialogRef.close())
       .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
   }

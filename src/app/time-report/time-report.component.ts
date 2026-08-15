@@ -34,6 +34,8 @@ interface DayRecord {
   durationLabel: string;
   hasError: boolean;
   crossesDay: boolean;
+  dognbetaling: boolean;
+  dognCount: number;
 }
 
 interface DayReport {
@@ -42,17 +44,20 @@ interface DayReport {
   records: DayRecord[];
   totalMinutes: number;
   totalLabel: string;
+  dognCount: number;
 }
 
 interface WeekGroup {
   weekNumber: number;
   days: DayReport[];
   totalLabel: string;
+  dognCount: number;
 }
 
 interface PeriodReport {
   weeks: WeekGroup[];
   totalLabel: string;
+  dognCount: number;
 }
 
 @Component({
@@ -204,15 +209,18 @@ export class TimeReportComponent implements OnInit {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([, weekDays]) => {
         const totalMinutes = weekDays.reduce((sum, d) => sum + d.totalMinutes, 0);
+        const dognCount = weekDays.reduce((sum, d) => sum + d.dognCount, 0);
         return {
           weekNumber: weekDays[0].date.isoWeek(),
           days: weekDays,
           totalLabel: this.formatDuration(totalMinutes),
+          dognCount,
         };
       });
 
     const totalMinutes = days.reduce((sum, d) => sum + d.totalMinutes, 0);
-    return {weeks, totalLabel: this.formatDuration(totalMinutes)};
+    const dognCount = days.reduce((sum, d) => sum + d.dognCount, 0);
+    return {weeks, totalLabel: this.formatDuration(totalMinutes), dognCount};
   }
 
   // Records are bucketed by their clock-in date — a record that runs past midnight (a
@@ -228,22 +236,35 @@ export class TimeReportComponent implements OnInit {
         const hasError = !!(record.clockOut && record.clockOut.isBefore(record.clockIn));
         const durationMinutes = (record.clockOut && record.clockOut.isAfter(record.clockIn))
           ? record.clockOut.diff(record.clockIn, 'minutes') : 0;
+        const dognbetaling = !!record.dognbetaling;
+        // Every 24-hour block a Døgnbetaling trip touches counts as a full paid day, so a
+        // trip one minute into a new block (e.g. 48:01) bills as 3 days, not 2 — ceil, not floor/round.
+        const dognCount = dognbetaling ? Math.ceil(durationMinutes / (24 * 60)) : 0;
         return {
           record,
           durationMinutes,
-          durationLabel: hasError ? 'Fejl' : (record.clockOut ? this.formatDuration(durationMinutes) : '—'),
+          durationLabel: hasError ? 'Fejl' : (record.clockOut ? (dognbetaling ? this.formatDogn(dognCount) : this.formatDuration(durationMinutes)) : '—'),
           hasError,
           crossesDay: !!(record.clockOut && !this.dateUtility.equals(record.clockIn, record.clockOut)),
+          dognbetaling,
+          dognCount,
         };
       });
 
-    const totalMinutes = dayRecords.reduce((sum, r) => sum + r.durationMinutes, 0);
-    return {date, trips: dayTrips, records: dayRecords, totalMinutes, totalLabel: this.formatDuration(totalMinutes)};
+    // Døgnbetaling records are paid per day, not per hour, so they're kept out of the
+    // hourly total below and summed separately as dognCount instead.
+    const totalMinutes = dayRecords.filter(r => !r.dognbetaling).reduce((sum, r) => sum + r.durationMinutes, 0);
+    const dognCount = dayRecords.reduce((sum, r) => sum + r.dognCount, 0);
+    return {date, trips: dayTrips, records: dayRecords, totalMinutes, totalLabel: this.formatDuration(totalMinutes), dognCount};
   }
 
   private formatDuration(totalMinutes: number): string {
     const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
     return `${h}:${m.toString().padStart(2, '0')}`;
+  }
+
+  private formatDogn(count: number): string {
+    return `${count} døgn`;
   }
 }
