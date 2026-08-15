@@ -33,9 +33,9 @@ import {TimePickerDialogComponent, TimePickerDialogData} from '../time-picker-di
 })
 export class TimeFieldComponent implements ControlValueAccessor {
   label = input('Tid');
-  /** In minutes — 15 to match the interval mat-timepicker was already using; trip start/end
-   * times need finer 1-minute control. */
-  minuteStep = input(15);
+  /** In minutes — governs the desktop dropdown's option list and the mobile wheel dialog's
+   * options; typing a time directly on desktop isn't restricted to this step. */
+  minuteStep = input(5);
   /** Seeded into the field the moment it's opened with no time of its own yet — e.g. Slut
    * opening already showing Start's time instead of blank/now, on both the desktop dropdown and
    * the mobile wheel dialog. */

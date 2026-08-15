@@ -22,7 +22,7 @@
           }
         </mat-form-field>
       }
-      <app-time-field label="Fra tid" formControlName="fromTime" [minuteStep]="1"></app-time-field>
+      <app-time-field label="Fra tid" formControlName="fromTime"></app-time-field>
     </div>
 
     <div class="datetime-row">
@@ -34,7 +34,7 @@
           <mat-datepicker #d2 [touchUi]="breakpoints.isMobile()"></mat-datepicker>
         </mat-form-field>
       }
-      <app-time-field label="Til tid" formControlName="toTime" [minuteStep]="1"></app-time-field>
+      <app-time-field label="Til tid" formControlName="toTime"></app-time-field>
     </div>
     @if (tripForm.hasError('endBeforeStart')) {
       <p class="form-error">Til-tidspunktet skal være efter fra-tidspunktet.</p>

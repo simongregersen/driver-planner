@@ -45,7 +45,7 @@ export class ClockRecordStopComponent {
     this.removeRecord = remove;
 
     this.clockIn = moment(record.clockIn);
-    this.clockOut = this.roundToQuarterHour(moment());
+    this.clockOut = this.roundToFiveMinutes(moment());
     this.note = record.note ?? '';
   }
 
@@ -78,7 +78,7 @@ export class ClockRecordStopComponent {
     });
   }
 
-  private roundToQuarterHour(m: Moment): Moment {
-    return m.clone().minutes(Math.round(m.minutes() / 15) * 15).seconds(0).milliseconds(0);
+  private roundToFiveMinutes(m: Moment): Moment {
+    return m.clone().minutes(Math.round(m.minutes() / 5) * 5).seconds(0).milliseconds(0);
   }
 }

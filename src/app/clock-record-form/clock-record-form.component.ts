@@ -64,7 +64,7 @@ export class ClockRecordFormComponent implements OnInit {
     const isEdit = this.mode === 'edit';
     this.clockIn = isEdit
       ? moment(this.record.clockIn)
-      : (this.initialClockIn ? this.initialClockIn.clone() : this.roundToQuarterHour(moment()));
+      : (this.initialClockIn ? this.initialClockIn.clone() : this.roundToFiveMinutes(moment()));
     this.clockOut = (isEdit && this.record.clockOut) ? moment(this.record.clockOut) : null;
     this.note = isEdit ? (this.record.note ?? '') : '';
   }
@@ -109,7 +109,7 @@ export class ClockRecordFormComponent implements OnInit {
     });
   }
 
-  private roundToQuarterHour(m: Moment): Moment {
-    return m.clone().minutes(Math.round(m.minutes() / 15) * 15).seconds(0).milliseconds(0);
+  private roundToFiveMinutes(m: Moment): Moment {
+    return m.clone().minutes(Math.round(m.minutes() / 5) * 5).seconds(0).milliseconds(0);
   }
 }
