@@ -3,7 +3,7 @@ import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
-import {MatCalendar, MatDatepickerModule} from '@angular/material/datepicker';
+import {MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {Observable} from 'rxjs';
@@ -58,12 +58,19 @@ export class MyTripsComponent implements OnInit {
     return date => !!date && this.isPublicDate(date, publicDates);
   });
 
+  // Same green "public-day" marking as Day Plans' own dateClass.
+  readonly dateClass = computed<MatCalendarCellClassFunction<Moment>>(() => {
+    const publicDates = this.publicDates();
+    return date => this.isPublicDate(date, publicDates) ? 'public-day' : '';
+  });
+
   constructor() {
-    // A calendar only rebuilds its cells on an explicit refresh, never on a new dateFilter
-    // alone. This has to run *after* render, so the calendar has already received the new
-    // dateFilter binding by the time it re-reads it.
+    // A calendar only rebuilds its cells on an explicit refresh, never on a new dateFilter/
+    // dateClass alone. This has to run *after* render, so the calendar has already received the
+    // new bindings by the time it re-reads them.
     afterRenderEffect(() => {
       this.dateFilter();
+      this.dateClass();
       this.calendar()?.updateTodaysDate();
     });
   }

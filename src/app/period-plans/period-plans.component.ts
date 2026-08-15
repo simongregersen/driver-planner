@@ -62,7 +62,7 @@ export class PeriodPlansComponent implements OnInit {
   readonly selectedLabelKeys = signal<string[]>([]);
   readonly showOfficeNotes = signal(false);
   readonly showDriverNotes = signal(false);
-  readonly showLabels = signal(false);
+  readonly showLabels = signal(true);
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});

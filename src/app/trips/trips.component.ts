@@ -64,6 +64,9 @@ export class TripsComponent implements OnInit {
    * make a conflict inconsistently appear or disappear depending on the current filter. Left
    * unset (null) by callers — e.g. Templates — where trips aren't real calendar bookings. */
   assignmentWarnings = input<Map<string, AssignmentConflicts> | null>(null);
+  /** Templates: a template trip's drivers/vehicles are placeholders, not a real assignment, so
+   * neither the count-mismatch nor the overlap-conflict highlighting applies there. */
+  showWarnings = input(true);
   edit = output<Trip>();
   removeDriver = output<{trip: Trip; driverKey: string}>();
   removeVehicle = output<{trip: Trip; vehicleKey: string}>();
@@ -89,11 +92,11 @@ export class TripsComponent implements OnInit {
   }
 
   hasDriverCountMismatch(trip: Trip): boolean {
-    return !trip.drivers || trip.drivers.length < (trip.vehicles?.length ?? 0);
+    return this.showWarnings() && (!trip.drivers || trip.drivers.length < (trip.vehicles?.length ?? 0));
   }
 
   hasVehicleCountMismatch(trip: Trip): boolean {
-    return !trip.vehicles || (trip.drivers?.length ?? 0) > trip.vehicles.length;
+    return this.showWarnings() && (!trip.vehicles || (trip.drivers?.length ?? 0) > trip.vehicles.length);
   }
 
   countMismatchTooltip(): string {
@@ -101,10 +104,12 @@ export class TripsComponent implements OnInit {
   }
 
   driverConflicts(trip: Trip, driverKey: string): Trip[] {
+    if (!this.showWarnings()) return [];
     return this.assignmentWarnings()?.get(trip.$key)?.driverConflicts.get(driverKey) ?? [];
   }
 
   vehicleConflicts(trip: Trip, vehicleKey: string): Trip[] {
+    if (!this.showWarnings()) return [];
     return this.assignmentWarnings()?.get(trip.$key)?.vehicleConflicts.get(vehicleKey) ?? [];
   }
 

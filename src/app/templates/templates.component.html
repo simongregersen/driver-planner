@@ -32,6 +32,8 @@
   </aside>
   <main class="page-main">
     <app-trips [trips]="(trips$ | async) ?? []"
+               [showLabels]="true"
+               [showWarnings]="false"
                (edit)="edit($event)">
     </app-trips>
     <div class="toolbar-row no-print">

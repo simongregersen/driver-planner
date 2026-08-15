@@ -9,7 +9,8 @@
                       [selected]="selectedDate"
                       (selectedChange)="onDateSelected($event)"
                       [minDate]="minDate"
-                      [dateFilter]="dateFilter()">
+                      [dateFilter]="dateFilter()"
+                      [dateClass]="dateClass()">
         </mat-calendar>
         <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
           <mat-label>Dato</mat-label>
@@ -22,7 +23,7 @@
                  (ngModelChange)="onDateSelected($event)"
                  (click)="d.open()">
           <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
-          <mat-datepicker #d [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+          <mat-datepicker #d [dateClass]="dateClass()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
         </mat-form-field>
         <div class="button-row" role="group" aria-label="Dato-navigation">
           <button matButton="outlined" type="button" [disabled]="!hasPreviousPublicDate()" (click)="previousDay()">Forrige</button>
@@ -50,7 +51,7 @@
                  (ngModelChange)="onDateSelected($event)"
                  (click)="dMobile.open()">
           <mat-datepicker-toggle matIconSuffix [for]="dMobile"></mat-datepicker-toggle>
-          <mat-datepicker #dMobile [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+          <mat-datepicker #dMobile [dateClass]="dateClass()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
         </mat-form-field>
       </div>
     </app-collapsible-bottom-bar>

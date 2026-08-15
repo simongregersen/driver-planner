@@ -31,7 +31,7 @@
       </mat-calendar>
       <div>
         <h5 class="section-title">Vis</h5>
-        <mat-button-toggle-group multiple class="visibility-toggles" aria-label="Vis-indstillinger">
+        <mat-button-toggle-group multiple [hideMultipleSelectionIndicator]="true" class="visibility-toggles" aria-label="Vis-indstillinger">
           <mat-button-toggle [checked]="showDriverNotes()" (change)="showDriverNotes.set($event.source.checked)">
             Chaufførnoter
           </mat-button-toggle>
