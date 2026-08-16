@@ -46,7 +46,13 @@ html {
      real device (762px reported vs. the correct 812px, a 50px gap that matches the missing
      inset). Adding it back explicitly is the documented fix; no JS/settle-forcing needed, since
      this isn't a transient cold-launch value that corrects itself, it's how dvh is defined to
-     resolve in this mode. */
+     resolve in this mode.
+       Do NOT trade this for a plain `height: 100%`: that does remove the ~84px of content-
+     independent scroll room this leaves on an otherwise-empty page (measured on-device:
+     scrollHeight 846 vs. a 762px scrollport), but it brings back the white bar along the bottom
+     of the screen — tried, confirmed, reverted. The scroll room is the lesser of the two evils;
+     pages that look wrong when dragged are instead handled by centring their empty state (see
+     .empty-state below) so there is nothing to notice. */
   height: calc(100dvh + env(safe-area-inset-bottom));
 }
 
@@ -191,6 +197,50 @@ body {
   margin: 0 auto;
   padding: 0 12px;
   box-sizing: border-box;
+}
+
+/* Opt-in centring for a page's "nothing here" message ("Ingen ture.", "Ingen registreringer.").
+   Global rather than per-component because the elements carrying it live inside TripsComponent
+   and TimeReportingComponent, while the decision to centre belongs to the *page* embedding them
+   — Min dag, Arbejdstid and Dagsplaner do, Skabeloner and Periodeplaner (which stack many
+   per-day lists down one page) must not. Each component exposes a centerEmptyState input and
+   applies this class from it, so there's no reaching into another component's DOM.
+     Beyond looking better than a lone line of text pinned under the toolbar, this works around
+   the ~84px of content-independent scroll room html's height leaves on every page in the
+   installed iOS PWA (see the comment on `html` above, and note that the obvious fix there
+   reintroduces the white bar along the screen bottom). A centred message has that much room to
+   be dragged in either direction without landing anywhere that reads as broken.
+     Everything here is inside the mobile breakpoint on purpose: the class is inert on desktop,
+   where the layout is a content column beside a sidebar (Min dag, Dagsplaner) that viewport
+   centring would drift the text across, and where the scroll quirk being dodged doesn't exist
+   in the first place. Desktop keeps the plain in-flow line it has always had. */
+@media (max-width: 1024px) {
+  .empty-state-centered {
+    /* Fixed, so it neither adds to the document height (which on these pages is already the
+       thing that scrolls) nor moves when the page is dragged. Bounded by the toolbar above and
+       the bottom nav below rather than centred on the raw viewport, so it lands in the middle of
+       the space the user can actually see. Any pinned bar a page floats above that nav overlaps
+       only the very bottom of this box, which is empty. */
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: calc(64px + env(safe-area-inset-top));
+    bottom: var(--bottom-nav-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    /* The bottom padding is what lifts the text above the true centre of that box — optical
+       centring, the same reason a dialog's title never sits at its exact midpoint. In dvh so
+       the lift stays proportional across phone sizes rather than looking slight on a large
+       screen and heavy-handed on a small one. */
+    padding: 0 24px 12dvh;
+    box-sizing: border-box;
+    /* Up from the 14px body base: at page-body size a single centred line in the middle of an
+       otherwise empty screen reads as something that failed to load rather than as the page's
+       actual content. */
+    font-size: 18px;
+  }
 }
 
 /* iOS Safari auto-zooms the page on focus for any form control whose own font-size computes

@@ -199,7 +199,7 @@
       </tbody>
     </table>
   } @else {
-    <em class="no-print">Ingen ture.</em>
+    <em class="no-print" [class.empty-state-centered]="centerEmptyState()">Ingen ture.</em>
   }
 } @else {
   <div class="loading no-print">

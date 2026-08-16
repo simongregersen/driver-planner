@@ -30,6 +30,9 @@ export class TimeReportingComponent {
   from = input.required<Moment>();
   to = input<Moment | undefined>(undefined);
   limit = input<number | undefined>(undefined);
+  /** Whether "Ingen registreringer." should be centred in the visible page rather than sitting
+   * just under the punch button — see .empty-state-centered in styles.css. */
+  centerEmptyState = input(false);
 
   private readonly dataStore = inject(DataStore);
   private readonly dateUtility = inject(DateUtility);

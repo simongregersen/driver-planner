@@ -67,6 +67,11 @@ export class TripsComponent implements OnInit {
   /** Templates: a template trip's drivers/vehicles are placeholders, not a real assignment, so
    * neither the count-mismatch nor the overlap-conflict highlighting applies there. */
   showWarnings = input(true);
+  /** Whether "Ingen ture." should be centred in the visible page rather than sitting on its own
+   * under the header — see .empty-state-centered in styles.css. For pages where this list is the
+   * whole content (Min dag, Dagsplaner); deliberately off for Periodeplaner and Skabeloner,
+   * where several of these lists stack down one page and a centred one would be nonsense. */
+  centerEmptyState = input(false);
   edit = output<Trip>();
   removeDriver = output<{trip: Trip; driverKey: string}>();
   removeVehicle = output<{trip: Trip; vehicleKey: string}>();
