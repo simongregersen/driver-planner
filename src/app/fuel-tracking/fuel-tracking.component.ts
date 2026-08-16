@@ -7,6 +7,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {combineLatest, Observable, of} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
@@ -18,22 +19,43 @@ import {BreakpointService} from '../breakpoint.service';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
 import {FuelReport} from '../fuel-report';
+import {TankRefill} from '../tank-refill';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
 import {FuelReportingComponent} from '../fuel-reporting/fuel-reporting.component';
 import {FuelReportFormComponent} from '../fuel-report-form/fuel-report-form.component';
+import {TankRefillFormComponent} from '../tank-refill-form/tank-refill-form.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 import {PageHeaderService} from '../page-header.service';
 
 type FuelReportRow = FuelReport & {vehicleKey: string; vehicleName: string; driverName: string};
+
+interface TankRow {
+  refill: TankRefill;
+  krPerLiter: number | null;
+}
+
+interface CategoryCost {
+  label: string;
+  totalLiters: number;
+  /** liters × the period's overall average tank price — a FuelReport itself never records what
+   * was paid, only Triptæller/liters. Null when the period's average kr/L (see tankTotal)
+   * itself can't be computed. */
+  cost: number | null;
+}
 
 interface VehicleGroup {
   vehicleKey: string;
   vehicleName: string;
   isRutebus: boolean;
   rows: FuelReportRow[];
-  /** Computable with at least two readings in the period, or one plus a reading just before it
-   * (see beforePeriodReadings) — otherwise there's nothing to take a delta against. */
+  /** The last reading before the period, shown (dimmed, read-only) as the first row whenever
+   * this group is expanded — the anchor the first in-period row's own delta is computed
+   * against, so the arithmetic behind distanceKm below isn't just taken on faith. Null when
+   * there's no reading before the period to anchor against at all. */
+  baselineRow: FuelReportRow | null;
+  /** Computable with at least two readings in the period, or one plus baselineRow — otherwise
+   * there's nothing to take a delta against. */
   distanceKm: number | null;
   totalLiters: number;
   kmPerLiter: number | null;
@@ -68,7 +90,7 @@ function summarizeGroups(groups: VehicleGroup[]): CategoryTotal {
   styleUrls: ['./fuel-tracking.component.css'],
   imports: [
     AsyncPipe, DatePipe, DecimalPipe,
-    MatButtonModule, MatFormFieldModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, MatDatepickerModule,
+    MatButtonModule, MatFormFieldModule, MatIconModule, MatProgressSpinnerModule, MatSlideToggleModule, MatTooltipModule, MatDatepickerModule,
     ChipFilterComponent, CollapsibleBottomBarComponent, FuelReportingComponent,
   ],
   providers: [DatePipe],
@@ -102,6 +124,10 @@ export class FuelTrackingComponent {
     this.dateUtility.isPast(date) ? 'past-day' : '';
 
   private readonly isAdmin = toSignal(this.userService.isAdmin$, {initialValue: false});
+  // An admin can also have their own driver profile (someone who both manages and occasionally
+  // drives) — used only to default startFuelingAsAdmin's driver picker to themselves; null for
+  // an admin with no linked profile, which just leaves that picker unset as before.
+  private readonly ownDriverProfile = toSignal(this.userService.driverProfile$, {initialValue: null as Driver | null});
 
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
@@ -115,8 +141,14 @@ export class FuelTrackingComponent {
     return selected.length ? all.filter(v => selected.includes(v.$key)) : all;
   });
 
+  // getFuelReports/getLatestFuelReportBefore below are one-time reads, not live listeners (see
+  // their own doc comments on why) — so nothing re-fetches on its own after a report is added,
+  // edited, or toggled. Bumping this is what makes those actions (see setExcludedFromStatistics,
+  // editRow, startFuelingAsAdmin) actually show up here afterwards.
+  private readonly refreshTrigger = signal(0);
+
   private readonly rawReports = toSignal(
-    combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from), toObservable(this.to)]).pipe(
+    combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from), toObservable(this.to), toObservable(this.refreshTrigger)]).pipe(
       switchMap(([vehicles, from, to]) => this.dataStore.getFuelReportsForVehicles(vehicles, from, to)),
     ) as Observable<(FuelReport & {vehicleKey: string; vehicleName: string})[] | null>,
     {initialValue: null},
@@ -124,19 +156,62 @@ export class FuelTrackingComponent {
 
   // The reading right before the selected period, per vehicle — a baseline for computing
   // distance when a vehicle has only one reading inside the period itself (see vehicleGroups
-  // below), never shown as a row in its own right.
+  // below). Kept as the full report (not just its odometerKm) so it can also be shown as
+  // context — see VehicleGroup.baselineRow — rather than only folded invisibly into the math.
   private readonly beforePeriodReadings = toSignal(
-    combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from)]).pipe(
+    combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from), toObservable(this.refreshTrigger)]).pipe(
       switchMap(([vehicles, from]) => vehicles.length
         ? combineLatest(vehicles.map(v => this.dataStore.getLatestFuelReportBefore(v.$key, from).pipe(
-            map(r => r ? {vehicleKey: v.$key, odometerKm: r.odometerKm} : null),
+            map(r => r ? {vehicleKey: v.$key, vehicleName: v.displayName, report: r} : null),
           )))
         : of([])),
-    ) as Observable<({vehicleKey: string; odometerKm: number} | null)[] | null>,
+    ) as Observable<({vehicleKey: string; vehicleName: string; report: FuelReport} | null)[] | null>,
     {initialValue: null},
   );
 
   readonly loadingReports = computed(() => this.rawReports() === null);
+
+  // Admin-only data (see database.rules.json) — gated on isAdmin() so a driver's session never
+  // even issues the request, which would otherwise fail as permission-denied.
+  private readonly tankRefills = toSignal(
+    combineLatest([toObservable(this.isAdmin), toObservable(this.from), toObservable(this.to), toObservable(this.refreshTrigger)]).pipe(
+      switchMap(([isAdmin, from, to]) => isAdmin ? this.dataStore.getTankRefills(from, to) : of([]))
+    ) as Observable<TankRefill[]>,
+    {initialValue: [] as TankRefill[]},
+  );
+
+  readonly tankRows = computed<TankRow[]>(() =>
+    [...this.tankRefills()]
+      .sort((a, b) => a.date.valueOf() - b.date.valueOf())
+      .map(refill => ({refill, krPerLiter: refill.liters > 0 ? refill.price / refill.liters : null}))
+  );
+
+  readonly tankTotal = computed(() => {
+    const rows = this.tankRows();
+    const totalLiters = rows.reduce((sum, r) => sum + r.refill.liters, 0);
+    const totalPrice = rows.reduce((sum, r) => sum + r.refill.price, 0);
+    return {
+      totalLiters,
+      totalPrice,
+      krPerLiter: totalLiters > 0 ? totalPrice / totalLiters : null,
+    };
+  });
+
+  // Collapsed by default (see the component's own doc comment) — an admin unfolds only the
+  // vehicles they actually want the per-report breakdown for.
+  private readonly expandedVehicleKeys = signal<ReadonlySet<string>>(new Set());
+
+  isExpanded(vehicleKey: string): boolean {
+    return this.expandedVehicleKeys().has(vehicleKey);
+  }
+
+  toggleExpanded(vehicleKey: string): void {
+    this.expandedVehicleKeys.update(keys => {
+      const next = new Set(keys);
+      if (next.has(vehicleKey)) next.delete(vehicleKey); else next.add(vehicleKey);
+      return next;
+    });
+  }
 
   readonly vehicleGroups = computed<VehicleGroup[]>(() => {
     const drivers = this.driverList();
@@ -149,24 +224,38 @@ export class FuelTrackingComponent {
     }
     return Array.from(byVehicle.values())
       .map(groupRows => {
-        const totalLiters = groupRows.reduce((sum, r) => sum + r.liters, 0);
         const vehicleKey = groupRows[0].vehicleKey;
-        // Two or more readings in the period already bracket a distance on their own. Exactly
-        // one reading can still produce a distance if there's a reading just before the period
-        // to diff it against (e.g. refuelling on the 15th with the period starting the same day
-        // — the 14th's reading is what makes that first in-period reading meaningful at all).
-        // Zero readings never happens here — a vehicle with none wouldn't have a group.
-        const beforeOdometer = beforeReadings.find(b => b?.vehicleKey === vehicleKey)?.odometerKm;
-        const distanceKm = groupRows.length >= 2
-          ? Math.max(...groupRows.map(r => r.odometerKm)) - Math.min(...groupRows.map(r => r.odometerKm))
-          : (groupRows.length === 1 && beforeOdometer != null)
-            ? Math.abs(groupRows[0].odometerKm - beforeOdometer)
-            : null;
+        const sortedRows = [...groupRows].sort((a, b) => a.date.valueOf() - b.date.valueOf());
+        const beforeReading = beforeReadings.find(b => b?.vehicleKey === vehicleKey);
+        const beforeOdometer = beforeReading?.report.odometerKm;
+        const baselineRow: FuelReportRow | null = beforeReading
+          ? {...beforeReading.report, vehicleKey, vehicleName: beforeReading.vehicleName, driverName: drivers.find(d => d.$key === beforeReading.report.driverKey)?.displayName ?? 'Ukendt chauffør'}
+          : null;
+
+        // An excluded report's liters never count...
+        const totalLiters = sortedRows.filter(r => !r.excludeFromStatistics).reduce((sum, r) => sum + r.liters, 0);
+
+        // ...and neither does the distance it represents — the km since whichever reading came
+        // right before it (an earlier in-period row, or the last reading before the period for
+        // the first row). Walking the chain and summing only the non-excluded deltas is
+        // equivalent to the old max(odometerKm) - min(odometerKm) when nothing is excluded (it
+        // telescopes to the same total), but lets one excluded report's delta drop out of the
+        // total while its own reading still anchors the next report's delta.
+        let previousOdometer = beforeOdometer;
+        let distanceKm: number | null = null;
+        for (const row of sortedRows) {
+          if (previousOdometer != null && !row.excludeFromStatistics) {
+            distanceKm = (distanceKm ?? 0) + (row.odometerKm - previousOdometer);
+          }
+          previousOdometer = row.odometerKm;
+        }
+
         return {
           vehicleKey,
           vehicleName: groupRows[0].vehicleName,
           isRutebus: this.vehicleList().find(v => v.$key === vehicleKey)?.isRutebus ?? false,
-          rows: [...groupRows].sort((a, b) => a.date.valueOf() - b.date.valueOf()),
+          rows: sortedRows,
+          baselineRow,
           distanceKm,
           totalLiters,
           kmPerLiter: (distanceKm != null && totalLiters > 0) ? distanceKm / totalLiters : null,
@@ -181,14 +270,38 @@ export class FuelTrackingComponent {
   // to contribute a distance at all, same as a single vehicle group's own kmPerLiter above.
   readonly grandTotal = computed(() => summarizeGroups(this.vehicleGroups()));
 
-  // Same grand total, split by rute/turist so an admin can see each fleet's contribution
-  // separately rather than only the combined figure.
-  readonly categoryTotals = computed(() => {
+  // One overview table per category (see the template) rather than a single mixed table with a
+  // "Heraf ..." total line underneath — each category's own stats table shows its own total
+  // directly. isRutebus is still the underlying Vehicle field (see vehicle.ts); only the
+  // user-facing label changed from Rutebus/Turistbus to Special/Turist.
+  readonly categoryGroups = computed(() => {
     const groups = this.vehicleGroups();
-    return {
-      rute: summarizeGroups(groups.filter(g => g.isRutebus)),
-      turist: summarizeGroups(groups.filter(g => !g.isRutebus)),
-    };
+    return [
+      {label: 'Special', groups: groups.filter(g => g.isRutebus), total: summarizeGroups(groups.filter(g => g.isRutebus))},
+      {label: 'Turist', groups: groups.filter(g => !g.isRutebus), total: summarizeGroups(groups.filter(g => !g.isRutebus))},
+    ];
+  });
+
+  // Fuel cost per vehicle type (Special/Turist) — FuelReport never records a price of its own
+  // (only Triptæller/liters), so this multiplies each category's own liters by the one price we
+  // do have: the period's overall average kr/L, from the Tank section's own tankTotal above.
+  readonly categoryCosts = computed<CategoryCost[]>(() =>
+    this.categoryGroups().map(c => {
+      const avgKrPerLiter = this.tankTotal().krPerLiter;
+      return {
+        label: c.label,
+        totalLiters: c.total.totalLiters,
+        cost: avgKrPerLiter != null ? c.total.totalLiters * avgKrPerLiter : null,
+      };
+    })
+  );
+
+  // Sum of categoryCosts's own per-category costs — equivalent to grandTotal.totalLiters ×
+  // avgKrPerLiter, just derived from the same per-category figures shown above it rather than
+  // recomputed independently.
+  readonly totalCost = computed(() => {
+    const avgKrPerLiter = this.tankTotal().krPerLiter;
+    return avgKrPerLiter != null ? this.grandTotal().totalLiters * avgKrPerLiter : null;
   });
 
   // The range shown in both headers below: an admin's own selected period, or — a driver has no
@@ -245,16 +358,42 @@ export class FuelTrackingComponent {
     instance.driverKey = driverKey;
   }
 
-  // An admin reporting a refuelling isn't reporting their own — the form itself asks which
-  // driver it's for (see FuelReportFormComponent.needsDriverPicker) rather than this assuming one.
+  // The form itself still asks which driver it's for (see FuelReportFormComponent.
+  // needsDriverPicker) rather than this assuming one outright — an admin reporting on someone
+  // else's behalf is a real case too — but it's pre-selected to the admin's own driver profile,
+  // if they have one, since reporting their own refuelling is the far more common case.
   startFuelingAsAdmin(): void {
-    this.dialog.open(FuelReportFormComponent, SMALL_DIALOG_CONFIG);
+    const dialogRef = this.dialog.open(FuelReportFormComponent, SMALL_DIALOG_CONFIG);
+    dialogRef.componentInstance.defaultDriverKey = this.ownDriverProfile()?.$key;
+    dialogRef.afterClosed().subscribe(() => this.refreshTrigger.update(n => n + 1));
   }
 
   editRow(row: FuelReportRow): void {
-    const instance = this.dialog.open(FuelReportFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
+    const dialogRef = this.dialog.open(FuelReportFormComponent, SMALL_DIALOG_CONFIG);
+    const instance = dialogRef.componentInstance;
     instance.mode = 'edit';
     instance.vehicleKey = row.vehicleKey;
     instance.record = row;
+    dialogRef.afterClosed().subscribe(() => this.refreshTrigger.update(n => n + 1));
+  }
+
+  // Admin-only control, only ever reachable from this component's own admin table — see
+  // DataStore.setFuelReportExcluded and database.rules.json's .validate rule on the field.
+  setExcludedFromStatistics(row: FuelReportRow, excluded: boolean): void {
+    this.dataStore.setFuelReportExcluded(row.vehicleKey, row, excluded)
+      .then(() => this.refreshTrigger.update(n => n + 1));
+  }
+
+  addToTank(): void {
+    const dialogRef = this.dialog.open(TankRefillFormComponent, SMALL_DIALOG_CONFIG);
+    dialogRef.afterClosed().subscribe(() => this.refreshTrigger.update(n => n + 1));
+  }
+
+  editTankRefill(refill: TankRefill): void {
+    const dialogRef = this.dialog.open(TankRefillFormComponent, SMALL_DIALOG_CONFIG);
+    const instance = dialogRef.componentInstance;
+    instance.mode = 'edit';
+    instance.record = refill;
+    dialogRef.afterClosed().subscribe(() => this.refreshTrigger.update(n => n + 1));
   }
 }

@@ -33,6 +33,15 @@
       ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
     },
 
+    "tankRefills": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".indexOn": "date",
+      "$refillKey": {
+        ".validate": "newData.hasChildren(['date', 'liters', 'price'])"
+      }
+    },
+
     "tripsInTemplate": {
       ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
       ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
@@ -82,7 +91,15 @@
       "$vehicleKey": {
         ".indexOn": "date",
         "$reportKey": {
-          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === (data.exists() ? data.child('driverKey').val() : newData.child('driverKey').val()))"
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === (data.exists() ? data.child('driverKey').val() : newData.child('driverKey').val()))",
+          "excludeFromStatistics": {
+            // The .write above cascades full record access to the owning driver too, so this
+            // has to be a .validate (checked in addition to, not instead of, that .write) to
+            // actually stop a driver from touching just this field — it only runs for a write
+            // that touches this exact child, so ordinary driver create/edit calls (which never
+            // include this key) are unaffected.
+            ".validate": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+          }
         }
       }
     },

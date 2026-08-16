@@ -5,19 +5,27 @@
   padding: 48px 0;
 }
 
-.day-block {
-  margin-bottom: 16px;
-}
-
-.day-heading {
-  margin: 0 0 4px;
-  font: var(--mat-sys-title-medium);
-}
-
 .period-total {
   margin-top: 16px;
   text-align: right;
   font-weight: 600;
+}
+
+.category-heading {
+  margin: 24px 0 4px;
+  font: var(--mat-sys-title-medium);
+}
+
+.category-heading:first-child {
+  margin-top: 0;
+}
+
+/* A whole separate section (fuel bought in bulk for the company's own tank, not tied to any
+   vehicle), so it gets more headroom above than a category-heading does between two vehicle
+   tables — and unlike those, it's always shown, so there's no :first-child case to cover. */
+.tank-heading {
+  margin: 32px 0 4px;
+  font: var(--mat-sys-title-large);
 }
 
 /* Same inline calendar used by Periodeplaner/Dagsplaner. This was missing here entirely —
@@ -76,6 +84,54 @@
   text-overflow: ellipsis;
 }
 
+/* A dimmed row is the at-a-glance cue that a report doesn't count toward the totals below it —
+   the toggle itself is the only thing that still reads at full strength, so it's still obvious
+   which control to flip back to undo it. */
+.row-excluded {
+  opacity: 0.55;
+}
+
+.row-excluded .cell-toggle {
+  opacity: 1;
+}
+
+.data-table .cell-toggle {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Same fix as the global .data-table .cell-actions (styles.css): the icon button's invisible
+   48px touch target extends past its own 26px visible edge, and now that this is the
+   right-most column (see the component's own doc/history), that overhang has nothing to its
+   right but this cell's padding — without headroom here it pokes past the table's outer edge,
+   reading as a faint "the table scrolls a little" horizontal scrollbar. */
+.data-table .cell-expand {
+  width: 1%;
+  white-space: nowrap;
+  padding-right: 12px;
+}
+
+/* The overview row's own hover/click affordance is enough — the nested detail table underneath
+   isn't itself a row of the outer table, so it shouldn't pick up .hoverable's highlight. */
+.detail-cell {
+  padding: 4px 8px 16px;
+  border-bottom: none;
+}
+
+.detail-table {
+  font: var(--mat-sys-body-medium);
+}
+
+/* The last reading before the period — shown so the first in-period row's own km delta is
+   traceable back to a real number instead of taken on faith, not because it's itself part of
+   this period's report. Dimmed and non-interactive (no edit/exclude controls) to read as
+   context, not as a row of its own. */
+.row-baseline {
+  color: var(--mat-sys-on-surface-variant);
+  background: var(--mat-sys-surface-container);
+  font-style: italic;
+}
+
 .start-tankning-row {
   display: flex;
   justify-content: center;
@@ -119,6 +175,8 @@
 .admin-start-tankning-row {
   display: flex;
   justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .mobile-admin-bar-expanded {

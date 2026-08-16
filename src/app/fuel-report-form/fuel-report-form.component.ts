@@ -69,6 +69,11 @@ export class FuelReportFormComponent implements OnInit {
    * driver picker in the form itself (see driverOptions below). Always required by the time
    * of a create submit, one way or the other. */
   driverKey?: string;
+  /** Create + no driverKey only: pre-selects the in-form driver picker (see needsDriverPicker)
+   * instead of leaving it blank — an admin filling this in is very often reporting their own
+   * refuelling, so this is FuelTrackingComponent passing along the admin's own driver profile
+   * (if they have one) as a starting point that's still free to be changed to anyone else. */
+  defaultDriverKey?: string;
   mode: FuelReportFormMode = 'create';
   /** Required when mode is 'edit'. */
   vehicleKey!: string;
@@ -99,7 +104,7 @@ export class FuelReportFormComponent implements OnInit {
     this.needsDriverPicker = !isEdit && !this.driverKey;
     this.fuelReportForm = this.fb.group({
       vehicleKey: [null, isEdit ? [] : Validators.required],
-      driverKey: [null, this.needsDriverPicker ? Validators.required : []],
+      driverKey: [this.needsDriverPicker ? (this.defaultDriverKey ?? null) : null, this.needsDriverPicker ? Validators.required : []],
       date: [isEdit ? this.record.date : this.dateUtility.today(), Validators.required],
       odometerKm: [isEdit ? formatDecimal(this.record.odometerKm) : '', [Validators.required, decimalValidator]],
       liters: [isEdit ? formatDecimal(this.record.liters) : '', [Validators.required, decimalValidator]],

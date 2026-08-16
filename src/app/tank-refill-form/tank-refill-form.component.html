@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger tilførsel' : 'Tilføj til tank' }}</h2>
+
+<mat-dialog-content>
+  <form id="tankRefillForm" class="form-stack" [formGroup]="tankRefillForm" (ngSubmit)="onSubmit()">
+    <app-date-field class="date-field" label="Dato"
+                     [value]="tankRefillForm.controls['date'].value"
+                     [minDate]="minDate"
+                     (valueChange)="setDate($event)"></app-date-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Brændstof</mat-label>
+      <input matInput type="text" inputmode="numeric" formControlName="liters">
+      <span matSuffix>L</span>
+      @if (tankRefillForm.controls['liters'].hasError('decimal')) {
+        <mat-error>Angiv et gyldigt tal.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Pris</mat-label>
+      <input matInput type="text" inputmode="numeric" formControlName="price">
+      <span matSuffix>kr.</span>
+      @if (tankRefillForm.controls['price'].hasError('decimal')) {
+        <mat-error>Angiv et gyldigt tal.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (mode === 'edit') {
+    <button matButton type="button" class="confirm-danger" (click)="deleteRefill()">Slet</button>
+  }
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="tankRefillForm" [disabled]="!tankRefillForm.valid">
+    {{ mode === 'edit' ? 'Gem' : 'Registrer' }}
+  </button>
+</mat-dialog-actions>

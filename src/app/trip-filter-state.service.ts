@@ -62,16 +62,21 @@ export class TripFilterStateService {
     this.applyFilterChange(() => this.selectedLabelKeys.set(keys));
   }
 
+  // Unlike the driver/vehicle/label filters above, these three don't feed filterTrips/
+  // labelOptions — they're passed straight through to app-trips as plain display flags over
+  // whatever trips are already in memory, so there's nothing expensive to defer. Routing them
+  // through applyFilterChange too would flip isFiltering for no reason, needlessly hiding the
+  // existing trips/notes behind a spinner and disabling the toggle group for a tick.
   setShowDriverNotes(value: boolean): void {
-    this.applyFilterChange(() => this.showDriverNotes.set(value));
+    this.showDriverNotes.set(value);
   }
 
   setShowOfficeNotes(value: boolean): void {
-    this.applyFilterChange(() => this.showOfficeNotes.set(value));
+    this.showOfficeNotes.set(value);
   }
 
   setShowLabels(value: boolean): void {
-    this.applyFilterChange(() => this.showLabels.set(value));
+    this.showLabels.set(value);
   }
 
   // Each of these is a factory: called once per host component (typically in a field

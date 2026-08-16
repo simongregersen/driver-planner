@@ -82,6 +82,12 @@ describe('FuelReportFormComponent', () => {
       expect(fixture.componentInstance.fuelReportForm.controls['driverKey'].hasError('required')).toBe(true);
     });
 
+    it('pre-selects the driver picker with defaultDriverKey when supplied', () => {
+      const fixture = create('create', {defaultDriverKey: 'd1'});
+      expect(fixture.componentInstance.fuelReportForm.controls['driverKey'].value).toBe('d1');
+      expect(fixture.componentInstance.fuelReportForm.controls['driverKey'].hasError('required')).toBe(false);
+    });
+
     it('does not submit an invalid (non-numeric) reading', async () => {
       const fixture = create('create', {driverKey: 'd1'});
       const c = fixture.componentInstance;

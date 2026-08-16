@@ -131,12 +131,11 @@ describe('TripFilterStateService', () => {
       expect(service.selectedDriverKeys()).toEqual(['d1']);
     });
 
-    it('setShowLabels defers the same way', () => {
+    it('setShowLabels applies immediately, without touching isFiltering', () => {
       const service = TestBed.inject(TripFilterStateService);
       service.setShowLabels(false);
-      expect(service.showLabels()).toBe(true); // unchanged yet
-      vi.runAllTimers();
       expect(service.showLabels()).toBe(false);
+      expect(service.isFiltering()).toBe(false);
     });
   });
 });

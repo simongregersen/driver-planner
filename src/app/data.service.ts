@@ -4,6 +4,7 @@ import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, Trip, TripReport} from './trip';
 import {ClockRecord} from './clock-record';
 import {FuelReport, NewFuelReport} from './fuel-report';
+import {NewTankRefill, TankRefill} from './tank-refill';
 import {Driver, NewDriver} from './driver';
 import {AppUser} from './user';
 import {combineLatest, firstValueFrom, from as observableFrom, Observable, of} from 'rxjs';
@@ -31,6 +32,7 @@ export class DataStore {
   private tripsRef = ref(db, '/trips');
   private clockRecordsRef = ref(db, '/clockRecords');
   private fuelReportsRef = ref(db, '/fuelReports');
+  private tankRefillsRef = ref(db, '/tankRefills');
   private templatesRef = ref(db, '/templates');
   private publicRef = ref(db, '/public');
   private usersRef = ref(db, '/users');
@@ -283,6 +285,14 @@ export class DataStore {
     return remove(child(this.fuelReportsRef, `${vehicleKey}/${record.$key}`));
   }
 
+  // Deliberately separate from updateFuelReport, which backs the shared create/edit dialog
+  // used by both roles — this is the only path that ever writes excludeFromStatistics, called
+  // solely from FuelTrackingComponent's admin-only table, and database.rules.json's own
+  // .validate rule on that field rejects the write outright if it isn't an admin doing it.
+  setFuelReportExcluded(vehicleKey: string, record: FuelReport, excluded: boolean) {
+    return update(child(this.fuelReportsRef, `${vehicleKey}/${record.$key}`), {excludeFromStatistics: excluded || null});
+  }
+
   // For the fuel-tracking page's both branches: an admin passes the vehicles it wants to see
   // (or all of them), and a driver also passes all vehicles — the .read rule on each report
   // (see database.rules.json) already restricts what comes back to that driver's own reports,
@@ -305,6 +315,43 @@ export class DataStore {
     const vehicleRef = child(this.fuelReportsRef, vehicleKey);
     const q = query(vehicleRef, orderByChild('date'), endAt(this.dateUtility.toMoment(before)!.valueOf() - 1), limitToLast(1));
     return observableFrom(this.fetchFuelReports(q).then(reports => reports[0] ?? null));
+  }
+
+  // Admin-only (see database.rules.json) — a flat collection, unlike fuelReports, since there's
+  // only one company tank rather than one per vehicle.
+  getTankRefills(from: Moment, to: Moment): Observable<TankRefill[]> {
+    const fromDate = this.dateUtility.toMoment(from)!;
+    const q = query(this.tankRefillsRef, orderByChild('date'), startAt(fromDate.valueOf()), endAt(this.dateUtility.toMoment(to)!.add(1, 'days').valueOf() - 1));
+    return observableFrom(this.fetchTankRefills(q));
+  }
+
+  private async fetchTankRefills(q: Query): Promise<TankRefill[]> {
+    const snapshot = await get(q);
+    const refills: TankRefill[] = [];
+    snapshot.forEach(child => {
+      const refill = {...(child.val() as Record<string, unknown>), $key: child.key} as TankRefill;
+      refill.date = moment(refill.date as unknown as number);
+      refills.push(refill);
+    });
+    return refills;
+  }
+
+  addTankRefill(refill: NewTankRefill) {
+    return push(this.tankRefillsRef, {
+      date: refill.date.valueOf(),
+      liters: refill.liters,
+      price: refill.price,
+    });
+  }
+
+  updateTankRefill(record: TankRefill, updates: Partial<NewTankRefill>) {
+    const payload: Record<string, unknown> = {...updates};
+    if (updates.date) payload.date = updates.date.valueOf();
+    return update(child(this.tankRefillsRef, record.$key), payload);
+  }
+
+  removeTankRefill(record: TankRefill) {
+    return remove(child(this.tankRefillsRef, record.$key));
   }
 
   removeTrip(trip: Trip) {

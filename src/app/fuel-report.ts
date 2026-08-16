@@ -12,6 +12,9 @@ export interface FuelReport extends AngularFireObject {
   odometerKm: number;
   liters: number;
   note?: string;
+  /** Admin-only — see FuelTrackingComponent.vehicleGroups and DataStore.setFuelReportExcluded.
+   * Never set through NewFuelReport/the shared create-edit form, so a driver can't report it. */
+  excludeFromStatistics?: boolean;
 }
 
 export interface NewFuelReport {
