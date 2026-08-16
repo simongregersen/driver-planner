@@ -83,4 +83,19 @@
    this panel would otherwise run flush into (it's not inside .container like normal content). */
 .expand-panel.expanded .expand-panel-inner {
   padding: 16px 16px 8px;
+  /* The panel's content can be taller than the space left above the bottom nav — Day Plans' bar
+     carries a date field, the operations buttons and three chip filters — in which case it has to
+     scroll rather than run off the top of the screen. overflow-y only: the base rule's
+     `overflow: hidden` still governs the x axis, and is what lets the 0fr grid collapse clip
+     cleanly.
+       overscroll-behavior: contain is the half that makes this safe. Without it, scrolling past
+     this panel's own end chains into the page behind — the exact behaviour the touchmove handler
+     exists to prevent — so the handler now defers to this element instead of blocking it (see
+     CollapsibleBottomBarComponent.onTouchMove). styles.css already leans on the same property for
+     dialog content. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Leaves the bottom nav clear plus roughly the collapsed row and a strip of the page above, so
+     the bar never grows to cover the whole screen and there is always something to tap past it. */
+  max-height: calc(100dvh - var(--bottom-nav-height) - 140px);
 }

@@ -13,34 +13,16 @@
  * action: none along the way. A direct per-touch decision in JS isn't exposed to that ambiguity.
  */
 
+import {findScrollableAncestor} from './touch-scroll';
+
 let openCount = 0;
 
-function isScrollable(element: Element): boolean {
-  const style = getComputedStyle(element);
-  return (style.overflowY === 'auto' || style.overflowY === 'scroll') && element.scrollHeight > element.clientHeight;
-}
-
-// Walks up from the touch's start target looking for a scrollable element — stopping (and
-// disallowing) if it reaches the shared overlay root first, so a touch on non-scrollable overlay
-// chrome (backdrop, dialog title/actions, a short form that doesn't overflow) never falls through
-// to scroll the page behind, while a touch that starts inside a genuinely-overflowing region
-// (e.g. a tall form) still scrolls that region normally.
-function findScrollableAncestorWithinOverlay(target: EventTarget | null): Element | null {
-  let element = target instanceof Element ? target : null;
-  while (element && element !== document.body) {
-    if (element.classList.contains('cdk-overlay-container')) {
-      return null;
-    }
-    if (isScrollable(element)) {
-      return element;
-    }
-    element = element.parentElement;
-  }
-  return null;
-}
-
+// Stops at the shared overlay root, so a touch on non-scrollable overlay chrome (backdrop,
+// dialog title/actions, a short form that doesn't overflow) never falls through to the page,
+// while one starting inside a genuinely-overflowing region still scrolls it normally.
 function onTouchMove(event: TouchEvent): void {
-  if (!findScrollableAncestorWithinOverlay(event.target)) {
+  const scrollable = findScrollableAncestor(event.target, el => el.classList.contains('cdk-overlay-container'));
+  if (!scrollable) {
     event.preventDefault();
   }
 }
