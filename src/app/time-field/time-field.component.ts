@@ -1,10 +1,12 @@
-import {ChangeDetectionStrategy, Component, forwardRef, inject, input, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, forwardRef, inject, input, output, signal} from '@angular/core';
 import {FormControl, NG_VALUE_ACCESSOR, ControlValueAccessor, ReactiveFormsModule} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatTimepickerModule} from '@angular/material/timepicker';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {Moment} from 'moment';
 import {BreakpointService} from '../breakpoint.service';
 import {TIME_PICKER_DIALOG_CONFIG} from '../dialog-config';
@@ -23,7 +25,7 @@ import {TimePickerDialogComponent, TimePickerDialogData} from '../time-picker-di
   selector: 'app-time-field',
   templateUrl: './time-field.component.html',
   styleUrls: ['./time-field.component.css'],
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTimepickerModule],
+  imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatTimepickerModule, MatTooltipModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -40,6 +42,15 @@ export class TimeFieldComponent implements ControlValueAccessor {
    * opening already showing Start's time instead of blank/now, on both the desktop dropdown and
    * the mobile wheel dialog. */
   fallbackTime = input<Moment | null>(null);
+  /** Shows a clear button in the field's own suffix whenever it holds a value. Worth turning on
+   * wherever `fallbackTime` is used: seeding commits a value on the very first click, so without
+   * a way back, opening the field by accident leaves a value the user never chose and may not be
+   * able to remove. */
+  clearable = input(false);
+  clearLabel = input('Ryd tid');
+  /** Emitted after the field clears itself, so a host that treats this time as half of a pair
+   * (TripFormComponent's Til dato/Til tid) can clear the other half too. */
+  readonly cleared = output<void>();
 
   readonly breakpoints = inject(BreakpointService);
   private readonly dialog = inject(MatDialog);
@@ -97,6 +108,16 @@ export class TimeFieldComponent implements ControlValueAccessor {
     if (this.breakpoints.isMobile()) {
       this.open();
     }
+  }
+
+  clear(event: Event): void {
+    // The wrapping mat-form-field has its own (click)=onFieldClick, which would immediately
+    // re-seed this field from fallbackTime — and reopen the picker on mobile — undoing the clear
+    // the instant it happened.
+    event.stopPropagation();
+    this.materialTimeControl.setValue(null);
+    this.onTouched();
+    this.cleared.emit();
   }
 
   private open(): void {

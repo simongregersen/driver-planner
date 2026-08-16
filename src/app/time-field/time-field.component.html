@@ -5,6 +5,15 @@
   } @else {
     <input matInput [formControl]="materialTimeControl" [matTimepicker]="picker">
   }
+  <!-- Sits in the field's own suffix rather than beside it, so appearing and disappearing can't
+       reflow the surrounding row. Rendered only when there is a value to clear. -->
+  @if (clearable() && displayValue()) {
+    <button matIconButton matSuffix type="button" class="clear-button"
+            [attr.aria-label]="clearLabel()" [matTooltip]="clearLabel()"
+            (click)="clear($event)">
+      <mat-icon>close</mat-icon>
+    </button>
+  }
   @if (breakpoints.isMobile()) {
     <mat-icon matIconSuffix>schedule</mat-icon>
   } @else {

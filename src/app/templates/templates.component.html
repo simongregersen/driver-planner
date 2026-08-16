@@ -31,16 +31,16 @@
     </div>
   </aside>
   <main class="page-main">
-    <!-- readonly: a template trip's drivers/vehicles are placeholders rather than real
-         bookings, so there's nothing to remove them *from* — without this the chips render a
-         remove "X" whose (removeDriver)/(removeVehicle) output nobody here binds, i.e. a
-         visible, keyboard-reachable control that silently does nothing. Editing still happens
-         through the row → dialog, same as everywhere else. -->
+    <!-- Deliberately NOT readonly. That input freezes the whole row, including the row-click that
+         is the only way to open a trip for editing (see TripsComponent.onRowClick) — templates
+         have to stay editable. The chips' remove "X" is wired up properly instead, so it does
+         what it advertises rather than being a dead control. -->
     <app-trips [trips]="(trips$ | async) ?? []"
                [showLabels]="true"
                [showWarnings]="false"
-               [readonly]="true"
-               (edit)="edit($event)">
+               (edit)="edit($event)"
+               (removeDriver)="removeDriverFromTrip($event)"
+               (removeVehicle)="removeVehicleFromTrip($event)">
     </app-trips>
     <div class="toolbar-row no-print">
       <button matButton="filled" type="button" (click)="create()">Opret tur</button>

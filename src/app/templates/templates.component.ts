@@ -1,4 +1,5 @@
 import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {AsyncPipe} from '@angular/common';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
@@ -10,6 +11,8 @@ import {MatListModule} from '@angular/material/list';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
 import {Template} from '../template';
+import {Driver} from '../driver';
+import {Vehicle} from '../vehicle';
 import {Observable} from 'rxjs';
 import {take} from 'rxjs/operators';
 import {NewTrip, Trip} from '../trip';
@@ -39,6 +42,12 @@ export class TemplatesComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly writeFeedback = inject(WriteFeedbackService);
   private readonly pageHeader = inject(PageHeaderService);
+
+  // Only used to name the driver/vehicle in the removal confirmation. Deliberately unfiltered —
+  // getAllDrivers no longer strips soft-deleted drivers (see its doc comment), which is what lets
+  // a driver who has since left still resolve to a name here rather than to 'chaufføren'.
+  private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
+  private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
 
   templates$!: Observable<Template[]>;
   trips$!: Observable<Trip[]>;
@@ -96,6 +105,36 @@ export class TemplatesComponent implements OnInit {
     const template = this.selectedTemplate;
     if (!template) return Promise.resolve();
     return this.dataStore.removeTripFromTemplate(template, trip);
+  }
+
+  removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
+    const name = this.driverList().find(d => d.$key === driverKey)?.displayName ?? 'chaufføren';
+    this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen i skabelonen?`, trip,
+      {drivers: trip.drivers.filter(k => k !== driverKey)});
+  }
+
+  removeVehicleFromTrip({trip, vehicleKey}: {trip: Trip; vehicleKey: string}) {
+    const name = this.vehicleList().find(v => v.$key === vehicleKey)?.displayName ?? 'køretøjet';
+    this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen i skabelonen?`, trip,
+      {vehicles: trip.vehicles.filter(k => k !== vehicleKey)});
+  }
+
+  // Mirrors TripEditingService.confirmRemoval, and for the same reason: the chip's remove button
+  // sits directly on the row-click-to-edit target, so on a phone it's easy to hit by mistake.
+  // Persists through updateTripFromTemplate rather than updateTrip — a template trip lives under
+  // /tripsInTemplate, which is a different node with its own write path.
+  private confirmRemoval(message: string, trip: Trip, updates: Partial<NewTrip>): void {
+    const template = this.selectedTemplate;
+    if (!template) return;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...CONFIRM_DIALOG_CONFIG,
+      data: {message, confirmLabel: 'Fjern', danger: true} as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        void this.writeFeedback.run(this.dataStore.updateTripFromTemplate(template, trip, updates));
+      }
+    });
   }
 
   // Shared by create()/edit()'s save/remove subscriptions. A rejected write leaves the dialog

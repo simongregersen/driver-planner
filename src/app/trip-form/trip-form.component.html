@@ -34,8 +34,24 @@
           <mat-datepicker #d2 [touchUi]="breakpoints.isMobile()"></mat-datepicker>
         </mat-form-field>
       }
-      <app-time-field label="Til tid" formControlName="toTime"></app-time-field>
+      <!-- Opening Til tid with no time of its own seeds it from Fra tid, so the picker lands on
+           the trip's start rather than on midnight — and ngOnInit then fills Til dato from Fra
+           dato in the same move. Matches Slut in Chaufførrapport and Tidsregistrering, which get
+           the same pairing from DateTimeFieldComponent's fallbackValue. -->
+      <!-- clearable: a trip legitimately has no end (see onSubmit), but the seeding above commits
+           a value on the very first click — so without a way back, opening Til tid and changing
+           your mind left the end set to exactly the start, which endAfterStartValidator rejects.
+           (cleared) removes Til dato as well: clearing only the time would leave the date
+           resolving the end to midnight, which is *before* the start, so the form would still be
+           invalid. The two fields express one thing, so they clear as one. -->
+      <app-time-field label="Til tid" formControlName="toTime"
+                      [fallbackTime]="tripForm.controls['fromTime'].value"
+                      [clearable]="true" clearLabel="Turen har ingen sluttid"
+                      (cleared)="clearEnd()"></app-time-field>
     </div>
+    @if (tripForm.hasError('endTimeWithoutStartTime')) {
+      <p class="form-error">Angiv et fra-tidspunkt, når turen har et til-tidspunkt.</p>
+    }
     @if (tripForm.hasError('endBeforeStart')) {
       <p class="form-error">Til-tidspunktet skal være efter fra-tidspunktet.</p>
     }

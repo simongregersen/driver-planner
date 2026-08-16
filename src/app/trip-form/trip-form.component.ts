@@ -1,4 +1,5 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit, output, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, output, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
@@ -75,6 +76,7 @@ export class TripFormComponent implements OnInit {
   vehicleWarningMessages$!: Observable<string[]>;
 
   private readonly dataStore = inject(DataStore);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
   private readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
@@ -112,7 +114,26 @@ export class TripFormComponent implements OnInit {
       description: isEdit ? this.trip.description : '',
       officeDescription: isEdit ? this.trip.officeDescription : '',
       labels: [isEdit ? (this.trip.labels ?? []) : []]
-    }, {validators: this.endAfterStartValidator});
+    }, {validators: [this.endAfterStartValidator, this.startTimeRequiredWithEndValidator]});
+
+    // The date half of the same "seed Til from Fra" behaviour the Til tid field gets via
+    // [fallbackTime] — mirroring DateTimeFieldComponent.emit(), which fills Slut's date from
+    // Start's as soon as a Slut time is given. Without it, entering only a Til tid leaves Til
+    // dato visibly blank even though computeStartEnd is already treating it as the start's day,
+    // so the form shows something different from what it will actually save.
+    //
+    // Deliberately one-directional. The reverse — filling Til tid from Fra tid when a Til dato is
+    // picked — is what DateTimeFieldComponent does, but it would be wrong here: an end is
+    // optional on a trip (see onSubmit), and auto-supplying the start's time would resolve end
+    // exactly equal to start, which endAfterStartValidator rejects.
+    this.tripForm.controls['toTime'].valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        const toDate = this.tripForm.controls['toDate'];
+        if (this.tripForm.controls['toTime'].value && !toDate.value) {
+          toDate.setValue(this.tripForm.controls['fromDate'].value);
+        }
+      });
 
     this.availableDrivers$ = this.dataStore.getAllDrivers()
       .pipe(map(Utility.filterDeleted), map(ds => ds.map(d => ({id: d.$key, name: d.displayName}))));
@@ -186,6 +207,28 @@ export class TripFormComponent implements OnInit {
     const {start, end} = this.computeStartEnd(group.value);
     return (end && !end.isAfter(start)) ? {endBeforeStart: true} : null;
   };
+
+  // A trip may legitimately have no end at all, but a Til tid without a Fra tid is incoherent —
+  // and, worse, it used to save silently: computeStartEnd resolves a missing time to midnight
+  // (DateUtility.toMoment returns the day's start), so the trip would be stored beginning at
+  // 00:00 and show that on the plan, a start time nobody entered. Nothing caught this before;
+  // the form was simply valid.
+  //
+  // Deliberately keyed on toTime alone rather than on toDate too: a Til dato with no times at all
+  // is a meaningful way to express a trip spanning several days, and shouldn't be blocked.
+  private readonly startTimeRequiredWithEndValidator: ValidatorFn = (group: AbstractControl): ValidationErrors | null => {
+    const {fromTime, toTime} = group.value as {fromTime?: Moment | null; toTime?: Moment | null};
+    return (toTime && !fromTime) ? {endTimeWithoutStartTime: true} : null;
+  };
+
+  // Returns the trip to having no end at all. Both halves have to go: leaving Til dato behind
+  // would still resolve to an end via computeStartEnd, and leaving Til tid behind is what makes
+  // the form invalid in the first place. markAsDirty because patchValue doesn't set it, and the
+  // unsaved-changes guard on this dialog reads tripForm.dirty.
+  clearEnd(): void {
+    this.tripForm.patchValue({toDate: null, toTime: null});
+    this.tripForm.markAsDirty();
+  }
 
   addLabel(event: MatChipInputEvent): void {
     const value = (event.value || '').trim();

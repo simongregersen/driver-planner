@@ -5,3 +5,21 @@
 .picker-field {
   width: 100%;
 }
+
+/* Material sizes suffix icon buttons for a 48px touch target, which is taller than the field
+   itself and pushes the baseline around. Scaling it down keeps the clear affordance inside the
+   field's own height, so showing and hiding it can't change the field's layout — the whole point
+   of putting it in the suffix rather than beside the field. */
+.clear-button {
+  --mat-icon-button-state-layer-size: 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.clear-button mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+}

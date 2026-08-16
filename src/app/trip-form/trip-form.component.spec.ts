@@ -41,6 +41,118 @@ describe('TripFormComponent', () => {
     return fixture;
   }
 
+  describe('seeding Til from Fra', () => {
+    // Mirrors Slut in Chaufførrapport/Tidsregistrering, which get the same pairing from
+    // DateTimeFieldComponent: opening the end's time seeds it from the start, and the end's date
+    // follows from the start's.
+    it('fills Til dato from Fra dato once a Til tid is entered', () => {
+      const fixture = create('create', {defaultDate: moment('2026-03-01')});
+      const c = fixture.componentInstance;
+      c.tripForm.controls['fromDate'].setValue(moment('2026-03-01'));
+      c.tripForm.controls['fromTime'].setValue(moment('1970-01-01 09:00', 'YYYY-MM-DD HH:mm'));
+
+      expect(c.tripForm.controls['toDate'].value).toBeNull();
+      c.tripForm.controls['toTime'].setValue(moment('1970-01-01 12:00', 'YYYY-MM-DD HH:mm'));
+
+      expect(c.tripForm.controls['toDate'].value?.format('YYYY-MM-DD')).toBe('2026-03-01');
+    });
+
+    it('does not overwrite a Til dato the user has already chosen', () => {
+      const fixture = create('create', {defaultDate: moment('2026-03-01')});
+      const c = fixture.componentInstance;
+      c.tripForm.controls['fromDate'].setValue(moment('2026-03-01'));
+      c.tripForm.controls['toDate'].setValue(moment('2026-03-03'));
+
+      c.tripForm.controls['toTime'].setValue(moment('1970-01-01 12:00', 'YYYY-MM-DD HH:mm'));
+
+      expect(c.tripForm.controls['toDate'].value.format('YYYY-MM-DD')).toBe('2026-03-03');
+    });
+
+    it('leaves Til dato alone while there is no Til tid, so a trip can still have no end', () => {
+      const fixture = create('create', {defaultDate: moment('2026-03-01')});
+      const c = fixture.componentInstance;
+      const emitted: NewTrip[] = [];
+      c.save.subscribe(v => emitted.push(v));
+
+      c.tripForm.patchValue({
+        name: 'Uden slut',
+        fromDate: moment('2026-03-01'), fromTime: moment('1970-01-01 09:00', 'YYYY-MM-DD HH:mm'),
+      });
+      expect(c.tripForm.controls['toDate'].value).toBeNull();
+
+      c.onSubmit();
+      expect(emitted[0].end).toBeNull();
+    });
+  });
+
+  describe('end without a start time', () => {
+    const timeAt = (hhmm: string) => moment(`1970-01-01 ${hhmm}`, 'YYYY-MM-DD HH:mm');
+
+    it('is rejected, with an error to explain why', () => {
+      const fixture = create('create', {defaultDate: moment('2026-03-01')});
+      const c = fixture.componentInstance;
+      c.tripForm.patchValue({
+        name: 'Tur', fromDate: moment('2026-03-01'), fromTime: null, toTime: timeAt('12:00'),
+      });
+
+      // Previously this saved silently: a missing Fra tid resolves to midnight, so the trip was
+      // stored starting at 00:00 — a start time nobody entered.
+      expect(c.tripForm.hasError('endTimeWithoutStartTime')).toBe(true);
+      expect(c.tripForm.valid).toBe(false);
+    });
+
+    it('is accepted again once a start time is given', () => {
+      const fixture = create('create', {defaultDate: moment('2026-03-01')});
+      const c = fixture.componentInstance;
+      c.tripForm.patchValue({
+        name: 'Tur', fromDate: moment('2026-03-01'), fromTime: null, toTime: timeAt('12:00'),
+      });
+      c.tripForm.patchValue({fromTime: timeAt('09:00')});
+
+      expect(c.tripForm.hasError('endTimeWithoutStartTime')).toBe(false);
+      expect(c.tripForm.valid).toBe(true);
+    });
+
+    it('does not fire for a multi-day trip expressed with dates only', () => {
+      const fixture = create('create', {defaultDate: moment('2026-03-01')});
+      const c = fixture.componentInstance;
+      c.tripForm.patchValue({
+        name: 'Tur', fromDate: moment('2026-03-01'), toDate: moment('2026-03-03'),
+      });
+
+      expect(c.tripForm.hasError('endTimeWithoutStartTime')).toBe(false);
+      expect(c.tripForm.valid).toBe(true);
+    });
+  });
+
+  describe('clearEnd', () => {
+    it('returns the trip to having no end, clearing both halves', () => {
+      const fixture = create('create', {defaultDate: moment('2026-03-01')});
+      const c = fixture.componentInstance;
+      const emitted: NewTrip[] = [];
+      c.save.subscribe(v => emitted.push(v));
+
+      c.tripForm.patchValue({
+        name: 'Tur',
+        fromDate: moment('2026-03-01'), fromTime: moment('1970-01-01 09:00', 'YYYY-MM-DD HH:mm'),
+        toTime: moment('1970-01-01 09:00', 'YYYY-MM-DD HH:mm'),
+      });
+      // Exactly the state a stray click on Til tid leaves behind: end seeded equal to start,
+      // which endAfterStartValidator rejects and nothing else could undo.
+      expect(c.tripForm.hasError('endBeforeStart')).toBe(true);
+
+      c.clearEnd();
+
+      expect(c.tripForm.controls['toTime'].value).toBeNull();
+      expect(c.tripForm.controls['toDate'].value).toBeNull();
+      expect(c.tripForm.valid).toBe(true);
+      expect(c.tripForm.dirty).toBe(true);
+
+      c.onSubmit();
+      expect(emitted[0].end).toBeNull();
+    });
+  });
+
   describe('create', () => {
     it('emits a save output with the combined date/time and form values', () => {
       const fixture = create('create', {defaultDate: moment('2026-03-01')});
