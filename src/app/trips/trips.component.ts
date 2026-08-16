@@ -58,14 +58,20 @@ export class TripsComponent implements OnInit {
    * and a fuller tooltip on the days it didn't actually start on. Templates/other callers with
    * no such day context simply leave this unset, and no trip ever gets marked. */
   referenceDate = input<Moment | null>(null);
-  /** Precomputed by the caller (Day Plans/Period Plans/My Trips) off its own full, pre-filter
-   * trip list — see Utility.computeAssignmentWarnings. Must NOT be derived from `trips()` itself,
-   * since that's already narrowed by whatever chip/day filters the caller applies, which would
-   * make a conflict inconsistently appear or disappear depending on the current filter. Left
-   * unset (null) by callers — e.g. Templates — where trips aren't real calendar bookings. */
+  /** Precomputed by the caller (Day Plans/Period Plans) off its own full, pre-filter trip list —
+   * see Utility.computeAssignmentWarnings. Must NOT be derived from `trips()` itself, since
+   * that's already narrowed by whatever chip/day filters the caller applies, which would make a
+   * conflict inconsistently appear or disappear depending on the current filter.
+   *   Left unset (null) wherever double-booking isn't the reader's problem to solve: Skabeloner,
+   * whose trips aren't real calendar bookings at all, and Min dag, which is a driver's own day
+   * rather than a planning view — a driver can't resolve a clash between two trips, only the
+   * planner can, so surfacing one there is noise. Unset also skips the O(n²) comparison. */
   assignmentWarnings = input<Map<string, AssignmentConflicts> | null>(null);
-  /** Templates: a template trip's drivers/vehicles are placeholders, not a real assignment, so
-   * neither the count-mismatch nor the overlap-conflict highlighting applies there. */
+  /** Off wherever the trip list isn't a planning view. Skabeloner: a template trip's drivers/
+   * vehicles are placeholders, not a real assignment, so neither the count-mismatch nor the
+   * overlap-conflict highlighting means anything there. Min dag: a driver seeing their own day
+   * can't act on either warning — filling a staffing gap or resolving a clash is the planner's
+   * job — so both read as unexplained amber rather than as information. */
   showWarnings = input(true);
   /** Whether "Ingen ture." should be centred in the visible page rather than sitting on its own
    * under the header — see .empty-state-centered in styles.css. For pages where this list is the

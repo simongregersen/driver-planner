@@ -65,8 +65,8 @@
       @if (dayPublic()) {
         @if (trips()) {
           <app-trips [trips]="filteredTrips()"
-                     [assignmentWarnings]="tripWarnings()"
                      [readonly]="true"
+                     [showWarnings]="false"
                      [highlightModified]="true"
                      [hideSingleDriver]="true"
                      [showFinishToggle]="true"

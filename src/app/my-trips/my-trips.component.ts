@@ -71,10 +71,6 @@ export class MyTripsComponent implements OnInit {
     return (this.trips() ?? []).filter(t => Utility.isAssigned(driver, t));
   });
 
-  // Computed off the day's full trip list — before filteredTrips narrows it to just this
-  // driver's own trips — so a vehicle double-booked with a different driver's trip still shows.
-  readonly tripWarnings = computed(() => Utility.computeAssignmentWarnings(this.trips() ?? []));
-
   private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
   private readonly publicDates = toSignal(this.dataStore.getPublicDates(), {initialValue: [] as string[]});
 
