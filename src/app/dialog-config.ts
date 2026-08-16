@@ -1,15 +1,23 @@
 import {MatDialogConfig} from '@angular/material/dialog';
 
-/** Shared size for the app's editor dialogs, matching the previous "large" modal width. */
+/** Shared size for the app's editor dialogs, matching the previous "large" modal width.
+ *
+ * disableClose does NOT mean these can't be dismissed — it means Escape and a backdrop click are
+ * delivered as events instead of tearing the dialog down immediately, so guardDialogDismissal()
+ * can ask before discarding typed-in input. Each editor dialog wires that up itself; a dialog
+ * that doesn't would become genuinely un-dismissable by those gestures, so the two must stay
+ * together. */
 export const DIALOG_CONFIG: MatDialogConfig = {
   width: '800px',
   maxWidth: '95vw',
+  disableClose: true,
 };
 
-/** Narrower dialogs, for short single-purpose forms. */
+/** Narrower dialogs, for short single-purpose forms. Same disableClose rationale as above. */
 export const SMALL_DIALOG_CONFIG: MatDialogConfig = {
   width: '500px',
   maxWidth: '95vw',
+  disableClose: true,
 };
 
 /** For ConfirmDialogComponent's yes/no prompts (including delete confirmations). */

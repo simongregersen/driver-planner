@@ -24,7 +24,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button matButton class="delete-btn" type="button" (click)="confirmDelete()">Slet</button>
-  <button matButton type="button" mat-dialog-close>Annuller</button>
-  <button matButton="filled" type="submit" form="clockRecordStopForm" class="stop-btn" [disabled]="!!error()">Stop</button>
+  <button matButton class="delete-btn" type="button" [disabled]="saving()" (click)="confirmDelete()">Slet</button>
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="clockRecordStopForm" class="stop-btn" [disabled]="!!error() || saving()">Stop</button>
 </mat-dialog-actions>

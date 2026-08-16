@@ -1,5 +1,5 @@
-import {ApplicationConfig, Injector, LOCALE_ID, inject, provideAppInitializer, provideZoneChangeDetection, isDevMode} from '@angular/core';
-import {PreloadAllModules, provideRouter, withPreloading, withRouterConfig} from '@angular/router';
+import {ApplicationConfig, ErrorHandler, Injector, LOCALE_ID, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZoneChangeDetection, isDevMode} from '@angular/core';
+import {provideRouter, withPreloading, withRouterConfig} from '@angular/router';
 import {registerLocaleData} from '@angular/common';
 import localeDa from '@angular/common/locales/da';
 import {MAT_DATE_LOCALE} from '@angular/material/core';
@@ -15,6 +15,8 @@ import {createBlockScrollStrategy} from '@angular/cdk/overlay';
 import {BreakpointService} from './breakpoint.service';
 import {MobileScrollBlockStrategy} from './mobile-scroll-block-strategy';
 import {DatepickerScrollBlockWatcher} from './datepicker-scroll-block-watcher';
+import {AppErrorHandler} from './app-error-handler';
+import {RoleAwarePreloadingStrategy} from './role-aware-preloading';
 
 registerLocaleData(localeDa);
 
@@ -37,16 +39,23 @@ const DATE_FORMATS = {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection(),
+    // Routes unhandled promise rejections and uncaught errors into Angular's error pipeline, so
+    // AppErrorHandler below actually sees them. Without this the app's fire-and-forget writes
+    // fail completely silently on a device nobody can open a console on.
+    provideBrowserGlobalErrorListeners(),
+    {provide: ErrorHandler, useClass: AppErrorHandler},
     // Every route is lazy (`loadComponent`), and with no preloading, the very first click on a
     // nav link like Periodeplaner has to fetch+parse that chunk before anything can even mount —
-    // there's nothing on screen to show it registered at all until that finishes. PreloadAllModules
-    // fetches every route's chunk in the background shortly after the app first stabilizes, so by
-    // the time a real click happens the chunk is usually already cached. urlUpdateStrategy: 'eager'
+    // there's nothing on screen to show it registered at all until that finishes. Preloading
+    // fetches route chunks in the background shortly after the app first stabilizes, so by
+    // the time a real click happens the chunk is usually already cached. RoleAwarePreloadingStrategy
+    // is PreloadAllModules minus the admin-only pages a driver can never open — see its own doc
+    // comment. urlUpdateStrategy: 'eager'
     // covers the rest of the gap (a cold cache, a slow connection) — it flips the URL/active-tab
     // highlight the instant the click is accepted, before the chunk or that page's own data fetch
     // resolves, rather than waiting for the whole navigation to finish. The destination component's
     // own loading spinner (every routed page already has one) takes it from there.
-    provideRouter(routes, withPreloading(PreloadAllModules), withRouterConfig({urlUpdateStrategy: 'eager'})),
+    provideRouter(routes, withPreloading(RoleAwarePreloadingStrategy), withRouterConfig({urlUpdateStrategy: 'eager'})),
     {provide: LOCALE_ID, useValue: 'da-DK'},
     {provide: MAT_DATE_LOCALE, useValue: 'da-DK'},
     provideMomentDateAdapter(DATE_FORMATS),

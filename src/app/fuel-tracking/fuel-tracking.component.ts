@@ -7,7 +7,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
-import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatSlideToggleChange, MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {combineLatest, Observable, of} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
@@ -27,6 +27,7 @@ import {FuelReportFormComponent} from '../fuel-report-form/fuel-report-form.comp
 import {TankRefillFormComponent} from '../tank-refill-form/tank-refill-form.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 import {PageHeaderService} from '../page-header.service';
+import {WriteFeedbackService} from '../write-feedback.service';
 
 type FuelReportRow = FuelReport & {vehicleKey: string; vehicleName: string; driverName: string};
 
@@ -100,6 +101,7 @@ export class FuelTrackingComponent {
   readonly userService = inject(UserService);
   readonly breakpoints = inject(BreakpointService);
   private readonly dataStore = inject(DataStore);
+  private readonly writeFeedback = inject(WriteFeedbackService);
   private readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
   private readonly pageHeader = inject(PageHeaderService);
@@ -379,9 +381,18 @@ export class FuelTrackingComponent {
 
   // Admin-only control, only ever reachable from this component's own admin table — see
   // DataStore.setFuelReportExcluded and database.rules.json's .validate rule on the field.
-  setExcludedFromStatistics(row: FuelReportRow, excluded: boolean): void {
-    this.dataStore.setFuelReportExcluded(row.vehicleKey, row, excluded)
-      .then(() => this.refreshTrigger.update(n => n + 1));
+  setExcludedFromStatistics(row: FuelReportRow, event: MatSlideToggleChange): void {
+    void this.writeFeedback
+      .run(this.dataStore.setFuelReportExcluded(row.vehicleKey, row, event.checked), {
+        failureMessage: 'Kunne ikke ændre statistikindstillingen. Prøv igen.',
+      })
+      .then(outcome => {
+        // Reset the toggle rather than leaving it claiming a state that was never stored — the
+        // rows here come from a one-time read (see refreshTrigger), so nothing else would ever
+        // correct it.
+        if (outcome === 'failed') event.source.checked = !!row.excludeFromStatistics;
+        else this.refreshTrigger.update(n => n + 1);
+      });
   }
 
   addToTank(): void {

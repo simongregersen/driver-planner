@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, OnInit, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnInit, inject, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
@@ -6,7 +6,6 @@ import {MatButtonToggleModule, MatButtonToggleChange} from '@angular/material/bu
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import {MatSnackBar} from '@angular/material/snack-bar';
 import {Observable} from 'rxjs';
 import {Moment} from 'moment';
 import {Trip, TripReport} from '../trip';
@@ -15,6 +14,8 @@ import {DataStore} from '../data.service';
 import {DateTimeFieldComponent} from '../date-time-field/date-time-field.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
+import {WriteFeedbackService} from '../write-feedback.service';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
 
 // A single driver's own report for one trip — opened either by that driver themselves from
 // "Min dag" (TripsComponent's report button) or by an admin from Dagsplaner
@@ -44,7 +45,12 @@ export class TripReportFormComponent implements OnInit {
 
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly writeFeedback = inject(WriteFeedbackService);
+
+  /** True while a submit's write is in flight. Gates the submit button so a slow connection
+   * can't turn an impatient second tap into a second record — and stays true for a write that
+   * hasn't been acknowledged yet, which offline is every write. See WriteFeedbackService. */
+  readonly saving = signal(false);
   readonly dialogRef = inject(MatDialogRef<TripReportFormComponent>);
 
   driver$!: Observable<Driver>;
@@ -64,6 +70,10 @@ export class TripReportFormComponent implements OnInit {
   endKm: number | null = null;
   endKmFromCustomer = false;
   note = '';
+
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => this.snapshot() !== this.pristineSnapshot);
+  }
 
   ngOnInit(): void {
     this.driver$ = this.dataStore.getDriver(this.driverKey);
@@ -86,6 +96,23 @@ export class TripReportFormComponent implements OnInit {
       this.start = this.trip.start;
       this.end = this.trip.end;
     }
+    this.pristineSnapshot = this.snapshot();
+  }
+
+  /** Field values as ngOnInit left them. Template-driven form, so there's no FormGroup.dirty for
+   * the dismissal guard to consult — and this is the dialog where losing input hurts most: a
+   * driver stood at the bus has typically entered two timestamps, two odometer readings, four
+   * garage/kunde toggles and a note by the time a stray backdrop tap could discard it. */
+  private pristineSnapshot = '';
+
+  private snapshot(): string {
+    return JSON.stringify([
+      this.start?.valueOf() ?? null, this.startFromCustomer,
+      this.end?.valueOf() ?? null, this.endFromCustomer,
+      this.startKm, this.startKmFromCustomer,
+      this.endKm, this.endKmFromCustomer,
+      this.note,
+    ]);
   }
 
   setStartFromCustomer(event: MatButtonToggleChange): void {
@@ -131,6 +158,7 @@ export class TripReportFormComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.saving()) return;
     if (this.error()) return;
     const report: TripReport = {
       start: this.start,
@@ -143,9 +171,7 @@ export class TripReportFormComponent implements OnInit {
       endKmFromCustomer: this.endKmFromCustomer,
       note: this.note.trim(),
     };
-    this.dataStore.setTripReport(this.trip.$key, this.driverKey, report)
-      .then(() => this.dialogRef.close())
-      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
+    void this.writeFeedback.closeDialogOn(this.dialogRef, this.dataStore.setTripReport(this.trip.$key, this.driverKey, report), this.saving);
   }
 
   deleteReport(): void {
@@ -159,8 +185,8 @@ export class TripReportFormComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.dataStore.deleteTripReport(this.trip.$key, this.driverKey);
-        this.dialogRef.close();
+        void this.writeFeedback.closeDialogOn(
+          this.dialogRef, this.dataStore.deleteTripReport(this.trip.$key, this.driverKey), this.saving, {failureMessage: 'Kunne ikke slette rapporten. Prøv igen.'});
       }
     });
   }

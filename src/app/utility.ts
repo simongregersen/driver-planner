@@ -45,6 +45,34 @@ export class Utility {
     return trip.start.isBefore(end) && effectiveEnd.isSameOrAfter(start);
   }
 
+  // Combines the two windowed queries DataStore.getTrips issues — the ordinary start-ordered one
+  // and the sparse multiDayStart-indexed one — into a single correctly-ordered list.
+  //
+  // Extracted from the rxjs pipeline so it can actually be tested: this is the subtlest piece of
+  // logic in the data layer, it has no dependency on Firebase at all, and getting it wrong shows
+  // up as trips silently missing from or duplicated on a plan rather than as an error.
+  //
+  // Anything left in `multiDay` once inWindow's own trips are excluded must have started before
+  // the window (a trip starting inside it would have matched inWindow too), so it belongs ahead
+  // of everything in inWindow. Both inputs are already start-ordered by their queries, so
+  // concatenating in that order needs no further sort.
+  static mergeTripWindows<T extends {$key: string}>(inWindow: T[], multiDay: T[]): T[] {
+    const inWindowKeys = new Set(inWindow.map(t => t.$key));
+    const beforeWindow = multiDay.filter(t => !inWindowKeys.has(t.$key));
+    return [...beforeWindow, ...inWindow];
+  }
+
+  // The value DataStore writes to a trip's sparse multiDayStart index: the trip's own start when
+  // it genuinely spans more than one calendar day, and null otherwise.
+  //
+  // Null rather than undefined matters on the update path — Firebase treats null as "remove this
+  // key", which is what clears a stale flag when an edit shortens a trip back to a single day.
+  // Omitting the key instead would leave the old value in place and keep the trip appearing on
+  // days it no longer covers.
+  static multiDayStartValue(start: Moment, end: Moment | null | undefined): number | null {
+    return (end && !Utility.sameDate(start, end)) ? start.valueOf() : null;
+  }
+
   // A note's start/end are both dates (no time), so a given date "applies" whenever it falls
   // anywhere within that inclusive range — used by both Day Plans (all notes for the day) and
   // My Day (just the ones assigned to the signed-in driver).

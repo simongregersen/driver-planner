@@ -1,0 +1,10 @@
+{
+  "_comment": "Emulator config for the database-rules integration tests (npm run test:rules). Separate from firebase.json so the ports can't collide with a dev emulator started from `npm run emulators`, and so no hosting/UI emulator is spun up for a test run that only needs the database.",
+  "database": [{"instance": "driver-planner", "rules": "database.rules.json"}],
+  "emulators": {
+    "database": {"host": "127.0.0.1", "port": 9555},
+    "ui": {"enabled": false},
+    "hub": {"port": 4455},
+    "logging": {"port": 4556}
+  }
+}

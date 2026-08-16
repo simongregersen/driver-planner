@@ -46,6 +46,7 @@
               @for (key of trip.drivers; track key) {
                 <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
                           [class.chip-warning]="driverConflicts(trip, key).length > 0"
+                          [class.chip-deleted]="isDeletedDriver(drivers, key)"
                           [matTooltip]="conflictTooltip(getDriver(drivers, key)?.displayName, driverConflicts(trip, key))"
                           (removed)="removeDriver.emit({trip, driverKey: key})">
                   {{ getDriver(drivers, key)?.displayName }}

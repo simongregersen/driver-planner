@@ -1,7 +1,6 @@
 import {Injectable, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {MatSnackBar} from '@angular/material/snack-bar';
 import {Moment} from 'moment';
 import {DataStore} from './data.service';
 import {Driver} from './driver';
@@ -10,6 +9,7 @@ import {NewTrip, Trip} from './trip';
 import {TripFormComponent} from './trip-form/trip-form.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from './confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from './dialog-config';
+import {WriteFeedbackService} from './write-feedback.service';
 
 // Shared by Day Plans and Period Plans — the regular (non-template) trip create/edit/remove
 // flow through TripFormComponent, persisted via DataStore's plain trip methods (updateTrip/
@@ -21,7 +21,7 @@ import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from './dialog-config';
 export class TripEditingService {
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly writeFeedback = inject(WriteFeedbackService);
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
@@ -30,14 +30,18 @@ export class TripEditingService {
     return this.dataStore.removeTrip(trip);
   }
 
-  // Shared by edit()/create()'s save/remove subscriptions: the dialog only closes once the
-  // write actually succeeds — a rejected write (offline, permission denied, ...) leaves it open
-  // with a snackbar instead of silently discarding the edit.
+  // Shared by edit()/create()'s save/remove subscriptions. A rejected write (permission denied,
+  // a validation rule) leaves the dialog open with a snackbar instead of silently discarding the
+  // edit. A write that simply hasn't been acknowledged yet — the offline case, where the RTDB
+  // promise never settles at all — closes the dialog and says so, rather than freezing it
+  // forever, which is what the previous plain then/catch did. See WriteFeedbackService.
   private closeOnSave(dialogRef: MatDialogRef<TripFormComponent>, saved: PromiseLike<unknown>): void {
-    saved.then(
-      () => dialogRef.close(),
-      () => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}),
-    );
+    const instance = dialogRef.componentInstance;
+    instance?.saving.set(true);
+    this.writeFeedback.run(saved).then(outcome => {
+      instance?.saving.set(false);
+      if (outcome !== 'failed') dialogRef.close();
+    });
   }
 
   removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
@@ -54,13 +58,13 @@ export class TripEditingService {
 
   // Chip removal happens right next to the row-click-to-edit target, and on a phone screen
   // it's easy to hit by mistake — this catches that before it silently changes the trip.
-  private confirmRemoval(message: string, onConfirm: () => void): void {
+  private confirmRemoval(message: string, onConfirm: () => PromiseLike<unknown>): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       ...CONFIRM_DIALOG_CONFIG,
       data: {message, confirmLabel: 'Fjern', danger: true} as ConfirmDialogData,
     });
     dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) onConfirm();
+      if (confirmed) void this.writeFeedback.run(onConfirm());
     });
   }
 

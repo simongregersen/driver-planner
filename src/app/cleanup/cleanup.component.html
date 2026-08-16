@@ -4,11 +4,22 @@
 
 <div class="cleanup-card">
   <p>
-    Af hensyn til GDPR må turdata ikke opbevares i mere end {{ tripRetentionYears }} år. Klik
-    nedenfor for at slette alle ture, der er ældre end det, samt alle offentliggjorte datoer, der
-    er ældre end {{ publicDateRetentionYears }} år (ingen har brug for at kunne se så langt
-    tilbage). Handlingen kan ikke fortrydes.
+    Af hensyn til GDPR opbevares data ikke længere end nødvendigt. Klik nedenfor for at slette
+    alt, der er ældre end de frister, som står nedenfor. Du får vist præcis hvad der slettes, og
+    bliver bedt om at bekræfte, før noget fjernes. Handlingen kan ikke fortrydes.
   </p>
+  <dl class="retention-list">
+    <dt>Ture</dt>
+    <dd>{{ tripRetentionYears }} år</dd>
+    <dt>Arbejdstidsregistreringer</dt>
+    <dd>{{ clockRecordRetentionYears }} år (bogføringspligt for løndokumentation)</dd>
+    <dt>Tankninger</dt>
+    <dd>{{ fuelReportRetentionYears }} år</dd>
+    <dt>Noter</dt>
+    <dd>{{ noteRetentionYears }} år</dd>
+    <dt>Offentliggjorte datoer</dt>
+    <dd>{{ publicDateRetentionYears }} år</dd>
+  </dl>
   <button matButton="filled" type="button" [disabled]="running()" (click)="cleanupOldData()">
     Ryd op i gamle data
   </button>

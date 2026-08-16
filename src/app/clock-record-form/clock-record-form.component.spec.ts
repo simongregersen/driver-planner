@@ -1,8 +1,9 @@
 import {TestBed} from '@angular/core/testing';
+import {flushWrites} from '../../test-helpers';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from '../confirm-dialog/confirm-dialog.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {of} from 'rxjs';
+import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {ClockRecordFormComponent} from './clock-record-form.component';
 import {DataStore} from '../data.service';
@@ -30,7 +31,7 @@ describe('ClockRecordFormComponent', () => {
       imports: [ClockRecordFormComponent],
       providers: [
         {provide: DataStore, useValue: dataStore},
-        {provide: MatDialogRef, useValue: {close: dialogRefClose}},
+        {provide: MatDialogRef, useValue: {close: dialogRefClose, backdropClick: () => EMPTY, keydownEvents: () => EMPTY}},
         {provide: MatSnackBar, useValue: {open: snackBarOpen}},
       ],
     });
@@ -59,6 +60,7 @@ describe('ClockRecordFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.addClockRecord).toHaveBeenCalledWith('d1', c.clockIn, 'Morgenvagt', null, false);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
@@ -79,13 +81,15 @@ describe('ClockRecordFormComponent', () => {
       fixture.componentInstance.clockIn = moment('2026-01-01 08:00', 'YYYY-MM-DD HH:mm');
       fixture.componentInstance.onSubmit();
       await fixture.whenStable();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });
 
   describe('edit', () => {
-    it('pre-fills clockIn/clockOut/note from the existing record', () => {
+    it('pre-fills clockIn/clockOut/note from the existing record', async () => {
       const fixture = create('edit', {record});
       const c = fixture.componentInstance;
       expect(c.clockIn!.isSame(record.clockIn)).toBe(true);
@@ -94,7 +98,7 @@ describe('ClockRecordFormComponent', () => {
       expect(c.dognbetaling).toBe(false);
     });
 
-    it('pre-fills dognbetaling from the existing record', () => {
+    it('pre-fills dognbetaling from the existing record', async () => {
       const fixture = create('edit', {record: {...record, dognbetaling: true}});
       expect(fixture.componentInstance.dognbetaling).toBe(true);
     });
@@ -107,10 +111,11 @@ describe('ClockRecordFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.updateClockRecord).toHaveBeenCalledWith('d1', record, expect.objectContaining({note: 'Opdateret', dognbetaling: true}));
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('clearClockOut() clears the end time', () => {
+    it('clearClockOut() clears the end time', async () => {
       const fixture = create('edit', {record});
       const c = fixture.componentInstance;
       c.clearClockOut();
@@ -119,19 +124,21 @@ describe('ClockRecordFormComponent', () => {
   });
 
   describe('delete', () => {
-    it('removes the record and closes the dialog when the confirm dialog is accepted', () => {
+    it('removes the record and closes the dialog when the confirm dialog is accepted', async () => {
       confirmed = true;
       const fixture = create('edit', {record});
       fixture.componentInstance.confirmDelete();
       expect(dataStore.removeClockRecord).toHaveBeenCalledWith('d1', record);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('does nothing when the confirm dialog is declined', () => {
+    it('does nothing when the confirm dialog is declined', async () => {
       confirmed = false;
       const fixture = create('edit', {record});
       fixture.componentInstance.confirmDelete();
       expect(dataStore.removeClockRecord).not.toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });

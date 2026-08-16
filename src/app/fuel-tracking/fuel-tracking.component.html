@@ -159,7 +159,7 @@
                                 <td class="no-print cell-toggle">
                                   <mat-slide-toggle [checked]="row.excludeFromStatistics"
                                                     [matTooltip]="row.excludeFromStatistics ? 'Ekskluderet fra statistik' : 'Medtages i statistik'"
-                                                    (change)="setExcludedFromStatistics(row, $event.checked)">
+                                                    (change)="setExcludedFromStatistics(row, $event)">
                                   </mat-slide-toggle>
                                 </td>
                                 <td class="no-print cell-actions">

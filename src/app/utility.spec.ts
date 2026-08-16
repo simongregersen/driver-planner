@@ -253,3 +253,55 @@ describe('Utility.computeAssignmentWarnings', () => {
     expect(result.get('solo')!.driverConflicts.size).toBe(0);
   });
 });
+
+describe('Utility.mergeTripWindows', () => {
+  // Mirrors DataStore.getTrips: `inWindow` is the start-ordered query for the visible window,
+  // `multiDay` the sparse multiDayStart-indexed one reaching further back.
+  const t = (key: string) => ({$key: key});
+
+  it('puts trips that started before the window ahead of the window\'s own', () => {
+    expect(Utility.mergeTripWindows([t('b')], [t('a')]).map(x => x.$key)).toEqual(['a', 'b']);
+  });
+
+  it('does not duplicate a multi-day trip that also starts inside the window', () => {
+    // A trip starting inside the window matches both queries; without the dedupe it would render
+    // twice on the plan.
+    expect(Utility.mergeTripWindows([t('a'), t('b')], [t('a')]).map(x => x.$key)).toEqual(['a', 'b']);
+  });
+
+  it('preserves the order within each query rather than re-sorting', () => {
+    expect(Utility.mergeTripWindows([t('c'), t('d')], [t('a'), t('b')]).map(x => x.$key))
+      .toEqual(['a', 'b', 'c', 'd']);
+  });
+
+  it('handles either side being empty', () => {
+    expect(Utility.mergeTripWindows([t('a')], []).map(x => x.$key)).toEqual(['a']);
+    expect(Utility.mergeTripWindows([], [t('a')]).map(x => x.$key)).toEqual(['a']);
+    expect(Utility.mergeTripWindows<{$key: string}>([], [])).toEqual([]);
+  });
+});
+
+describe('Utility.multiDayStartValue', () => {
+  it('is null for a trip that starts and ends on the same day', () => {
+    expect(Utility.multiDayStartValue(moment('2026-03-10T08:00'), moment('2026-03-10T23:30'))).toBeNull();
+  });
+
+  it('is null for a trip with no end at all', () => {
+    expect(Utility.multiDayStartValue(moment('2026-03-10T08:00'), null)).toBeNull();
+    expect(Utility.multiDayStartValue(moment('2026-03-10T08:00'), undefined)).toBeNull();
+  });
+
+  it("is the trip's own start once it crosses midnight", () => {
+    const start = moment('2026-03-10T23:00');
+    expect(Utility.multiDayStartValue(start, moment('2026-03-11T01:00'))).toBe(start.valueOf());
+  });
+
+  it('is null rather than undefined, so an update clears a stale flag', () => {
+    // Firebase treats null as "remove this key" but ignores undefined, so a trip shortened back
+    // to a single day would otherwise keep its old multiDayStart and go on appearing on days it
+    // no longer covers.
+    const cleared = Utility.multiDayStartValue(moment('2026-03-10T08:00'), moment('2026-03-10T12:00'));
+    expect(cleared).toBeNull();
+    expect(cleared).not.toBeUndefined();
+  });
+});

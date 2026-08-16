@@ -45,7 +45,7 @@
       <div>
         <mat-slide-toggle class="day-public-toggle"
                     [checked]="dayPublic()"
-                    (change)="setDayPublic($event.checked)">
+                    (change)="setDayPublic($event)">
           Synlig for chauffører
         </mat-slide-toggle>
       </div>
@@ -62,7 +62,7 @@
         </div>
         <mat-menu #templateMenu="matMenu">
           @for (template of (availableTemplates$ | async) ?? []; track template.id) {
-            <button mat-menu-item type="button"
+            <button mat-menu-item type="button" [disabled]="insertingTemplate()"
                     (click)="insertTemplateWithConfirm(template.id, template.name)">{{ template.name }}</button>
           }
         </mat-menu>
@@ -134,7 +134,7 @@
       <div>
         <mat-slide-toggle class="day-public-toggle"
                     [checked]="dayPublic()"
-                    (change)="setDayPublic($event.checked)">
+                    (change)="setDayPublic($event)">
           Synlig for chauffører
         </mat-slide-toggle>
       </div>
@@ -151,7 +151,7 @@
         </div>
         <mat-menu #templateMenuMobile="matMenu">
           @for (template of (availableTemplates$ | async) ?? []; track template.id) {
-            <button mat-menu-item type="button"
+            <button mat-menu-item type="button" [disabled]="insertingTemplate()"
                     (click)="insertTemplateWithConfirm(template.id, template.name)">{{ template.name }}</button>
           }
         </mat-menu>

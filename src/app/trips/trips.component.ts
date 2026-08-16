@@ -87,6 +87,13 @@ export class TripsComponent implements OnInit {
     return drivers?.find(d => d.$key === key);
   }
 
+  /** A driver who has since left, still assigned to this trip. DataStore.getAllDrivers no longer
+   * filters these out (it can't — the name still has to render here), so the chip is dimmed to
+   * distinguish "no longer employed" from an ordinary assignment. */
+  isDeletedDriver(drivers: Driver[] | null, key: string): boolean {
+    return !!this.getDriver(drivers, key)?.deleted;
+  }
+
   getVehicle(vehicles: Vehicle[] | null, key: string): Vehicle | undefined {
     return vehicles?.find(v => v.$key === key);
   }

@@ -10,6 +10,7 @@ import {BehaviorSubject, combineLatest, Observable, of} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
 import moment, {Moment} from 'moment';
 import {DataStore} from '../data.service';
+import {Utility} from '../utility';
 import {UserService} from '../user.service';
 import {DateUtility} from '../date-utility';
 import {Driver} from '../driver';
@@ -90,7 +91,9 @@ export class TimeReportComponent implements OnInit {
   selectedDriver: Driver | null = null;
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
-  readonly driverOptions = computed(() => this.driverList().map(d => ({id: d.$key, name: d.displayName})));
+  // Picker: excludes deleted drivers. effectiveDriverName$ below deliberately reads the
+  // unfiltered driverList, so an already-selected driver who was since deleted still resolves.
+  readonly driverOptions = computed(() => Utility.filterDeleted(this.driverList()).map(d => ({id: d.$key, name: d.displayName})));
 
   // Payroll runs in fixed 14-day periods, two ISO weeks at a time, anchored so the first week
   // of the pair is always even-numbered (e.g. the period covering today is weeks 32-33 — 32 is even).

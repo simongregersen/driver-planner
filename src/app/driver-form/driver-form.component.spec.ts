@@ -1,8 +1,9 @@
 import {TestBed} from '@angular/core/testing';
+import {flushWrites} from '../../test-helpers';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from '../confirm-dialog/confirm-dialog.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {of} from 'rxjs';
+import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {DriverFormComponent} from './driver-form.component';
 import {DataStore} from '../data.service';
@@ -32,7 +33,7 @@ describe('DriverFormComponent', () => {
       imports: [DriverFormComponent],
       providers: [
         {provide: DataStore, useValue: dataStore},
-        {provide: MatDialogRef, useValue: {close: dialogRefClose}},
+        {provide: MatDialogRef, useValue: {close: dialogRefClose, backdropClick: () => EMPTY, keydownEvents: () => EMPTY}},
         {provide: MatSnackBar, useValue: {open: snackBarOpen}},
       ],
     });
@@ -58,7 +59,9 @@ describe('DriverFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.addDriver).toHaveBeenCalledWith('Jan', 'Jan Poulsen', null);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
+      await flushWrites();
       expect(snackBarOpen).not.toHaveBeenCalled();
     });
 
@@ -68,13 +71,15 @@ describe('DriverFormComponent', () => {
       fixture.componentInstance.driverForm.setValue({displayName: 'Jan', name: 'Jan Poulsen', birthday: null});
       fixture.componentInstance.onSubmit();
       await fixture.whenStable();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });
 
   describe('edit', () => {
-    it('pre-fills the form from the existing driver', () => {
+    it('pre-fills the form from the existing driver', async () => {
       const fixture = create('edit', driver);
       const val = fixture.componentInstance.driverForm.value;
       expect(val.displayName).toBe('Kim');
@@ -88,6 +93,7 @@ describe('DriverFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.updateDriver).toHaveBeenCalledWith(driver, expect.objectContaining({displayName: 'Kim H.'}));
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
@@ -96,25 +102,29 @@ describe('DriverFormComponent', () => {
       const fixture = create('edit', driver);
       fixture.componentInstance.onSubmit();
       await fixture.whenStable();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
-    it('deletes the driver and closes the dialog when the confirm dialog is accepted', () => {
+    it('deletes the driver and closes the dialog when the confirm dialog is accepted', async () => {
       confirmed = true;
       const fixture = create('edit', driver);
       fixture.componentInstance.deleteDriver();
       expect(dataStore.deleteDriver).toHaveBeenCalledWith(driver);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('does nothing when the confirm dialog is declined', () => {
+    it('does nothing when the confirm dialog is declined', async () => {
       confirmed = false;
       const fixture = create('edit', driver);
       fixture.componentInstance.deleteDriver();
       expect(dataStore.deleteDriver).not.toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });

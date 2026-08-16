@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, OnInit, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnInit, inject, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
@@ -6,7 +6,6 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
-import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import moment, {Moment} from 'moment';
 import {ClockRecord} from '../clock-record';
@@ -14,6 +13,8 @@ import {DataStore} from '../data.service';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {DateTimeFieldComponent} from '../date-time-field/date-time-field.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
+import {WriteFeedbackService} from '../write-feedback.service';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
 
 export type ClockRecordFormMode = 'create' | 'edit';
 
@@ -57,13 +58,36 @@ export class ClockRecordFormComponent implements OnInit {
 
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly writeFeedback = inject(WriteFeedbackService);
+
+  /** True while a submit's write is in flight. Gates the submit button so a slow connection
+   * can't turn an impatient second tap into a second record — and stays true for a write that
+   * hasn't been acknowledged yet, which offline is every write. See WriteFeedbackService. */
+  readonly saving = signal(false);
   readonly dialogRef = inject(MatDialogRef<ClockRecordFormComponent>);
 
   clockIn: Moment | null = null;
   clockOut: Moment | null = null;
   note = '';
   dognbetaling = false;
+
+  /** The field values as ngOnInit left them. This form is template-driven, so there's no
+   * FormGroup.dirty to consult — comparing against this snapshot is what tells the dismissal
+   * guard whether anything has actually been typed. */
+  private pristineSnapshot = '';
+
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => this.snapshot() !== this.pristineSnapshot);
+  }
+
+  private snapshot(): string {
+    return JSON.stringify([
+      this.clockIn?.valueOf() ?? null,
+      this.clockOut?.valueOf() ?? null,
+      this.note,
+      this.dognbetaling,
+    ]);
+  }
 
   ngOnInit(): void {
     const isEdit = this.mode === 'edit';
@@ -73,6 +97,7 @@ export class ClockRecordFormComponent implements OnInit {
     this.clockOut = (isEdit && this.record.clockOut) ? moment(this.record.clockOut) : null;
     this.note = isEdit ? (this.record.note ?? '') : '';
     this.dognbetaling = isEdit ? !!this.record.dognbetaling : false;
+    this.pristineSnapshot = this.snapshot();
   }
 
   clearClockOut(): void {
@@ -87,6 +112,7 @@ export class ClockRecordFormComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.saving()) return;
     if (this.error()) return;
     const note = this.note.trim() || null;
     // A Slut filled in on create closes the record immediately — otherwise it'd read as still
@@ -94,8 +120,7 @@ export class ClockRecordFormComponent implements OnInit {
     const saved = this.mode === 'edit'
       ? this.dataStore.updateClockRecord(this.driverKey, this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note, dognbetaling: this.dognbetaling})
       : this.dataStore.addClockRecord(this.driverKey, this.clockIn!, note, this.clockOut, this.dognbetaling);
-    saved.then(() => this.dialogRef.close())
-      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
+    void this.writeFeedback.closeDialogOn(this.dialogRef, saved, this.saving);
   }
 
   confirmDelete(): void {
@@ -109,8 +134,8 @@ export class ClockRecordFormComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.dataStore.removeClockRecord(this.driverKey, this.record);
-        this.dialogRef.close();
+        void this.writeFeedback.closeDialogOn(
+          this.dialogRef, this.dataStore.removeClockRecord(this.driverKey, this.record), this.saving, {failureMessage: 'Kunne ikke slette registreringen. Prøv igen.'});
       }
     });
   }

@@ -19,6 +19,23 @@ const TRIP_RETENTION_YEARS = 5;
 // aggressively, from trips themselves.
 const PUBLIC_DATE_RETENTION_YEARS = 1;
 
+// Working-time records are payroll evidence, so they're kept longer than trips: Danish
+// bookkeeping rules require payroll documentation to be retained for five years after the end of
+// the financial year it belongs to, and this is the data that substantiates it. Kept as its own
+// constant rather than sharing TRIP_RETENTION_YEARS because the two are governed by different
+// things and shouldn't silently move together.
+const CLOCK_RECORD_RETENTION_YEARS = 6;
+
+// Absence/holiday notes name individual employees and have no value once the period they
+// describe is well past — the shortest retention here, since nothing depends on them
+// historically the way payroll depends on clock records.
+const NOTE_RETENTION_YEARS = 2;
+
+// Refuelling records back the fuel-consumption statistics, which are only ever looked at over
+// recent periods — but they're also the odometer history, so they're kept a good while longer
+// than notes.
+const FUEL_REPORT_RETENTION_YEARS = 5;
+
 // Deliberately unreachable from any nav (see app.routes.ts's comment on the /cleanup route) —
 // still gated by authGuard/adminGuard like every other admin page, just never linked to.
 @Component({
@@ -38,6 +55,9 @@ export class CleanupComponent implements OnInit {
 
   readonly tripRetentionYears = TRIP_RETENTION_YEARS;
   readonly publicDateRetentionYears = PUBLIC_DATE_RETENTION_YEARS;
+  readonly clockRecordRetentionYears = CLOCK_RECORD_RETENTION_YEARS;
+  readonly noteRetentionYears = NOTE_RETENTION_YEARS;
+  readonly fuelReportRetentionYears = FUEL_REPORT_RETENTION_YEARS;
   // A signal rather than a plain field: under OnPush, a plain field mutated after an `await`
   // never triggers a re-render (only the synchronous portion of a (click) handler does), so the
   // button would otherwise stay stuck disabled once the async work moves past its first `await`.
@@ -52,13 +72,19 @@ export class CleanupComponent implements OnInit {
     try {
       const tripCutoff = this.dateUtility.today().subtract(TRIP_RETENTION_YEARS, 'years');
       const publicCutoff = this.dateUtility.today().subtract(PUBLIC_DATE_RETENTION_YEARS, 'years');
+      const clockCutoff = this.dateUtility.today().subtract(CLOCK_RECORD_RETENTION_YEARS, 'years');
+      const noteCutoff = this.dateUtility.today().subtract(NOTE_RETENTION_YEARS, 'years');
+      const fuelCutoff = this.dateUtility.today().subtract(FUEL_REPORT_RETENTION_YEARS, 'years');
 
-      const [trips, publicDateKeys] = await Promise.all([
+      const [trips, publicDateKeys, clockRecordPaths, noteKeys, fuelReportPaths] = await Promise.all([
         firstValueFrom(this.dataStore.getTripsOlderThan(tripCutoff)),
         firstValueFrom(this.dataStore.getPublicDatesOlderThan(publicCutoff)),
+        this.dataStore.getClockRecordPathsOlderThan(clockCutoff),
+        this.dataStore.getNoteKeysOlderThan(noteCutoff),
+        this.dataStore.getFuelReportPathsOlderThan(fuelCutoff),
       ]);
 
-      if (!trips.length && !publicDateKeys.length) {
+      if (!trips.length && !publicDateKeys.length && !clockRecordPaths.length && !noteKeys.length && !fuelReportPaths.length) {
         this.snackBar.open('Intet at rydde op i.', 'OK', {duration: 4000});
         return;
       }
@@ -77,6 +103,18 @@ export class CleanupComponent implements OnInit {
         const dateWord = publicDateKeys.length === 1 ? 'offentliggjort dato' : 'offentliggjorte datoer';
         parts.push(`${publicDateKeys.length} ${dateWord} ældre end ${PUBLIC_DATE_RETENTION_YEARS} år (fra ${sortedKeys[0]} til ${sortedKeys[sortedKeys.length - 1]})`);
       }
+      if (clockRecordPaths.length) {
+        const word = clockRecordPaths.length === 1 ? 'arbejdstidsregistrering' : 'arbejdstidsregistreringer';
+        parts.push(`${clockRecordPaths.length} ${word} ældre end ${CLOCK_RECORD_RETENTION_YEARS} år`);
+      }
+      if (noteKeys.length) {
+        const word = noteKeys.length === 1 ? 'note' : 'noter';
+        parts.push(`${noteKeys.length} ${word} ældre end ${NOTE_RETENTION_YEARS} år`);
+      }
+      if (fuelReportPaths.length) {
+        const word = fuelReportPaths.length === 1 ? 'tankning' : 'tankninger';
+        parts.push(`${fuelReportPaths.length} ${word} ældre end ${FUEL_REPORT_RETENTION_YEARS} år`);
+      }
 
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         ...CONFIRM_DIALOG_CONFIG,
@@ -93,14 +131,28 @@ export class CleanupComponent implements OnInit {
       await Promise.all([
         this.dataStore.removeTrips(trips.map(t => t.$key)),
         this.dataStore.removePublicDates(publicDateKeys),
+        this.dataStore.removeClockRecordPaths(clockRecordPaths),
+        this.dataStore.removeNotes(noteKeys),
+        this.dataStore.removeFuelReportPaths(fuelReportPaths),
       ]);
-      console.log(`Cleanup: removed ${trips.length} trips older than ${tripCutoff.format('YYYY-MM-DD')}`
-        + ` and ${publicDateKeys.length} public-date markers older than ${publicCutoff.format('YYYY-MM-DD')}.`);
+      console.log('Cleanup removed:'
+        + ` ${trips.length} trips older than ${tripCutoff.format('YYYY-MM-DD')},`
+        + ` ${publicDateKeys.length} public-date markers older than ${publicCutoff.format('YYYY-MM-DD')},`
+        + ` ${clockRecordPaths.length} clock records older than ${clockCutoff.format('YYYY-MM-DD')},`
+        + ` ${noteKeys.length} notes older than ${noteCutoff.format('YYYY-MM-DD')},`
+        + ` ${fuelReportPaths.length} fuel reports older than ${fuelCutoff.format('YYYY-MM-DD')}.`);
 
       const resultParts: string[] = [];
       if (trips.length) resultParts.push(`${trips.length} ${trips.length === 1 ? 'tur' : 'ture'}`);
       if (publicDateKeys.length) {
         resultParts.push(`${publicDateKeys.length} ${publicDateKeys.length === 1 ? 'offentliggjort dato' : 'offentliggjorte datoer'}`);
+      }
+      if (clockRecordPaths.length) {
+        resultParts.push(`${clockRecordPaths.length} ${clockRecordPaths.length === 1 ? 'arbejdstidsregistrering' : 'arbejdstidsregistreringer'}`);
+      }
+      if (noteKeys.length) resultParts.push(`${noteKeys.length} ${noteKeys.length === 1 ? 'note' : 'noter'}`);
+      if (fuelReportPaths.length) {
+        resultParts.push(`${fuelReportPaths.length} ${fuelReportPaths.length === 1 ? 'tankning' : 'tankninger'}`);
       }
       this.snackBar.open(`${resultParts.join(' og ')} blev slettet.`, 'OK', {duration: 4000});
     } catch (err) {

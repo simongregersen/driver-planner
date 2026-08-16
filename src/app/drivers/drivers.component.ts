@@ -1,19 +1,22 @@
 import {ChangeDetectionStrategy, Component, inject, OnInit} from '@angular/core';
 import {AsyncPipe, DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
-import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatCheckboxChange, MatCheckboxModule} from '@angular/material/checkbox';
 import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
+import {Utility} from '../utility';
 import {Driver} from '../driver';
 import {AppUser} from '../user';
 import {Observable} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {DriverFormComponent} from '../driver-form/driver-form.component';
 import {DriverLoginCreatorComponent} from '../driver-login-creator/driver-login-creator.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
 import {PageHeaderService} from '../page-header.service';
+import {WriteFeedbackService} from '../write-feedback.service';
 
 @Component({
   standalone: true,
@@ -28,6 +31,7 @@ import {PageHeaderService} from '../page-header.service';
 })
 export class DriversComponent implements OnInit {
   readonly dataStore = inject(DataStore);
+  private readonly writeFeedback = inject(WriteFeedbackService);
   private readonly dialog = inject(MatDialog);
   private readonly pageHeader = inject(PageHeaderService);
 
@@ -36,7 +40,9 @@ export class DriversComponent implements OnInit {
 
   ngOnInit() {
     this.pageHeader.set('Chauffører');
-    this.drivers = this.dataStore.getAllDrivers();
+    // getAllDrivers no longer filters (it must still resolve names for already-assigned
+    // drivers elsewhere), so this list — the one place a driver is deleted from — filters itself.
+    this.drivers = this.dataStore.getAllDrivers().pipe(map(Utility.filterDeleted));
     this.users$ = this.dataStore.getAllUsers();
   }
 
@@ -58,13 +64,26 @@ export class DriversComponent implements OnInit {
       } as ConfirmDialogData,
     });
     dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) this.dataStore.deleteDriver(driver);
+      if (confirmed) {
+        void this.writeFeedback.run(this.dataStore.deleteDriver(driver), {
+          failureMessage: 'Kunne ikke slette chaufføren. Prøv igen.',
+        });
+      }
     });
   }
 
-  setDriverAdmin(driver: Driver, isAdmin: boolean) {
+  // Same one-way-[checked] hazard as Day Plans' publish toggle: on a rejected write the bound
+  // value never changes, so nothing pushes the checkbox back and it keeps claiming a privilege
+  // level that was never stored. Reset it from $event.source on failure.
+  setDriverAdmin(driver: Driver, event: MatCheckboxChange) {
     if (!driver.uid) return;
-    this.dataStore.setUserAdmin(driver.uid, isAdmin);
+    void this.writeFeedback
+      .run(this.dataStore.setUserAdmin(driver.uid, event.checked), {
+        failureMessage: 'Kunne ikke ændre administratorrettigheder. Prøv igen.',
+      })
+      .then(outcome => {
+        if (outcome === 'failed') event.source.checked = !event.checked;
+      });
   }
 
   edit(driver: Driver) {

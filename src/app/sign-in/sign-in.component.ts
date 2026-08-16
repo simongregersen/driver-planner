@@ -23,12 +23,18 @@ export class SignInComponent {
   readonly installPrompt = inject(InstallPromptService);
 
   error = signal<string | null>(null);
+  /** Gates the submit button so a slow network can't turn an impatient second tap into a second
+   * sign-in attempt — which Firebase counts toward its own rate limit (auth/too-many-requests). */
+  readonly signingIn = signal(false);
 
   login(email: string, password: string) {
+    if (this.signingIn()) return;
     this.error.set(null);
+    this.signingIn.set(true);
     this.authService.login(email, password)
       .then(() => this.router.navigate(['']))
-      .catch(err => this.error.set(SignInComponent.mapError(err?.code)));
+      .catch(err => this.error.set(SignInComponent.mapError(err?.code)))
+      .finally(() => this.signingIn.set(false));
   }
 
   private static mapError(code: string): string {

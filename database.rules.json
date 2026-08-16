@@ -62,9 +62,52 @@
       "$tripKey": {
         "reports": {
           "$driverKey": {
-            ".write": "root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === $driverKey"
+            ".write": "root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === $driverKey",
+            // A driver's own report is one of only two places a non-admin can write, and it was
+            // previously unconstrained: any shape, any size, under any $tripKey — including trips
+            // they aren't assigned to and trips that don't exist. Whatever landed here then came
+            // back down inside every getTrips() result for every admin and every other driver, so
+            // one bad write taxed everyone. These mirror the TripReport interface in trip.ts.
+            //
+            // data.exists() on the delete path: removing a report writes null, which would
+            // otherwise fail hasChildren below. The parent check refuses a report that would
+            // conjure a trip that isn't there.
+            ".validate": "!newData.exists() || (root.child('trips').child($tripKey).exists() && newData.hasChildren(['startFromCustomer', 'endFromCustomer', 'startKmFromCustomer', 'endKmFromCustomer']))",
+            "start": {".validate": "newData.isNumber()"},
+            "end": {".validate": "newData.isNumber()"},
+            "startFromCustomer": {".validate": "newData.isBoolean()"},
+            "endFromCustomer": {".validate": "newData.isBoolean()"},
+            "startKm": {".validate": "newData.isNumber() && newData.val() >= 0"},
+            "endKm": {".validate": "newData.isNumber() && newData.val() >= 0"},
+            "startKmFromCustomer": {".validate": "newData.isBoolean()"},
+            "endKmFromCustomer": {".validate": "newData.isBoolean()"},
+            "note": {".validate": "newData.isString() && newData.val().length <= 2000"},
+            "$other": {".validate": false}
           }
         }
+      }
+    },
+
+    // The admin-only half of a trip: the office's internal note and its planning labels.
+    //
+    // These used to live on the trip itself, marked "admin-only, never shown to drivers" in
+    // trip.ts and enforced only by a component input (TripsComponent's showOfficeNotes/
+    // showLabels). But /trips grants .read to every driver at the container level — RTDB read
+    // access cascades down, so there is no way to carve an unreadable child out of a readable
+    // parent — which meant any driver could read all of it straight from the REST API. Splitting
+    // it into a sibling node is the only way to actually withhold it.
+    //
+    // Keyed by trip, and only ever read by key — the trip list it belongs to has already been
+    // windowed by the /trips query, so this node is never sorted or range-filtered and needs no
+    // .indexOn and no copy of the trip's dates to sort by. Nothing in here has to be kept in step
+    // with the trip it hangs off; the key alone ties them together.
+    "tripOffice": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$tripKey": {
+        "officeDescription": {".validate": "newData.isString() && newData.val().length <= 5000"},
+        "labels": {".validate": "newData.hasChildren() || newData.val() === null"},
+        "$other": {".validate": false}
       }
     },
 
@@ -73,7 +116,23 @@
       "$driverKey": {
         ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === $driverKey)",
         ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === $driverKey)",
-        ".indexOn": "clockIn"
+        ".indexOn": "clockIn",
+        // The other path a non-admin can write. These records drive the payroll timesheet, so an
+        // unconstrained shape here is a payroll problem, not just a data-hygiene one. clockIn is
+        // the only genuinely required field — clockOut stays absent while a shift is open, and
+        // note/dognbetaling are written as null (which RTDB stores as "remove the key") when
+        // unset, so all three are validated only when actually present.
+        "$recordKey": {
+          ".validate": "newData.hasChildren(['clockIn'])",
+          "clockIn": {".validate": "newData.isNumber()"},
+          // newData.parent(), not data.parent(): on a create both fields arrive in the same
+          // write, so the *existing* record has no clockIn to compare against yet and the
+          // comparison would be against null. newData sees the merged result either way.
+          "clockOut": {".validate": "newData.isNumber() && newData.val() >= newData.parent().child('clockIn').val()"},
+          "note": {".validate": "newData.isString() && newData.val().length <= 2000"},
+          "dognbetaling": {".validate": "newData.isBoolean()"},
+          "$other": {".validate": false}
+        }
       }
     },
 

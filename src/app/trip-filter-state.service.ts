@@ -33,7 +33,9 @@ export class TripFilterStateService {
 
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
-  readonly driverOptions = computed(() => this.driverList().map(d => ({id: d.$key, name: d.displayName})));
+  // A picker, so deleted drivers are excluded here — unlike the name lookups that read the
+  // same unfiltered driverList below.
+  readonly driverOptions = computed(() => Utility.filterDeleted(this.driverList()).map(d => ({id: d.$key, name: d.displayName})));
   readonly vehicleOptions = computed(() => this.vehicleList().map(v => ({id: v.$key, name: v.displayName})));
   readonly selectedDriverNames = computed(() =>
     this.driverOptions().filter(o => this.selectedDriverKeys().includes(o.id)).map(o => o.name).join(', ')

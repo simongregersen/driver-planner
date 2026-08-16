@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
@@ -7,17 +7,20 @@ import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
-import {MatSnackBar} from '@angular/material/snack-bar';
 import {Moment} from 'moment';
 import {Observable} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {FuelReport, NewFuelReport} from '../fuel-report';
 import {Vehicle} from '../vehicle';
 import {Driver} from '../driver';
 import {DataStore} from '../data.service';
+import {Utility} from '../utility';
 import {DateUtility} from '../date-utility';
 import {DateFieldComponent} from '../date-field/date-field.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
+import {WriteFeedbackService} from '../write-feedback.service';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
 
 export type FuelReportFormMode = 'create' | 'edit';
 
@@ -84,12 +87,18 @@ export class FuelReportFormComponent implements OnInit {
   private readonly dateUtility = inject(DateUtility);
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly writeFeedback = inject(WriteFeedbackService);
+
+  /** True while a submit's write is in flight. Gates the submit button so a slow connection
+   * can't turn an impatient second tap into a second record — and stays true for a write that
+   * hasn't been acknowledged yet, which offline is every write. See WriteFeedbackService. */
+  readonly saving = signal(false);
   private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject(MatDialogRef<FuelReportFormComponent>);
 
   readonly vehicles$: Observable<Vehicle[]> = this.dataStore.getAllVehicles();
-  readonly drivers$: Observable<Driver[]> = this.dataStore.getAllDrivers();
+  // A picker: excludes deleted drivers, same as the vehicle/driver selects elsewhere.
+  readonly drivers$: Observable<Driver[]> = this.dataStore.getAllDrivers().pipe(map(Utility.filterDeleted));
   readonly minDate = this.dateUtility.minDate(5);
 
   fuelReportForm!: FormGroup;
@@ -98,6 +107,14 @@ export class FuelReportFormComponent implements OnInit {
   /** True when nobody supplied a driverKey up front — an admin creating a report on a driver's
    * behalf, rather than a driver reporting their own. Gates the in-form driver picker. */
   needsDriverPicker = false;
+
+
+  // Escape / backdrop click ask before discarding typed-in input, rather than
+  // destroying it silently. Pristine forms still close instantly. See
+  // guardDialogDismissal and DIALOG_CONFIG's disableClose.
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => this.fuelReportForm?.dirty ?? false);
+  }
 
   ngOnInit(): void {
     const isEdit = this.mode === 'edit';
@@ -123,6 +140,7 @@ export class FuelReportFormComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.saving()) return;
     if (!this.fuelReportForm.valid) return;
     const val = this.fuelReportForm.value;
     const saved = this.mode === 'edit'
@@ -139,8 +157,7 @@ export class FuelReportFormComponent implements OnInit {
           liters: parseDecimal(val.liters)!,
           note: val.note || '',
         } as NewFuelReport);
-    saved.then(() => this.dialogRef.close())
-      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
+    void this.writeFeedback.closeDialogOn(this.dialogRef, saved, this.saving);
   }
 
   deleteReport(): void {
@@ -154,8 +171,8 @@ export class FuelReportFormComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.dataStore.removeFuelReport(this.vehicleKey, this.record);
-        this.dialogRef.close();
+        void this.writeFeedback.closeDialogOn(
+          this.dialogRef, this.dataStore.removeFuelReport(this.vehicleKey, this.record), this.saving, {failureMessage: 'Kunne ikke slette tankningen. Prøv igen.'});
       }
     });
   }

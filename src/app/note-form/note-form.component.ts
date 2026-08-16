@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, OnInit, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnInit, inject, signal} from '@angular/core';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
@@ -6,7 +6,6 @@ import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
-import {MatSnackBar} from '@angular/material/snack-bar';
 import {Moment} from 'moment';
 import {SelectOption} from '../select-option';
 import {DataStore} from '../data.service';
@@ -17,6 +16,8 @@ import {map} from 'rxjs/operators';
 import {DateFieldComponent} from '../date-field/date-field.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
+import {WriteFeedbackService} from '../write-feedback.service';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
 
 export type NoteFormMode = 'create' | 'edit';
 
@@ -58,8 +59,21 @@ export class NoteFormComponent implements OnInit {
   private readonly dataStore = inject(DataStore);
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly writeFeedback = inject(WriteFeedbackService);
+
+  /** True while a submit's write is in flight. Gates the submit button so a slow connection
+   * can't turn an impatient second tap into a second record — and stays true for a write that
+   * hasn't been acknowledged yet, which offline is every write. See WriteFeedbackService. */
+  readonly saving = signal(false);
   readonly dialogRef = inject(MatDialogRef<NoteFormComponent>);
+
+
+  // Escape / backdrop click ask before discarding typed-in input, rather than
+  // destroying it silently. Pristine forms still close instantly. See
+  // guardDialogDismissal and DIALOG_CONFIG's disableClose.
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => this.noteForm?.dirty ?? false);
+  }
 
   ngOnInit() {
     const isEdit = this.mode === 'edit';
@@ -94,6 +108,7 @@ export class NoteFormComponent implements OnInit {
   };
 
   onSubmit() {
+    if (this.saving()) return;
     const val = this.noteForm.value;
     const note: NewNote = {
       start: val.start,
@@ -107,8 +122,7 @@ export class NoteFormComponent implements OnInit {
     const saved = this.mode === 'edit'
       ? this.dataStore.updateNote(this.note, note)
       : this.dataStore.addNote(note);
-    saved.then(() => this.dialogRef.close())
-      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
+    void this.writeFeedback.closeDialogOn(this.dialogRef, saved, this.saving);
   }
 
   deleteNote(): void {
@@ -122,8 +136,8 @@ export class NoteFormComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.dataStore.removeNote(this.note);
-        this.dialogRef.close();
+        void this.writeFeedback.closeDialogOn(
+          this.dialogRef, this.dataStore.removeNote(this.note), this.saving, {failureMessage: 'Kunne ikke slette noten. Prøv igen.'});
       }
     });
   }

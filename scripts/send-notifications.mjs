@@ -23,30 +23,46 @@ initializeApp({
 const db = getDatabase();
 const messaging = getMessaging();
 
+// Returns `tokens` and `owners` as strictly parallel arrays: owners[i] is who tokens[i] belongs
+// to. This used to key `owners` by the token itself and recover the owner positionally via
+// [...owners.keys()][i], which silently assumed every token was unique across uids. An FCM token
+// is scoped to the browser/service-worker registration rather than to a user, so two drivers
+// signing in on one shared device produce the *same* token stored under two different uids — at
+// which point the Map was shorter than the array, every index past the duplicate pointed at the
+// wrong owner, and the tail of the list read as undefined and threw.
+//
+// A token appearing under several uids is deduped for sending (nobody wants the same push
+// twice), but every owner of it is kept, so pruning a dead token cleans up all of its records.
 async function collectTokens(uids) {
   const tokens = [];
-  const owners = new Map();
+  const owners = [];
+  const indexByToken = new Map();
   for (const uid of uids) {
     const snapshot = await db.ref(`/fcmTokens/${uid}`).get();
     const deviceTokens = snapshot.val() || {};
     for (const [tokenHash, entry] of Object.entries(deviceTokens)) {
+      if (!entry?.token) continue;
+      const existing = indexByToken.get(entry.token);
+      if (existing !== undefined) {
+        owners[existing].push({uid, tokenHash});
+        continue;
+      }
+      indexByToken.set(entry.token, tokens.length);
       tokens.push(entry.token);
-      owners.set(entry.token, {uid, tokenHash});
+      owners.push([{uid, tokenHash}]);
     }
   }
   return {tokens, owners};
 }
 
 async function pruneStaleTokens(owners, responses) {
-  await Promise.all(responses.map((response, i) => {
-    if (response.success) return Promise.resolve();
+  await Promise.all(responses.flatMap((response, i) => {
+    if (response.success) return [];
     const code = response.error?.code;
     if (code !== 'messaging/registration-token-not-registered' && code !== 'messaging/invalid-registration-token') {
-      return Promise.resolve();
+      return [];
     }
-    const token = [...owners.keys()][i];
-    const owner = owners.get(token);
-    return db.ref(`/fcmTokens/${owner.uid}/${owner.tokenHash}`).remove();
+    return (owners[i] ?? []).map(owner => db.ref(`/fcmTokens/${owner.uid}/${owner.tokenHash}`).remove());
   }));
 }
 
@@ -60,20 +76,40 @@ async function main() {
     return;
   }
 
+  let failures = 0;
   for (const [pushId, entry] of entries) {
-    const {tokens, owners} = await collectTokens(entry.uids || []);
-    if (tokens.length) {
-      const response = await messaging.sendEachForMulticast({
-        tokens,
-        notification: {title: entry.title, body: entry.body},
-        data: entry.data || {},
-      });
-      await pruneStaleTokens(owners, response.responses);
-      console.log(`Sent "${entry.title}" to ${response.successCount}/${tokens.length} device(s).`);
-    } else {
-      console.log(`No registered devices for notification "${entry.title}", skipping send.`);
+    // Each entry is isolated: one malformed or unsendable row must not block every row behind
+    // it. Previously a throw anywhere in here escaped to main().catch and exited before the
+    // queue entry was removed, so the 5-minute cron retried the same poisoned row forever and
+    // no driver received any notification at all until someone cleared it by hand.
+    try {
+      const {tokens, owners} = await collectTokens(entry.uids || []);
+      if (tokens.length) {
+        const response = await messaging.sendEachForMulticast({
+          tokens,
+          notification: {title: entry.title, body: entry.body},
+          data: entry.data || {},
+        });
+        await pruneStaleTokens(owners, response.responses);
+        console.log(`Sent "${entry.title}" to ${response.successCount}/${tokens.length} device(s).`);
+      } else {
+        console.log(`No registered devices for notification "${entry.title}", skipping send.`);
+      }
+    } catch (err) {
+      failures++;
+      console.error(`Failed to send notification ${pushId} ("${entry.title}"):`, err);
     }
+    // Removed regardless of outcome. A notification is only worth delivering close to when it
+    // was raised, so a row that couldn't be sent is dropped rather than retried indefinitely —
+    // and leaving it queued is what wedged the whole poller before.
     await db.ref(`/notificationQueue/${pushId}`).remove();
+  }
+
+  if (failures) {
+    // Non-zero exit so a persistent problem still shows up as a red workflow run, now that
+    // individual failures no longer stop the queue from draining.
+    console.error(`${failures} of ${entries.length} notification(s) could not be sent.`);
+    process.exitCode = 1;
   }
 }
 

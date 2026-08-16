@@ -1,8 +1,9 @@
 import {TestBed} from '@angular/core/testing';
+import {flushWrites} from '../../test-helpers';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from '../confirm-dialog/confirm-dialog.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {of} from 'rxjs';
+import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {TankRefillFormComponent} from './tank-refill-form.component';
 import {DataStore} from '../data.service';
@@ -30,7 +31,7 @@ describe('TankRefillFormComponent', () => {
       imports: [TankRefillFormComponent],
       providers: [
         {provide: DataStore, useValue: dataStore},
-        {provide: MatDialogRef, useValue: {close: dialogRefClose}},
+        {provide: MatDialogRef, useValue: {close: dialogRefClose, backdropClick: () => EMPTY, keydownEvents: () => EMPTY}},
         {provide: MatSnackBar, useValue: {open: snackBarOpen}},
       ],
     });
@@ -57,6 +58,7 @@ describe('TankRefillFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.addTankRefill).toHaveBeenCalledWith(expect.objectContaining({liters: 500, price: 4500.5}));
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
@@ -76,13 +78,15 @@ describe('TankRefillFormComponent', () => {
       c.tankRefillForm.setValue({date: moment('2026-02-01'), liters: '500', price: '4500'});
       c.onSubmit();
       await fixture.whenStable();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });
 
   describe('edit', () => {
-    it('pre-fills the form with comma-formatted decimals', () => {
+    it('pre-fills the form with comma-formatted decimals', async () => {
       const fixture = create('edit', {record});
       const val = fixture.componentInstance.tankRefillForm.value;
       expect(val.liters).toBe('500');
@@ -96,24 +100,27 @@ describe('TankRefillFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.updateTankRefill).toHaveBeenCalledWith(record, expect.objectContaining({price: 5000}));
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
-    it('removes the refill and closes the dialog when the confirm dialog is accepted', () => {
+    it('removes the refill and closes the dialog when the confirm dialog is accepted', async () => {
       confirmed = true;
       const fixture = create('edit', {record});
       fixture.componentInstance.deleteRefill();
       expect(dataStore.removeTankRefill).toHaveBeenCalledWith(record);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('does nothing when the confirm dialog is declined', () => {
+    it('does nothing when the confirm dialog is declined', async () => {
       confirmed = false;
       const fixture = create('edit', {record});
       fixture.componentInstance.deleteRefill();
       expect(dataStore.removeTankRefill).not.toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });

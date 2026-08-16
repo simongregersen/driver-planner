@@ -52,8 +52,13 @@ export class AppComponent {
   // whichever driver an admin might currently be viewing elsewhere in the app.
   driverName$: Observable<string | null> = this.userService.driverProfile$.pipe(map(d => d?.displayName ?? null));
 
-  async logout() {
-    await this.messagingService.unregister();
+  // Token cleanup is best-effort and deliberately NOT awaited. unregister() ends in an RTDB
+  // remove(), and an RTDB write while offline neither resolves nor rejects — it just sits in the
+  // in-memory buffer until the server acks. Awaiting it meant that tapping "Log ud" in a dead
+  // zone did nothing at all, with no feedback, leaving the driver signed in on what may well be
+  // a shared device. Signing out must never be gated on a database write succeeding.
+  logout() {
+    void this.messagingService.unregister().catch(err => console.warn('Could not unregister the push token', err));
     this.authService.logout();
   }
 

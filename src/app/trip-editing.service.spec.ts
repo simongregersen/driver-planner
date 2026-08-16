@@ -1,4 +1,6 @@
 import {TestBed} from '@angular/core/testing';
+import {signal} from '@angular/core';
+import {flushWrites} from '../test-helpers';
 import {MatDialog} from '@angular/material/dialog';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Subject, of} from 'rxjs';
@@ -50,7 +52,9 @@ describe('TripEditingService', () => {
     const save = new Subject<NewTrip>();
     const remove = new Subject<void>();
     const close = vi.fn();
-    dialogOpen.mockReturnValue({componentInstance: {save, remove}, close});
+    // `saving` mirrors TripFormComponent's own signal — closeOnSave drives it while the
+    // write is in flight, so the fake has to carry it too.
+    dialogOpen.mockReturnValue({componentInstance: {save, remove, saving: signal(false)}, close});
     return {save, remove, close};
   }
 
@@ -67,6 +71,7 @@ describe('TripEditingService', () => {
       save.next(updates);
       await Promise.resolve();
       expect(dataStore.updateTrip).toHaveBeenCalledWith(trip, updates);
+      await flushWrites();
       expect(close).toHaveBeenCalled();
     });
 
@@ -77,8 +82,9 @@ describe('TripEditingService', () => {
       service.edit(trip);
       save.next({} as NewTrip);
       await Promise.resolve();
-      await Promise.resolve();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(close).not.toHaveBeenCalled();
     });
 
@@ -89,6 +95,7 @@ describe('TripEditingService', () => {
       remove.next();
       await Promise.resolve();
       expect(dataStore.removeTrip).toHaveBeenCalledWith(trip);
+      await flushWrites();
       expect(close).toHaveBeenCalled();
     });
   });
@@ -102,26 +109,27 @@ describe('TripEditingService', () => {
       save.next(newTrip);
       await Promise.resolve();
       expect(dataStore.addTrip).toHaveBeenCalledWith(newTrip);
+      await flushWrites();
       expect(close).toHaveBeenCalled();
     });
   });
 
   describe('removeDriverFromTrip / removeVehicleFromTrip', () => {
-    it('removes the driver from the trip when confirmed', () => {
+    it('removes the driver from the trip when confirmed', async () => {
       mockConfirmDialog(true);
       const service = TestBed.inject(TripEditingService);
       service.removeDriverFromTrip({trip, driverKey: 'd1'});
       expect(dataStore.updateTrip).toHaveBeenCalledWith(trip, {drivers: []});
     });
 
-    it('does nothing when declined', () => {
+    it('does nothing when declined', async () => {
       mockConfirmDialog(false);
       const service = TestBed.inject(TripEditingService);
       service.removeDriverFromTrip({trip, driverKey: 'd1'});
       expect(dataStore.updateTrip).not.toHaveBeenCalled();
     });
 
-    it('removes the vehicle from the trip when confirmed', () => {
+    it('removes the vehicle from the trip when confirmed', async () => {
       mockConfirmDialog(true);
       const service = TestBed.inject(TripEditingService);
       service.removeVehicleFromTrip({trip, vehicleKey: 'v1'});
@@ -130,7 +138,7 @@ describe('TripEditingService', () => {
   });
 
   describe('removeTrip', () => {
-    it('delegates to DataStore.removeTrip', () => {
+    it('delegates to DataStore.removeTrip', async () => {
       const service = TestBed.inject(TripEditingService);
       service.removeTrip(trip);
       expect(dataStore.removeTrip).toHaveBeenCalledWith(trip);

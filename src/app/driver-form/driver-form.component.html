@@ -26,8 +26,8 @@
 
 <mat-dialog-actions align="end">
   @if (mode === 'edit') {
-    <button matButton type="button" class="confirm-danger" (click)="deleteDriver()">Slet</button>
+    <button matButton type="button" class="confirm-danger" [disabled]="saving()" (click)="deleteDriver()">Slet</button>
   }
-  <button matButton type="button" mat-dialog-close>Annuller</button>
-  <button matButton="filled" type="submit" form="driverForm" [disabled]="!driverForm.valid">{{ mode === 'edit' ? 'Gem' : 'Opret' }}</button>
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="driverForm" [disabled]="!driverForm.valid || saving()">{{ mode === 'edit' ? 'Gem' : 'Opret' }}</button>
 </mat-dialog-actions>

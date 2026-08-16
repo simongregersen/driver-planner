@@ -31,9 +31,15 @@
     </div>
   </aside>
   <main class="page-main">
+    <!-- readonly: a template trip's drivers/vehicles are placeholders rather than real
+         bookings, so there's nothing to remove them *from* — without this the chips render a
+         remove "X" whose (removeDriver)/(removeVehicle) output nobody here binds, i.e. a
+         visible, keyboard-reachable control that silently does nothing. Editing still happens
+         through the row → dialog, same as everywhere else. -->
     <app-trips [trips]="(trips$ | async) ?? []"
                [showLabels]="true"
                [showWarnings]="false"
+               [readonly]="true"
                (edit)="edit($event)">
     </app-trips>
     <div class="toolbar-row no-print">

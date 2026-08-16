@@ -1,10 +1,9 @@
-import {ChangeDetectionStrategy, Component, OnInit, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnInit, inject, signal} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import {MatSnackBar} from '@angular/material/snack-bar';
 import moment, {Moment} from 'moment';
 import {Driver, NewDriver} from '../driver';
 import {DateUtility} from '../date-utility';
@@ -12,6 +11,8 @@ import {DateFieldComponent} from '../date-field/date-field.component';
 import {DataStore} from '../data.service';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
+import {WriteFeedbackService} from '../write-feedback.service';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
 
 export type DriverFormMode = 'create' | 'edit';
 
@@ -49,11 +50,24 @@ export class DriverFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dateUtility = inject(DateUtility);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly writeFeedback = inject(WriteFeedbackService);
+
+  /** True while a submit's write is in flight. Gates the submit button so a slow connection
+   * can't turn an impatient second tap into a second record — and stays true for a write that
+   * hasn't been acknowledged yet, which offline is every write. See WriteFeedbackService. */
+  readonly saving = signal(false);
   readonly dialogRef = inject(MatDialogRef<DriverFormComponent>);
   readonly minDate = moment('1900-01-01', 'YYYY-MM-DD');
 
   driverForm!: FormGroup;
+
+
+  // Escape / backdrop click ask before discarding typed-in input, rather than
+  // destroying it silently. Pristine forms still close instantly. See
+  // guardDialogDismissal and DIALOG_CONFIG's disableClose.
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => this.driverForm?.dirty ?? false);
+  }
 
   ngOnInit() {
     const isEdit = this.mode === 'edit';
@@ -69,6 +83,7 @@ export class DriverFormComponent implements OnInit {
   }
 
   onSubmit() {
+    if (this.saving()) return;
     const val = this.driverForm.value;
     const driver: NewDriver = {
       displayName: val.displayName || '',
@@ -78,8 +93,7 @@ export class DriverFormComponent implements OnInit {
     const saved = this.mode === 'edit'
       ? this.dataStore.updateDriver(this.driver, driver)
       : this.dataStore.addDriver(driver.displayName, driver.name, driver.birthday);
-    saved.then(() => this.dialogRef.close())
-      .catch(() => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}));
+    void this.writeFeedback.closeDialogOn(this.dialogRef, saved, this.saving);
   }
 
   deleteDriver(): void {
@@ -93,8 +107,8 @@ export class DriverFormComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.dataStore.deleteDriver(this.driver);
-        this.dialogRef.close();
+        void this.writeFeedback.closeDialogOn(
+          this.dialogRef, this.dataStore.deleteDriver(this.driver), this.saving, {failureMessage: 'Kunne ikke slette chaufføren. Prøv igen.'});
       }
     });
   }

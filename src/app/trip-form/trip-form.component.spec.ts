@@ -1,6 +1,6 @@
 import {TestBed} from '@angular/core/testing';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {of} from 'rxjs';
+import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {TripFormComponent} from './trip-form.component';
 import {DataStore} from '../data.service';
@@ -23,7 +23,7 @@ describe('TripFormComponent', () => {
       imports: [TripFormComponent],
       providers: [
         {provide: DataStore, useValue: dataStore},
-        {provide: MatDialogRef, useValue: {close: vi.fn()}},
+        {provide: MatDialogRef, useValue: {close: vi.fn(), backdropClick: () => EMPTY, keydownEvents: () => EMPTY}},
       ],
     });
   });

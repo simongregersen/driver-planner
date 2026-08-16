@@ -6,16 +6,22 @@
   @if (error()) {
     <div class="app-error">{{ error() }}</div>
   }
+  <!-- name + autocomplete are what iOS Keychain, Android autofill and password managers key
+       off to offer a saved credential; without them this form is invisible to all of them and
+       a driver has to type both fields by hand on a phone every time. -->
   <mat-form-field class="full-width">
     <mat-label>Email</mat-label>
-    <input matInput type="email" id="inputEmail" #email required>
+    <input matInput type="email" id="inputEmail" name="email"
+           autocomplete="username" inputmode="email" autocapitalize="none"
+           spellcheck="false" #email required>
   </mat-form-field>
   <mat-form-field class="full-width">
     <mat-label>Password</mat-label>
-    <input matInput type="password" id="inputPassword" #password required>
+    <input matInput type="password" id="inputPassword" name="password"
+           autocomplete="current-password" #password required>
   </mat-form-field>
-  <button matButton="filled" class="full-width" type="submit">
-    Log ind
+  <button matButton="filled" class="full-width" type="submit" [disabled]="signingIn()">
+    {{ signingIn() ? 'Logger ind…' : 'Log ind' }}
   </button>
 </form>
 

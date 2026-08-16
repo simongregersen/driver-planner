@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, OnInit, inject, output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit, output, signal} from '@angular/core';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
@@ -22,6 +22,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 import {BreakpointService} from '../breakpoint.service';
 import {TimeFieldComponent} from '../time-field/time-field.component';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
 
 export type TripFormMode = 'create' | 'edit';
 
@@ -57,6 +58,13 @@ export class TripFormComponent implements OnInit {
   /** Emitted when mode is 'edit' and the user confirms deletion. */
   readonly remove = output<Trip>();
 
+  /** Set by whoever handles `save`/`remove` (TripEditingService, TemplatesComponent) for as long
+   * as the resulting write is in flight, so the submit button can't be pressed a second time
+   * while the first write is still unacknowledged — on a slow connection that otherwise creates
+   * a duplicate trip. Lives here rather than in the service because it's the dialog's own
+   * buttons that need to reflect it. */
+  readonly saving = signal(false);
+
   availableDrivers$!: Observable<SelectOption[]>;
   availableVehicles$!: Observable<SelectOption[]>;
   tripForm!: FormGroup;
@@ -79,6 +87,14 @@ export class TripFormComponent implements OnInit {
     .pipe(map(ds => new Map(ds.map(d => [d.$key, d.displayName]))));
   private readonly vehicleNames$ = this.dataStore.getAllVehicles()
     .pipe(map(vs => new Map(vs.map(v => [v.$key, v.displayName]))));
+
+
+  // Escape / backdrop click ask before discarding typed-in input, rather than
+  // destroying it silently. Pristine forms still close instantly. See
+  // guardDialogDismissal and DIALOG_CONFIG's disableClose.
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => this.tripForm?.dirty ?? false);
+  }
 
   ngOnInit() {
     const isEdit = this.mode === 'edit';
@@ -200,6 +216,7 @@ export class TripFormComponent implements OnInit {
   }
 
   onSubmit() {
+    if (this.saving()) return;
     const val = this.tripForm.value;
     const {start, end} = this.computeStartEnd(val);
 

@@ -14,7 +14,8 @@
     "send-notifications": "node scripts/send-notifications.mjs",
     "lint": "ng lint",
     "format": "prettier --write \"src/**/*.{ts,html,css}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,html,css}\""
+    "format:check": "prettier --check \"src/**/*.{ts,html,css}\"",
+    "test:rules": "firebase emulators:exec --only database --config firebase.test.json --project driver-planner \"node test/integration/database-rules.spec.mjs\""
   },
   "private": true,
   "dependencies": {

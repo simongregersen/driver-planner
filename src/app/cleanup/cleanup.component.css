@@ -5,3 +5,23 @@
 .cleanup-card p {
   margin-top: 0;
 }
+
+/* The retention periods differ per data type and are governed by different things (GDPR
+   minimisation for trips and notes, bookkeeping law for payroll evidence), so they're listed
+   explicitly rather than described in prose — an admin about to press an irreversible button
+   should be able to see all five at a glance. */
+.retention-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 16px 0 24px;
+}
+
+.retention-list dt {
+  font-weight: 500;
+}
+
+.retention-list dd {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}

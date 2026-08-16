@@ -13,6 +13,7 @@ import {VehicleFormComponent} from '../vehicle-form/vehicle-form.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {PageHeaderService} from '../page-header.service';
+import {WriteFeedbackService} from '../write-feedback.service';
 
 @Component({
   standalone: true,
@@ -27,6 +28,7 @@ import {PageHeaderService} from '../page-header.service';
 })
 export class VehiclesComponent implements OnInit {
   readonly dataStore = inject(DataStore);
+  private readonly writeFeedback = inject(WriteFeedbackService);
   private readonly dialog = inject(MatDialog);
   private readonly pageHeader = inject(PageHeaderService);
 
@@ -51,7 +53,11 @@ export class VehiclesComponent implements OnInit {
       } as ConfirmDialogData,
     });
     dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) this.dataStore.deleteVehicle(vehicle);
+      if (confirmed) {
+        void this.writeFeedback.run(this.dataStore.deleteVehicle(vehicle), {
+          failureMessage: 'Kunne ikke slette køretøjet. Prøv igen.',
+        });
+      }
     });
   }
 

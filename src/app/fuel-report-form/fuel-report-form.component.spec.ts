@@ -1,8 +1,9 @@
 import {TestBed} from '@angular/core/testing';
+import {flushWrites} from '../../test-helpers';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from '../confirm-dialog/confirm-dialog.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {of} from 'rxjs';
+import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {FuelReportFormComponent} from './fuel-report-form.component';
 import {DataStore} from '../data.service';
@@ -37,7 +38,7 @@ describe('FuelReportFormComponent', () => {
       imports: [FuelReportFormComponent],
       providers: [
         {provide: DataStore, useValue: dataStore},
-        {provide: MatDialogRef, useValue: {close: dialogRefClose}},
+        {provide: MatDialogRef, useValue: {close: dialogRefClose, backdropClick: () => EMPTY, keydownEvents: () => EMPTY}},
         {provide: MatSnackBar, useValue: {open: snackBarOpen}},
       ],
     });
@@ -64,6 +65,7 @@ describe('FuelReportFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.addFuelReport).toHaveBeenCalledWith('v1', expect.objectContaining({driverKey: 'd1', odometerKm: 1234, liters: 45.5}));
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
@@ -76,13 +78,13 @@ describe('FuelReportFormComponent', () => {
       expect(dataStore.addFuelReport).toHaveBeenCalledWith('v1', expect.objectContaining({liters: 45.5}));
     });
 
-    it('requires a driver picker when no driverKey was supplied up front', () => {
+    it('requires a driver picker when no driverKey was supplied up front', async () => {
       const fixture = create('create');
       expect(fixture.componentInstance.needsDriverPicker).toBe(true);
       expect(fixture.componentInstance.fuelReportForm.controls['driverKey'].hasError('required')).toBe(true);
     });
 
-    it('pre-selects the driver picker with defaultDriverKey when supplied', () => {
+    it('pre-selects the driver picker with defaultDriverKey when supplied', async () => {
       const fixture = create('create', {defaultDriverKey: 'd1'});
       expect(fixture.componentInstance.fuelReportForm.controls['driverKey'].value).toBe('d1');
       expect(fixture.componentInstance.fuelReportForm.controls['driverKey'].hasError('required')).toBe(false);
@@ -104,7 +106,9 @@ describe('FuelReportFormComponent', () => {
       c.fuelReportForm.setValue({vehicleKey: 'v1', driverKey: null, date: moment('2026-02-01'), odometerKm: '1234', liters: '45,5', note: ''});
       c.onSubmit();
       await fixture.whenStable();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });
@@ -126,24 +130,27 @@ describe('FuelReportFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.updateFuelReport).toHaveBeenCalledWith('v1', record, expect.objectContaining({liters: 50}));
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
-    it('removes the report and closes the dialog when the confirm dialog is accepted', () => {
+    it('removes the report and closes the dialog when the confirm dialog is accepted', async () => {
       confirmed = true;
       const fixture = create('edit', {vehicleKey: 'v1', record});
       fixture.componentInstance.deleteReport();
       expect(dataStore.removeFuelReport).toHaveBeenCalledWith('v1', record);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('does nothing when the confirm dialog is declined', () => {
+    it('does nothing when the confirm dialog is declined', async () => {
       confirmed = false;
       const fixture = create('edit', {vehicleKey: 'v1', record});
       fixture.componentInstance.deleteReport();
       expect(dataStore.removeFuelReport).not.toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });

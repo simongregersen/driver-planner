@@ -25,14 +25,28 @@ export interface TripReport {
   note: string;
 }
 
+/** The admin-only half of a trip, stored at /tripOffice/$tripKey rather than on the trip itself
+ * — /trips is readable by every driver and RTDB read access cascades down, so a field kept there
+ * is readable by them no matter what the UI does with it.
+ *
+ * Read only by key, never sorted or range-queried (DataStore already has the trip keys it needs
+ * from the /trips query), so this deliberately carries no copy of the trip's dates to sort by —
+ * and therefore nothing that could drift out of step with the trip. Absent entirely for a trip
+ * with neither a note nor a label. */
+export interface TripOffice {
+  officeDescription?: string;
+  labels?: string[];
+}
+
 export interface Trip extends AngularFireObject {
   start: Moment;
   end: Moment | null;
   name: string;
   description?: string;
-  /** Admin-only note, never shown to drivers (see TripsComponent's showOfficeNotes input). */
+  /** Admin-only note. Not stored on the trip — merged in from /tripOffice by
+   * DataStore.getTripsWithOffice, so it is only ever populated for an admin. See TripOffice. */
   officeDescription?: string;
-  /** Admin-only labels, never shown to drivers (see TripsComponent's showLabels input). */
+  /** Admin-only labels. Same storage and same caveat as officeDescription above. */
   labels?: string[];
   drivers: string[];
   vehicles: string[];

@@ -10,6 +10,7 @@ import {Trip, TripReport} from '../trip';
 import {DataStore} from '../data.service';
 import {TripReportFormComponent} from '../trip-report-form/trip-report-form.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
 
 interface ReportRow {
   driverKey: string;
@@ -41,6 +42,14 @@ export class TripReportsDialogComponent implements OnInit {
   readonly dialogRef = inject(MatDialogRef<TripReportsDialogComponent>);
 
   rows$!: Observable<ReportRow[]>;
+
+  // Opened with SMALL_DIALOG_CONFIG, which sets disableClose so the editor dialogs can guard
+  // unsaved input — this one only lists existing reports, so there's nothing to discard and it
+  // closes immediately. Without this call, disableClose would make it un-dismissable by Escape
+  // or a backdrop click.
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => false);
+  }
 
   ngOnInit(): void {
     const reports = this.trip.reports ?? {};

@@ -1,8 +1,9 @@
 import {TestBed} from '@angular/core/testing';
+import {flushWrites} from '../../test-helpers';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from '../confirm-dialog/confirm-dialog.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {of} from 'rxjs';
+import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {ClockRecordStopComponent} from './clock-record-stop.component';
 import {ClockRecordUpdates} from '../clock-record-form/clock-record-form.component';
@@ -27,7 +28,7 @@ describe('ClockRecordStopComponent', () => {
     TestBed.configureTestingModule({
       imports: [ClockRecordStopComponent],
       providers: [
-        {provide: MatDialogRef, useValue: {close: dialogRefClose}},
+        {provide: MatDialogRef, useValue: {close: dialogRefClose, backdropClick: () => EMPTY, keydownEvents: () => EMPTY}},
         {provide: MatSnackBar, useValue: {open: snackBarOpen}},
       ],
     });
@@ -44,7 +45,7 @@ describe('ClockRecordStopComponent', () => {
     return fixture;
   }
 
-  it('defaults clockOut to (roughly) now and clockIn/note from the record', () => {
+  it('defaults clockOut to (roughly) now and clockIn/note from the record', async () => {
     const fixture = create();
     const c = fixture.componentInstance;
     expect(c.clockIn!.isSame(record.clockIn)).toBe(true);
@@ -60,6 +61,7 @@ describe('ClockRecordStopComponent', () => {
     c.onSubmit();
     await fixture.whenStable();
     expect(save).toHaveBeenCalledWith(record, expect.objectContaining({clockIn: c.clockIn, note: 'Aftenvagt'}));
+    await flushWrites();
     expect(dialogRefClose).toHaveBeenCalled();
   });
 
@@ -77,24 +79,28 @@ describe('ClockRecordStopComponent', () => {
     const fixture = create();
     fixture.componentInstance.onSubmit();
     await fixture.whenStable();
+    await flushWrites();
     expect(snackBarOpen).toHaveBeenCalled();
+    await flushWrites();
     expect(dialogRefClose).not.toHaveBeenCalled();
   });
 
   describe('delete', () => {
-    it('removes the record and closes the dialog when the confirm dialog is accepted', () => {
+    it('removes the record and closes the dialog when the confirm dialog is accepted', async () => {
       confirmed = true;
       const fixture = create();
       fixture.componentInstance.confirmDelete();
       expect(removeRecord).toHaveBeenCalledWith(record);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('does nothing when the confirm dialog is declined', () => {
+    it('does nothing when the confirm dialog is declined', async () => {
       confirmed = false;
       const fixture = create();
       fixture.componentInstance.confirmDelete();
       expect(removeRecord).not.toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });

@@ -29,10 +29,10 @@
 
 <mat-dialog-actions align="end">
   @if (mode === 'edit') {
-    <button matButton type="button" class="confirm-danger" (click)="deleteRefill()">Slet</button>
+    <button matButton type="button" class="confirm-danger" [disabled]="saving()" (click)="deleteRefill()">Slet</button>
   }
-  <button matButton type="button" mat-dialog-close>Annuller</button>
-  <button matButton="filled" type="submit" form="tankRefillForm" [disabled]="!tankRefillForm.valid">
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="tankRefillForm" [disabled]="!tankRefillForm.valid || saving()">
     {{ mode === 'edit' ? 'Gem' : 'Registrer' }}
   </button>
 </mat-dialog-actions>

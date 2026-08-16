@@ -7,7 +7,6 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatListModule} from '@angular/material/list';
-import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
 import {Template} from '../template';
@@ -19,6 +18,7 @@ import {TripsComponent} from '../trips/trips.component';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {PageHeaderService} from '../page-header.service';
+import {WriteFeedbackService} from '../write-feedback.service';
 
 @Component({
   standalone: true,
@@ -37,12 +37,15 @@ export class TemplatesComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly writeFeedback = inject(WriteFeedbackService);
   private readonly pageHeader = inject(PageHeaderService);
 
   templates$!: Observable<Template[]>;
   trips$!: Observable<Trip[]>;
-  private _selectedTemplate!: Template;
+  // Null until the template list first arrives (see ngOnInit) — the previous `!: Template`
+  // declared away a state that genuinely occurs, which left the template's own `?.` guard
+  // looking redundant to the compiler while still being needed at runtime.
+  private _selectedTemplate: Template | null = null;
 
   templateForm: FormGroup = this.fb.group({
     name: ['', Validators.required]
@@ -61,7 +64,7 @@ export class TemplatesComponent implements OnInit {
   createTemplate() {
     if (!this.templateForm.valid) return;
     const val = this.templateForm.value;
-    this.dataStore.addTemplate(val.name);
+    void this.writeFeedback.run(this.dataStore.addTemplate(val.name));
     this.templateForm.reset();
   }
 
@@ -75,40 +78,48 @@ export class TemplatesComponent implements OnInit {
       } as ConfirmDialogData,
     });
     dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) this.dataStore.removeTemplate(template);
+      if (confirmed) void this.writeFeedback.run(this.dataStore.removeTemplate(template), {failureMessage: 'Kunne ikke slette skabelonen. Prøv igen.'});
     });
   }
 
   create() {
-    if (!this.selectedTemplate) return;
+    const template = this.selectedTemplate;
+    if (!template) return;
     const dialogRef = this.dialog.open(TripFormComponent, DIALOG_CONFIG);
     const instance = dialogRef.componentInstance;
     instance.mode = 'create';
     instance.showDate = false;
-    instance.save.subscribe((t: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.addTripToTemplate(this.selectedTemplate, t)));
+    instance.save.subscribe((t: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.addTripToTemplate(template, t)));
   }
 
   removeTrip(trip: Trip) {
-    return this.dataStore.removeTripFromTemplate(this.selectedTemplate, trip);
+    const template = this.selectedTemplate;
+    if (!template) return Promise.resolve();
+    return this.dataStore.removeTripFromTemplate(template, trip);
   }
 
-  // Shared by create()/edit()'s save/remove subscriptions: the dialog only closes once the
-  // write actually succeeds — a rejected write (offline, permission denied, ...) leaves it open
-  // with a snackbar instead of silently discarding the edit.
+  // Shared by create()/edit()'s save/remove subscriptions. A rejected write leaves the dialog
+  // open with a snackbar rather than silently discarding the edit; an unacknowledged one (the
+  // offline case, where the RTDB promise never settles) closes it and says so instead of
+  // freezing. See WriteFeedbackService.
   private closeOnSave(dialogRef: MatDialogRef<TripFormComponent>, saved: PromiseLike<unknown>): void {
-    saved.then(
-      () => dialogRef.close(),
-      () => this.snackBar.open('Kunne ikke gemme. Prøv igen.', 'OK', {duration: 5000}),
-    );
+    const instance = dialogRef.componentInstance;
+    instance?.saving.set(true);
+    this.writeFeedback.run(saved).then(outcome => {
+      instance?.saving.set(false);
+      if (outcome !== 'failed') dialogRef.close();
+    });
   }
 
   edit(trip: Trip) {
+    const template = this.selectedTemplate;
+    if (!template) return;
     const dialogRef = this.dialog.open(TripFormComponent, DIALOG_CONFIG);
     const instance = dialogRef.componentInstance;
     instance.mode = 'edit';
     instance.showDate = false;
     instance.trip = trip;
-    instance.save.subscribe((updates: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.updateTripFromTemplate(this.selectedTemplate, trip, updates)));
+    instance.save.subscribe((updates: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.updateTripFromTemplate(template, trip, updates)));
     instance.remove.subscribe(() => this.closeOnSave(dialogRef, this.removeTrip(trip)));
   }
 
@@ -118,7 +129,7 @@ export class TemplatesComponent implements OnInit {
     this.trips$ = this.dataStore.getTemplateTrips(template);
   }
 
-  get selectedTemplate(): Template {
+  get selectedTemplate(): Template | null {
     return this._selectedTemplate;
   }
 

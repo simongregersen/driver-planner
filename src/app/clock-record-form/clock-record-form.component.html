@@ -32,10 +32,10 @@
 
 <mat-dialog-actions align="end">
   @if (mode === 'edit') {
-    <button matButton class="delete-btn" type="button" (click)="confirmDelete()">Slet</button>
+    <button matButton class="delete-btn" type="button" [disabled]="saving()" (click)="confirmDelete()">Slet</button>
   }
-  <button matButton type="button" mat-dialog-close>Annuller</button>
-  <button matButton="filled" type="submit" form="clockRecordForm" [class.start-btn]="mode === 'create'" [disabled]="!!error()">
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="clockRecordForm" [class.start-btn]="mode === 'create'" [disabled]="!!error() || saving()">
     {{ mode === 'edit' ? 'Gem' : 'Start' }}
   </button>
 </mat-dialog-actions>

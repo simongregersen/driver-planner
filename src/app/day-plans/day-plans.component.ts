@@ -6,12 +6,13 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
 import {MatDialog} from '@angular/material/dialog';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
-import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatSlideToggleChange, MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
 import {Note} from '../note';
@@ -33,6 +34,7 @@ import {BreakpointService} from '../breakpoint.service';
 import {PageHeaderService} from '../page-header.service';
 import {TripFilterStateService} from '../trip-filter-state.service';
 import {TripEditingService} from '../trip-editing.service';
+import {WriteFeedbackService} from '../write-feedback.service';
 
 @Component({
   standalone: true,
@@ -57,6 +59,8 @@ export class DayPlansComponent implements OnInit {
   private readonly datePipe = inject(DatePipe);
   readonly filterState = inject(TripFilterStateService);
   readonly tripEditing = inject(TripEditingService);
+  private readonly writeFeedback = inject(WriteFeedbackService);
+  private readonly snackBar = inject(MatSnackBar);
 
   availableTemplates$!: Observable<SelectOption[]>;
   readonly minDate = this.dateUtility.minDate(5);
@@ -69,10 +73,16 @@ export class DayPlansComponent implements OnInit {
   // while a new Firebase listener spins up.
   readonly isLoadingTrips = signal(false);
 
+  /** Disables the Skabelon menu while an insert is in flight — it writes one trip per template
+   * entry, so a double-click would duplicate the whole template. */
+  readonly insertingTemplate = signal(false);
+
   readonly trips = toSignal(
     toObservable(this.selectedDate).pipe(
       tap(() => this.isLoadingTrips.set(true)),
-      switchMap(date => this.dataStore.getTrips(date)),
+      // ...WithOffice: this page shows the admin-only officeDescription/labels, which live in
+      // the separate admin-readable /tripOffice node rather than on the trip itself.
+      switchMap(date => this.dataStore.getTripsWithOffice(date)),
       tap(() => this.isLoadingTrips.set(false)),
     )
   );
@@ -182,17 +192,45 @@ export class DayPlansComponent implements OnInit {
   }
 
   insertTemplateWithConfirm(templateId: string, templateName: string) {
+    const date = this.selectedDate();
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       ...CONFIRM_DIALOG_CONFIG,
       data: {
         title: 'Indsæt skabelon',
-        message: `Er du sikker på, at du vil indsætte skabelonen\n'${templateName}'?`,
+        // Naming the target date matters: this is reached from a menu, and inserting into the
+        // wrong day creates N trips that then have to be deleted one at a time.
+        message: `Indsæt skabelonen '${templateName}' på ${this.datePipe.transform(date.toDate(), 'EEEE d. MMMM y')}?`,
         confirmLabel: 'Indsæt',
       } as ConfirmDialogData,
     });
     dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) this.dataStore.insertTemplate(this.selectedDate(), templateId);
+      if (confirmed) void this.insertTemplate(date, templateId);
     });
+  }
+
+  private async insertTemplate(date: Moment, templateId: string): Promise<void> {
+    this.insertingTemplate.set(true);
+    try {
+      const keys = await this.dataStore.insertTemplate(date, templateId);
+      if (!keys.length) {
+        this.snackBar.open('Skabelonen indeholder ingen ture.', 'OK', {duration: 4000});
+        return;
+      }
+      // Undo rather than a confirm-only flow: the confirm dialog can't catch inserting the right
+      // template on the wrong day, and unpicking it by hand is N row-click → dialog → Slet →
+      // confirm cycles. removeTrips is a single atomic multi-path delete, so this is cheap.
+      this.snackBar
+        .open(`${keys.length} ${keys.length === 1 ? 'tur' : 'ture'} indsat.`, 'Fortryd', {duration: 8000})
+        .onAction()
+        .subscribe(() => void this.writeFeedback.run(this.dataStore.removeTrips(keys), {
+          failureMessage: 'Kunne ikke fortryde indsættelsen. Prøv igen.',
+        }));
+    } catch (err) {
+      console.error('Could not insert template', err);
+      this.snackBar.open('Kunne ikke indsætte skabelonen. Prøv igen.', 'OK', {duration: 6000});
+    } finally {
+      this.insertingTemplate.set(false);
+    }
   }
 
   /** The calendar and the date input both hand back null when a selection is cleared. */
@@ -200,8 +238,21 @@ export class DayPlansComponent implements OnInit {
     if (date) this.selectedDate.set(date);
   }
 
-  setDayPublic(isPublic: boolean) {
-    this.dataStore.setDayPublic(this.selectedDate(), isPublic);
+  // The highest-consequence action on this page — it's what publishes the day to drivers and
+  // arms the change-notification path. [checked] is bound one-way to the stored signal, so a
+  // rejected write left the switch sitting wherever the user's thumb put it: the signal never
+  // changed, so Angular never wrote the old value back, and the admin walked away believing a
+  // day was published when it wasn't. Resetting it from $event.source on failure is what makes
+  // the control tell the truth again.
+  setDayPublic(event: MatSlideToggleChange) {
+    void this.writeFeedback
+      .run(this.dataStore.setDayPublic(this.selectedDate(), event.checked), {
+        failureMessage: 'Kunne ikke ændre synligheden. Prøv igen.',
+        pendingMessage: 'Ingen forbindelse — synligheden ændres, når du er online igen. Hold appen åben.',
+      })
+      .then(outcome => {
+        if (outcome === 'failed') event.source.checked = this.dayPublic();
+      });
   }
 
 }

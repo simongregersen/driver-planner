@@ -6,6 +6,7 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {Driver} from '../driver';
 import {UserService} from '../user.service';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
 
 @Component({
   standalone: true,
@@ -31,6 +32,14 @@ export class DriverLoginCreatorComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]]
   });
+
+
+  // Escape / backdrop click ask before discarding typed-in input, rather than
+  // destroying it silently. Pristine forms still close instantly. See
+  // guardDialogDismissal and DIALOG_CONFIG's disableClose.
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => this.loginForm?.dirty ?? false);
+  }
 
   onSubmit() {
     const val = this.loginForm.value;

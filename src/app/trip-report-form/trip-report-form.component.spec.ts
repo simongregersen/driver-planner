@@ -1,8 +1,9 @@
 import {TestBed} from '@angular/core/testing';
+import {flushWrites} from '../../test-helpers';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from '../confirm-dialog/confirm-dialog.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {of} from 'rxjs';
+import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {TripReportFormComponent} from './trip-report-form.component';
 import {DataStore} from '../data.service';
@@ -34,7 +35,7 @@ describe('TripReportFormComponent', () => {
       imports: [TripReportFormComponent],
       providers: [
         {provide: DataStore, useValue: dataStore},
-        {provide: MatDialogRef, useValue: {close: dialogRefClose}},
+        {provide: MatDialogRef, useValue: {close: dialogRefClose, backdropClick: () => EMPTY, keydownEvents: () => EMPTY}},
         {provide: MatSnackBar, useValue: {open: snackBarOpen}},
       ],
     });
@@ -53,7 +54,7 @@ describe('TripReportFormComponent', () => {
   }
 
   describe('pre-fill', () => {
-    it('defaults start/end to the trip schedule when no report exists yet', () => {
+    it('defaults start/end to the trip schedule when no report exists yet', async () => {
       const fixture = create();
       const c = fixture.componentInstance;
       expect(c.hasExistingReport).toBe(false);
@@ -61,7 +62,7 @@ describe('TripReportFormComponent', () => {
       expect(c.end!.isSame(tripEnd)).toBe(true);
     });
 
-    it('pre-fills from an existing report when one is present', () => {
+    it('pre-fills from an existing report when one is present', async () => {
       const existingStart = moment('2026-01-01 09:15', 'YYYY-MM-DD HH:mm');
       const withReport: Trip = {
         ...trip,
@@ -89,6 +90,7 @@ describe('TripReportFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.setTripReport).toHaveBeenCalledWith('t1', 'd1', expect.objectContaining({note: 'Alt ok'}));
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
@@ -117,25 +119,29 @@ describe('TripReportFormComponent', () => {
       const fixture = create();
       fixture.componentInstance.onSubmit();
       await fixture.whenStable();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
-    it('deletes the report and closes the dialog when the confirm dialog is accepted', () => {
+    it('deletes the report and closes the dialog when the confirm dialog is accepted', async () => {
       confirmed = true;
       const fixture = create();
       fixture.componentInstance.deleteReport();
       expect(dataStore.deleteTripReport).toHaveBeenCalledWith('t1', 'd1');
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('does nothing when the confirm dialog is declined', () => {
+    it('does nothing when the confirm dialog is declined', async () => {
       confirmed = false;
       const fixture = create();
       fixture.componentInstance.deleteReport();
       expect(dataStore.deleteTripReport).not.toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });

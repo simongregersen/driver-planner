@@ -81,8 +81,8 @@
 
 <mat-dialog-actions align="end">
   @if (hasExistingReport) {
-    <button matButton type="button" class="confirm-danger" (click)="deleteReport()">Slet</button>
+    <button matButton type="button" class="confirm-danger" [disabled]="saving()" (click)="deleteReport()">Slet</button>
   }
-  <button matButton type="button" mat-dialog-close>Annuller</button>
-  <button matButton="filled" type="submit" form="tripReportForm" [disabled]="!!error()">Gem</button>
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="tripReportForm" [disabled]="!!error() || saving()">Gem</button>
 </mat-dialog-actions>

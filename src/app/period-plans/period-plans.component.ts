@@ -72,7 +72,8 @@ export class PeriodPlansComponent implements OnInit {
   readonly trips = toSignal(
     toObservable(this.fetchedRange).pipe(
       tap(() => this.isLoadingTrips.set(true)),
-      switchMap(r => r ? this.dataStore.getTrips(r.from, r.to) : of(null)),
+      // ...WithOffice: same as Day Plans — this page shows officeDescription/labels.
+      switchMap(r => r ? this.dataStore.getTripsWithOffice(r.from, r.to) : of(null)),
       tap(() => this.isLoadingTrips.set(false)),
     )
   );

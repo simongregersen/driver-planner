@@ -177,6 +177,19 @@ mat-chip-set {
   --mat-chip-elevated-container-color: rgba(255, 193, 7, 0.25);
 }
 
+/* A driver who has left the company but is still assigned to this trip. Deleting a driver is a
+   soft delete that deliberately doesn't unassign them from trips already planned, so the name
+   still has to render — dimmed and struck through so it reads as "no longer here" rather than as
+   an ordinary assignment. Deliberately not the amber warning cue above: this isn't a conflict to
+   resolve before the day runs, it's a statement of fact about the roster. Strikethrough as well
+   as colour, so it doesn't rely on colour alone. */
+.chip-deleted {
+  --mat-chip-elevated-container-color: transparent;
+  --mat-chip-label-text-color: var(--mat-sys-outline);
+  border: 1px dashed var(--mat-sys-outline-variant);
+  text-decoration: line-through;
+}
+
 .loading {
   display: flex;
   justify-content: center;

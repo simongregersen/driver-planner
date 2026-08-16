@@ -29,7 +29,7 @@
           <td data-label="Admin">
             @if (driver.uid) {
               <mat-checkbox [checked]="isDriverAdmin(driver, users)"
-                            (change)="setDriverAdmin(driver, $event.checked)"
+                            (change)="setDriverAdmin(driver, $event)"
                             [attr.aria-label]="'Administrator: ' + driver.displayName">
               </mat-checkbox>
             }

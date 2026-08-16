@@ -1,8 +1,9 @@
 import {TestBed} from '@angular/core/testing';
+import {flushWrites} from '../../test-helpers';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from '../confirm-dialog/confirm-dialog.component';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {of} from 'rxjs';
+import {EMPTY, of} from 'rxjs';
 import {VehicleFormComponent} from './vehicle-form.component';
 import {DataStore} from '../data.service';
 import {Vehicle} from '../vehicle';
@@ -32,7 +33,7 @@ describe('VehicleFormComponent', () => {
       imports: [VehicleFormComponent],
       providers: [
         {provide: DataStore, useValue: dataStore},
-        {provide: MatDialogRef, useValue: {close: dialogRefClose}},
+        {provide: MatDialogRef, useValue: {close: dialogRefClose, backdropClick: () => EMPTY, keydownEvents: () => EMPTY}},
         {provide: MatSnackBar, useValue: {open: snackBarOpen}},
       ],
     });
@@ -62,7 +63,9 @@ describe('VehicleFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.addVehicle).toHaveBeenCalledWith('Bus 2', 'Scania', 'XY98765', null, true);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
+      await flushWrites();
       expect(snackBarOpen).not.toHaveBeenCalled();
     });
 
@@ -73,7 +76,9 @@ describe('VehicleFormComponent', () => {
       c.vehicleForm.setValue({displayName: 'Bus 2', brand: '', regNo: '', latestInspection: null, isRutebus: false});
       c.onSubmit();
       await fixture.whenStable();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
 
@@ -88,7 +93,7 @@ describe('VehicleFormComponent', () => {
   });
 
   describe('edit', () => {
-    it('pre-fills the form from the existing vehicle', () => {
+    it('pre-fills the form from the existing vehicle', async () => {
       const fixture = create('edit', vehicle);
       const val = fixture.componentInstance.vehicleForm.value;
       expect(val.displayName).toBe('Bus 1');
@@ -104,6 +109,7 @@ describe('VehicleFormComponent', () => {
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.updateVehicle).toHaveBeenCalledWith(vehicle, expect.objectContaining({isRutebus: true, displayName: 'Bus 1'}));
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
@@ -112,25 +118,29 @@ describe('VehicleFormComponent', () => {
       const fixture = create('edit', vehicle);
       fixture.componentInstance.onSubmit();
       await fixture.whenStable();
+      await flushWrites();
       expect(snackBarOpen).toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
-    it('deletes the vehicle and closes the dialog when the confirm dialog is accepted', () => {
+    it('deletes the vehicle and closes the dialog when the confirm dialog is accepted', async () => {
       confirmed = true;
       const fixture = create('edit', vehicle);
       fixture.componentInstance.deleteVehicle();
       expect(dataStore.deleteVehicle).toHaveBeenCalledWith(vehicle);
+      await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('does nothing when the confirm dialog is declined', () => {
+    it('does nothing when the confirm dialog is declined', async () => {
       confirmed = false;
       const fixture = create('edit', vehicle);
       fixture.componentInstance.deleteVehicle();
       expect(dataStore.deleteVehicle).not.toHaveBeenCalled();
+      await flushWrites();
       expect(dialogRefClose).not.toHaveBeenCalled();
     });
   });
