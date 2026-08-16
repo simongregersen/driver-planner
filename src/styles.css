@@ -642,12 +642,34 @@ button.confirm-danger.mat-mdc-unelevated-button {
     display: block !important;
   }
 
+  /* .print-only is a generic "reveal this in print" utility used well beyond page headers —
+     e.g. TripsComponent reuses it on the inline <span> that swaps a chip list for plain text
+     (see trips.component.html). A margin here landed on every one of those instead of just the
+     header once forced to display:block, visibly taller-than-before-looking every single trip
+     row in print. print-header is the same 4 pages' actual header wrapper, and only that. */
+  .print-header {
+    /* The on-screen .page-header this stands in for gets its breathing room from its own
+       margin, but that's a no-print element — print never inherits it, so the header would
+       otherwise sit flush against whatever table/content follows it on every page that uses
+       this print-header pattern (Timeseddel, Brændstof, Dagsplaner, Periodeplaner). */
+    margin-bottom: 24px;
+  }
+
   .page-layout {
     display: block;
   }
 
   .page-main {
     margin-top: 0;
+  }
+
+  /* Without this, a browser's print pagination is free to cut a row in half at a page
+     boundary — the top half's cells stay on the bottom of one page, the rest continues at the
+     top of the next. break-inside is the modern property; page-break-inside is kept alongside
+     it for older print engines that don't recognize break-inside yet. */
+  .data-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
 }

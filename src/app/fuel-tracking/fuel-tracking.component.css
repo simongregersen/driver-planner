@@ -11,21 +11,16 @@
   font-weight: 600;
 }
 
-.category-heading {
-  margin: 24px 0 4px;
-  font: var(--mat-sys-title-medium);
-}
-
-.category-heading:first-child {
-  margin-top: 0;
-}
-
-/* A whole separate section (fuel bought in bulk for the company's own tank, not tied to any
-   vehicle), so it gets more headroom above than a category-heading does between two vehicle
-   tables — and unlike those, it's always shown, so there's no :first-child case to cover. */
+/* Shared by every top-level section heading here (Special/Turist, Tank, Omkostning) so they
+   all read as the same rank. Whichever one happens to land first on the page (Special, usually)
+   drops its own top margin — .page-main's own margin-top (styles.css) already provides that gap. */
 .tank-heading {
   margin: 32px 0 4px;
   font: var(--mat-sys-title-large);
+}
+
+.tank-heading:first-child {
+  margin-top: 0;
 }
 
 /* Same inline calendar used by Periodeplaner/Dagsplaner. This was missing here entirely —

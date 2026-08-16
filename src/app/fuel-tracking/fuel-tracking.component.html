@@ -4,6 +4,12 @@
     <small>{{ headerFrom().toDate() | date:'EEEE, d MMMM' }} - {{ headerTo().toDate() | date:'EEEE, d MMMM' }}</small>
   </h2>
 </div>
+<div class="print-only print-header">
+  <h5 class="page-title">
+    Brændstof
+    <small>{{ headerFrom().toDate() | date:'EEEE, d MMMM' }} - {{ headerTo().toDate() | date:'EEEE, d MMMM' }}</small>
+  </h5>
+</div>
 
 @if (userService.isAdmin$ | async) {
   <div class="page-layout">
@@ -67,7 +73,7 @@
       } @else if (vehicleGroups().length > 0) {
         @for (category of categoryGroups(); track category.label) {
           @if (category.groups.length > 0) {
-            <h4 class="category-heading">{{ category.label }}</h4>
+            <h3 class="tank-heading">{{ category.label }}</h3>
             <div class="table-scroll">
               <table class="data-table overview-table">
                 <colgroup>
