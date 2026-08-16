@@ -137,5 +137,13 @@ describe('TripFilterStateService', () => {
       expect(service.showLabels()).toBe(false);
       expect(service.isFiltering()).toBe(false);
     });
+
+    it('setShowDayNotes applies immediately, without touching isFiltering', () => {
+      const service = TestBed.inject(TripFilterStateService);
+      expect(service.showDayNotes()).toBe(true);
+      service.setShowDayNotes(false);
+      expect(service.showDayNotes()).toBe(false);
+      expect(service.isFiltering()).toBe(false);
+    });
   });
 });

@@ -21,6 +21,9 @@ export class TripFilterStateService {
   readonly showOfficeNotes = signal(false);
   readonly showDriverNotes = signal(false);
   readonly showLabels = signal(true);
+  /** Day Plans only (see DayPlansComponent's own note-alert rendering) — Period Plans has no
+   * day-note concept of its own, so this just goes unused there. */
+  readonly showDayNotes = signal(true);
 
   // Re-filtering/re-rendering the whole trip table on a filter/view-toggle change can take long
   // enough to feel like the app hung, since it happens synchronously within the same change
@@ -77,6 +80,10 @@ export class TripFilterStateService {
 
   setShowLabels(value: boolean): void {
     this.showLabels.set(value);
+  }
+
+  setShowDayNotes(value: boolean): void {
+    this.showDayNotes.set(value);
   }
 
   // Each of these is a factory: called once per host component (typically in a field

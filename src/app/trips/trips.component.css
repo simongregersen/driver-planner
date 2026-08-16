@@ -18,9 +18,16 @@
 /* Admin-only labels, next to the trip name — margin on the wrapper (not a gap on a flex
    container around app-rich-text) since app-rich-text's :host is display:contents, and a flex
    gap there would leak in between its own internal segments (e.g. a **highlighted** word)
-   rather than just separating it from these chips. */
+   rather than just separating it from these chips. Deliberately left inline (not block): a
+   label stays right after the name when the two fit on the same line together, and only wraps
+   to its own line — as an ordinary consequence of inline layout, not anything forced here —
+   once the name's own wrapping (a long one spans 2-3 lines especially in print's narrower,
+   fixed-width Tur column) leaves it no room to fit after the last line. nowrap keeps that wrap
+   an all-or-nothing move for the whole label group — several labels drop to the new line
+   together, never splitting mid-group with some trailing the name and the rest below it. */
 .trip-labels {
   margin-left: 6px;
+  white-space: nowrap;
 }
 
 .trip-label-chip {

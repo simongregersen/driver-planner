@@ -12,6 +12,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatTooltipModule} from '@angular/material/tooltip';
 import {DataStore} from '../data.service';
 import {Note} from '../note';
 import {Utility} from '../utility';
@@ -41,7 +42,7 @@ import {TripEditingService} from '../trip-editing.service';
   imports: [
     FormsModule, AsyncPipe, DatePipe,
     MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule, MatIconModule,
-    MatInputModule, MatMenuModule, MatProgressSpinnerModule, MatSlideToggleModule,
+    MatInputModule, MatMenuModule, MatProgressSpinnerModule, MatSlideToggleModule, MatTooltipModule,
     TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
   ],
   providers: [DatePipe, TripFilterStateService, TripEditingService],

@@ -71,14 +71,21 @@
       <div>
         <h5 class="section-title">Vis</h5>
         <mat-button-toggle-group multiple [hideMultipleSelectionIndicator]="true" [disabled]="filterState.isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
-          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)">
-            Chaufførnoter
+          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)"
+                              aria-label="Chaufførnoter" matTooltip="Chaufførnoter">
+            <mat-icon>notes</mat-icon>
           </mat-button-toggle>
-          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)">
-            Kontornoter
+          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)"
+                              aria-label="Kontornoter" matTooltip="Kontornoter">
+            <mat-icon>admin_panel_settings</mat-icon>
           </mat-button-toggle>
-          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)">
-            Mærkater
+          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)"
+                              aria-label="Mærkater" matTooltip="Mærkater">
+            <mat-icon>label</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showDayNotes()" (change)="filterState.setShowDayNotes($event.source.checked)"
+                              aria-label="Dagsnoter" matTooltip="Dagsnoter">
+            <mat-icon>event_note</mat-icon>
           </mat-button-toggle>
         </mat-button-toggle-group>
       </div>
@@ -153,14 +160,21 @@
       <div>
         <h5 class="section-title">Vis</h5>
         <mat-button-toggle-group multiple [disabled]="filterState.isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
-          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)">
-            Chaufførnoter
+          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)"
+                              aria-label="Chaufførnoter" matTooltip="Chaufførnoter">
+            <mat-icon>notes</mat-icon>
           </mat-button-toggle>
-          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)">
-            Kontornoter
+          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)"
+                              aria-label="Kontornoter" matTooltip="Kontornoter">
+            <mat-icon>admin_panel_settings</mat-icon>
           </mat-button-toggle>
-          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)">
-            Mærkater
+          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)"
+                              aria-label="Mærkater" matTooltip="Mærkater">
+            <mat-icon>label</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showDayNotes()" (change)="filterState.setShowDayNotes($event.source.checked)"
+                              aria-label="Dagsnoter" matTooltip="Dagsnoter">
+            <mat-icon>event_note</mat-icon>
           </mat-button-toggle>
         </mat-button-toggle-group>
       </div>
@@ -188,17 +202,19 @@
   </app-collapsible-bottom-bar>
 
   <main class="page-main">
-    @for (note of visibleNotes(); track note.$key) {
-      <div class="note-alert" tabindex="0" role="button" (click)="editNote(note)"
-           (keydown.enter)="editNote(note)" (keydown.space)="$event.preventDefault(); editNote(note)">
-        <span class="note-alert-text">{{ note.text }}</span>
-        @if (noteNames().get(note.$key)?.drivers; as driverNames) {
-          <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ driverNames }}</span>
-        }
-        @if (noteNames().get(note.$key)?.vehicles; as vehicleNames) {
-          <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ vehicleNames }}</span>
-        }
-      </div>
+    @if (filterState.showDayNotes()) {
+      @for (note of visibleNotes(); track note.$key) {
+        <div class="note-alert" tabindex="0" role="button" (click)="editNote(note)"
+             (keydown.enter)="editNote(note)" (keydown.space)="$event.preventDefault(); editNote(note)">
+          <span class="note-alert-text">{{ note.text }}</span>
+          @if (noteNames().get(note.$key)?.drivers; as driverNames) {
+            <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ driverNames }}</span>
+          }
+          @if (noteNames().get(note.$key)?.vehicles; as vehicleNames) {
+            <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ vehicleNames }}</span>
+          }
+        </div>
+      }
     }
     @if (filterState.isFiltering() || isLoadingTrips()) {
       <div class="loading no-print">
