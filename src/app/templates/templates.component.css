@@ -2,6 +2,10 @@
   padding: 0;
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: var(--mat-sys-corner-medium);
+  /* Without this, the selected row's plain rectangular background (.active-item below) paints
+     square corners that poke out past this container's own rounded ones whenever the first or
+     last row is the selected one. */
+  overflow: hidden;
 }
 
 .template-list .active-item {
