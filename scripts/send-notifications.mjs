@@ -80,7 +80,7 @@ async function main() {
   for (const [pushId, entry] of entries) {
     // Each entry is isolated: one malformed or unsendable row must not block every row behind
     // it. Previously a throw anywhere in here escaped to main().catch and exited before the
-    // queue entry was removed, so the 5-minute cron retried the same poisoned row forever and
+    // queue entry was removed, so the cron retried the same poisoned row forever and
     // no driver received any notification at all until someone cleared it by hand.
     try {
       const {tokens, owners} = await collectTokens(entry.uids || []);
@@ -126,7 +126,7 @@ async function main() {
 // The database client holds an open WebSocket to RTDB from the first read onwards, and an open
 // socket keeps Node's event loop alive — so tearing the app down is what actually ends the
 // process. Without it the script printed its output, finished its work, and then sat idle until
-// Actions killed the job hours later, once per run of a five-minute cron.
+// Actions killed the job hours later, on every single run.
 //
 // The failure path sets exitCode rather than calling process.exit() for the same reason: exiting
 // there would skip this cleanup, and it's the one path most likely to have left the connection

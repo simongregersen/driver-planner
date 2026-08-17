@@ -9,7 +9,7 @@ import {environment} from '../environments/environment';
 const TRIGGER_DEBOUNCE_MS = 2000;
 
 // Kicks the notification-poller GitHub Actions workflow off immediately instead of
-// waiting for its 5-minute cron fallback. Best-effort: a failure here just means
+// waiting for its half-hourly cron fallback. Best-effort: a failure here just means
 // delivery falls back to the schedule, so callers don't need to handle rejections.
 @Injectable({providedIn: 'root'})
 export class NotificationDispatchService {

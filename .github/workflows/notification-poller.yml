@@ -6,14 +6,17 @@ on:
     # Safety-net fallback in case the immediate workflow_dispatch trigger from the app
     # fails (network blip, blocked request, rotated token) — GitHub's own scheduling can
     # add extra delay under load, so this is a backstop, not the primary delivery path.
-    - cron: '*/5 * * * *'
+    # Half-hourly rather than every five minutes: the dispatch is what actually delivers, in
+    # seconds, and this only matters on the rare run where that request was dropped. At */5 it
+    # was 288 runs a day to catch something that almost never happens.
+    - cron: '*/30 * * * *'
 
 jobs:
   send:
     runs-on: ubuntu-latest
-    # Draining the queue takes seconds. The cron fires every five minutes, so anything still
-    # running past this is wedged rather than busy, and capping it stops a stuck run from
-    # occupying a runner for GitHub's six-hour default.
+    # Draining the queue takes seconds, so anything still running minutes later is wedged rather
+    # than busy — capping it stops a stuck run from occupying a runner for GitHub's six-hour
+    # default, which is exactly what used to happen on every single run.
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
