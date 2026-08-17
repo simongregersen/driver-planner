@@ -33,6 +33,9 @@ export class FuelReportingComponent {
   from = input.required<Moment>();
   to = input<Moment | undefined>(undefined);
   limit = input<number | undefined>(undefined);
+  /** Whether "Ingen tankninger." should be centred in the visible page rather than sitting just
+   * under the "Start tankning" button — see .empty-state-centered in styles.css. */
+  centerEmptyState = input(false);
 
   private readonly dataStore = inject(DataStore);
   private readonly dialog = inject(MatDialog);

@@ -6,6 +6,10 @@ import {db, messaging} from './firebase';
 import {environment} from '../environments/environment';
 import {AuthenticationService} from './authentication.service';
 
+// Must match the constant of the same name in src/combined-sw.js — a service worker can't import
+// from the app bundle, so the string is duplicated rather than shared.
+const PUSH_TO_WINDOW = 'planner-push';
+
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -24,17 +28,38 @@ export class MessagingService {
       if (!m) {
         return;
       }
-      onMessage(m, payload => {
-        // Reads `data` rather than `notification` — the sender is data-only, see
-        // scripts/send-notifications.mjs. Title first and body under it, matching what the
-        // service worker puts on the lock screen: showing the body alone left a driver with
-        // "Tur 12 d. 5. maj kl. 08:00" and no indication of what had actually happened to it.
-        // The newline renders as a line break via the pre-line rule in styles.css.
-        const {title, body} = payload.data ?? {};
-        this.snackBar.open([title, body].filter(Boolean).join('\n') || 'Ny besked', 'OK', {
-          duration: 8000,
-        });
-      });
+      // Fires when the FCM SDK recognises a visible page and hands the push straight to it
+      // instead of showing a notification.
+      onMessage(m, payload => this.showPushSnackbar(payload.data));
+    });
+    this.listenForServiceWorkerPushes();
+  }
+
+  // iOS doesn't report an installed PWA that's open in the foreground as a visible client, so
+  // the SDK's own foreground path above never runs there and the push is handled as a background
+  // one instead. combined-sw.js forwards those to us anyway (see its comment) — hence the
+  // visibility check, which is the part the service worker couldn't do for itself.
+  private listenForServiceWorkerPushes(): void {
+    if (!('serviceWorker' in navigator)) {
+      return;
+    }
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data?.type !== PUSH_TO_WINDOW || document.visibilityState !== 'visible') {
+        return;
+      }
+      this.showPushSnackbar(event.data.data);
+    });
+  }
+
+  // Reads `data` rather than `notification` — the sender is data-only, see
+  // scripts/send-notifications.mjs. Title first and body under it, matching what the service
+  // worker puts on the lock screen: showing the body alone left a driver with "Tur 12 d. 5. maj
+  // kl. 08:00" and no indication of what had actually happened to it. The newline renders as a
+  // line break via the pre-line rule in styles.css.
+  private showPushSnackbar(data: Record<string, string> | undefined): void {
+    const {title, body} = data ?? {};
+    this.snackBar.open([title, body].filter(Boolean).join('\n') || 'Ny besked', 'OK', {
+      duration: 8000,
     });
   }
 
