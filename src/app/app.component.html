@@ -1,29 +1,92 @@
-<nav class="navbar navbar-toggleable-md navbar-inverse fixed-top bg-inverse hidden-print" *ngIf="loggedIn">
-    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
-            data-target="#topbar" aria-controls="topbar" aria-expanded="false"
-            aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <a class="navbar-brand" href="#"><i class="fa fa-bus"></i></a>
-    <div class="collapse navbar-collapse" id="topbar">
-      <ul class="navbar-nav mr-auto">
-        <!--<li class="nav-item"><a class="nav-link" routerLink="/overview" routerLinkActive="active">Oversigt</a></li>-->
-        <li class="nav-item"><a class="nav-link" routerLink="/day-plans" routerLinkActive="active">Dagsplaner</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/period-plans" routerLinkActive="active">Periodeplaner</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/templates" routerLinkActive="active">Skabeloner</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/drivers" routerLinkActive="active">Chauffører</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/vehicles" routerLinkActive="active">Køretøjer</a></li>
-      </ul>
-      <ul class="navbar-nav icons topbar-icons">
-        <li class="nav-item">
-          <a class="nav-link pointer" (click)="print()" ngbTooltip="Print" placement="bottom">Print</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link pointer" (click)="logout()" ngbTooltip="Log ud" placement="bottom">Log ud</a>
-        </li>
-      </ul>
+@if (loggedIn$ | async) {
+  <mat-toolbar class="app-toolbar no-print">
+    <a class="brand" routerLink="/" aria-label="Planner">
+      <app-brand-icon></app-brand-icon>
+    </a>
+
+    <div class="mobile-page-title">
+      <span class="mobile-page-title-main">{{ pageHeader.title() }}</span>
+      @if (pageHeader.subtitle()) {
+        <span class="mobile-page-title-sub">{{ pageHeader.subtitle() }}</span>
+      }
     </div>
-</nav>
-<div class="container">
+
+    <nav mat-tab-nav-bar class="nav-links" disableRipple [tabPanel]="tabPanel">
+      @if (isDriver$ | async) {
+        <a mat-tab-link routerLink="/my-trips" routerLinkActive #rlaMyTrips="routerLinkActive"
+           [active]="rlaMyTrips.isActive">Min dag</a>
+        <a mat-tab-link routerLink="/time-tracking" routerLinkActive #rlaTimeTracking="routerLinkActive"
+           [active]="rlaTimeTracking.isActive">Arbejdstid</a>
+      }
+      <a mat-tab-link routerLink="/time-report" routerLinkActive #rlaTimeReport="routerLinkActive"
+         [active]="rlaTimeReport.isActive">Timeseddel</a>
+      <a mat-tab-link routerLink="/fuel-tracking" routerLinkActive #rlaFuelTracking="routerLinkActive"
+         [active]="rlaFuelTracking.isActive">Brændstof</a>
+      @if (isAdmin$ | async) {
+        <a mat-tab-link routerLink="/day-plans" routerLinkActive #rlaDayPlans="routerLinkActive"
+           [active]="rlaDayPlans.isActive">Dagsplaner</a>
+        <a mat-tab-link routerLink="/period-plans" routerLinkActive #rlaPeriodPlans="routerLinkActive"
+           [active]="rlaPeriodPlans.isActive">Periodeplaner</a>
+        <a mat-tab-link routerLink="/templates" routerLinkActive #rlaTemplates="routerLinkActive"
+           [active]="rlaTemplates.isActive">Skabeloner</a>
+        <a mat-tab-link routerLink="/drivers" routerLinkActive #rlaDrivers="routerLinkActive"
+           [active]="rlaDrivers.isActive">Chauffører</a>
+        <a mat-tab-link routerLink="/vehicles" routerLinkActive #rlaVehicles="routerLinkActive"
+           [active]="rlaVehicles.isActive">Køretøjer</a>
+      }
+    </nav>
+
+    <span class="spacer"></span>
+
+    @if (driverName$ | async; as driverName) {
+      <span class="mobile-driver-chip">{{ driverName }}</span>
+    }
+
+    <span class="toolbar-actions">
+      <button matIconButton (click)="enableNotifications()" aria-label="Slå notifikationer til" matTooltip="Slå notifikationer til" matTooltipPosition="below">
+        <mat-icon>notifications</mat-icon>
+      </button>
+      <button matButton (click)="print()" class="pointer">Print</button>
+      <button matButton (click)="logout()" class="pointer">Log ud ({{ email$ | async }})</button>
+    </span>
+  </mat-toolbar>
+
+  <!-- Below the 1024px breakpoint (see app.component.css) this replaces both the desktop
+       tab row and the old hamburger menu — a persistent bottom tab bar reads as a native
+       app shell, where a menu the user has to open first reads as a website. -->
+  <nav class="bottom-nav no-print" aria-label="Bund-navigation">
+    @if (isDriver$ | async) {
+      <a class="bottom-nav-link" routerLink="/my-trips" routerLinkActive="active">
+        <mat-icon>directions_bus</mat-icon>
+        <span>Min dag</span>
+      </a>
+      <a class="bottom-nav-link" routerLink="/time-tracking" routerLinkActive="active">
+        <mat-icon>punch_clock</mat-icon>
+        <span>Arbejdstid</span>
+      </a>
+    }
+    @if ((isAdmin$ | async) === false) {
+      <a class="bottom-nav-link" routerLink="/time-report" routerLinkActive="active">
+        <mat-icon>receipt_long</mat-icon>
+        <span>Timeseddel</span>
+      </a>
+    }
+    <a class="bottom-nav-link" routerLink="/fuel-tracking" routerLinkActive="active">
+      <mat-icon>local_gas_station</mat-icon>
+      <span>Brændstof</span>
+    </a>
+    @if (isAdmin$ | async) {
+      <a class="bottom-nav-link" routerLink="/day-plans" routerLinkActive="active">
+        <mat-icon>event</mat-icon>
+        <span>Dagsplaner</span>
+      </a>
+    }
+    <button type="button" class="bottom-nav-link" (click)="openMoreSheet()">
+      <mat-icon>more_horiz</mat-icon>
+      <span>Mere</span>
+    </button>
+  </nav>
+}
+<mat-tab-nav-panel #tabPanel class="container">
   <router-outlet></router-outlet>
-</div>
+</mat-tab-nav-panel>

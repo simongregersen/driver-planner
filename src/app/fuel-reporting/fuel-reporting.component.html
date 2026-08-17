@@ -1,0 +1,58 @@
+@if (loading()) {
+  <div class="loading no-print">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+} @else if (sortedRecords().length > 0) {
+  <table class="data-table fuel-reporting-table">
+    <colgroup>
+      <col class="col-date">
+      <col>
+      <col class="col-num">
+      <col class="col-num">
+      <col class="col-actions">
+    </colgroup>
+    <thead>
+    <tr>
+      <th>Dato</th>
+      <th>Køretøj</th>
+      <th>Triptæller</th>
+      <th>Brændstof</th>
+      <th class="no-print"></th>
+    </tr>
+    </thead>
+    <tbody>
+    @for (record of visibleRecords(); track record.$key) {
+      <tr class="hoverable">
+        <td data-label="Dato">{{ record.date.toDate() | date:'EEE d/M' }}</td>
+        <td data-label="Køretøj">{{ record.vehicleName }}</td>
+        <td data-label="Triptæller">{{ record.odometerKm | number }}</td>
+        <td data-label="Brændstof">{{ record.liters | number:'1.0-2' }} L</td>
+        <td class="no-print cell-actions">
+          <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger" (click)="editRecord(record)">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </tr>
+    }
+    </tbody>
+    @if (hasMore()) {
+      <tfoot>
+      <tr>
+        <td colspan="5" class="no-print show-all-cell">
+          <button matButton type="button" (click)="showRecentWeekRecords()">Se seneste uges tankninger</button>
+        </td>
+      </tr>
+      </tfoot>
+    } @else if (showRecentWeek()) {
+      <tfoot>
+      <tr>
+        <td colspan="5" class="no-print show-all-cell">
+          <button matButton type="button" (click)="collapseRecords()">Se færre</button>
+        </td>
+      </tr>
+      </tfoot>
+    }
+  </table>
+} @else {
+  <em class="no-print">Ingen tankninger.</em>
+}

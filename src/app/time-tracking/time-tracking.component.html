@@ -1,0 +1,13 @@
+@if (userService.driverProfile$ | async; as driver) {
+  <div class="page-header">
+    <h2 class="page-title">
+      Arbejdstid
+      <small>{{ driver.displayName }}</small>
+    </h2>
+  </div>
+  <main class="page-main">
+    <app-clock-punch class="no-print" [driverKey]="driver.$key"></app-clock-punch>
+    <app-time-reporting [driverKey]="driver.$key" [from]="recordsWindowStart" [limit]="10"
+                        [centerEmptyState]="true"></app-time-reporting>
+  </main>
+}

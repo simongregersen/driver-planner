@@ -1,0 +1,7 @@
+<button matButton="filled"
+        type="button"
+        class="punch-btn"
+        [class.punch-stop]="openRecord()"
+        (click)="punch()">
+  {{ openRecord() ? 'Stop tidsregistrering' : 'Start tidsregistrering' }}
+</button>

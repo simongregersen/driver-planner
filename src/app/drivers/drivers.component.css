@@ -1,0 +1,73 @@
+/* Fulde navn/Login have no width hint at all and share whatever's left after the other
+   columns' percentage hints — an email address in particular has no spaces for normal
+   wrapping to break on, so without this a long one just overflowed its column instead of
+   wrapping (auto layout, kept here rather than table-layout: fixed, is what lets the actions
+   column below stay shrunk to its own content instead of needing a guessed pixel width). */
+.data-table td {
+  overflow-wrap: break-word;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  /* Buttons are 26px visible but keep the default 48px invisible touch target (see
+     .data-table .mat-mdc-icon-button in styles.css) — this gap keeps those targets
+     from overlapping so adjacent buttons stay unambiguous to tap. */
+  gap: 24px;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* Below the bottom-nav breakpoint (see app.component.css), "Opret chauffør" is pinned above
+   that bottom nav bar instead of sitting above the list — same treatment as Arbejdstid's
+   start/stop button, for a consistent single-primary-action pattern across pages. There's
+   only ever the one button here, so (unlike Min dag/Dagsplaner) there's nothing to collapse. */
+@media (max-width: 1024px) {
+  .toolbar-row {
+    position: fixed;
+    left: 0;
+    right: 0;
+    /* See the bottom comment on collapsible-bottom-bar's :host for the full explanation. */
+    bottom: calc(var(--bottom-nav-height) - env(safe-area-inset-bottom));
+    z-index: 900;
+    justify-content: center;
+    background: var(--mat-sys-surface-container);
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    padding: 8px 16px;
+    margin-bottom: 0;
+    box-sizing: border-box;
+  }
+
+  /* Room for the pinned bar above, in addition to the bottom nav it already accounts for
+     via body's own padding (see styles.css) — otherwise the last card ends up hidden behind
+     it. */
+  .table-scroll {
+    padding-bottom: 60px;
+  }
+}
+
+/* In the mobile card view, mat-checkbox's own default 40px invisible touch target inflates
+   this row's line height well past its "Admin: " label's plain text — shrinking it here
+   (rather than clipping it via the row's own line-height) keeps the checkbox properly tappable,
+   just less padded, and lays it out next to the (pseudo-element) label instead of wrapping.
+   :not(:empty) isn't just for correctness when there's nothing to lay out either — Angular's
+   per-component scoping attribute adds enough specificity that this rule's display: flex would
+   otherwise beat styles.css's global :empty { display: none }, undoing that rule specifically
+   for drivers without a login (no checkbox rendered, so this cell would otherwise stay empty). */
+@media (max-width: 767px) {
+  .data-table.card-on-mobile td[data-label="Admin"]:not(:empty) {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .data-table.card-on-mobile td[data-label="Admin"] mat-checkbox {
+    --mat-checkbox-state-layer-size: 28px;
+  }
+}

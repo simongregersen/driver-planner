@@ -1,0 +1,10 @@
+<div class="wheel" #scroller tabindex="0" role="listbox" [attr.aria-activedescendant]="'wheel-item-' + value()"
+     (scroll)="onScroll()" (keydown)="onKeydown($event)">
+  <div class="wheel-spacer"></div>
+  @for (v of values(); track v) {
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+    <div [id]="'wheel-item-' + v" class="wheel-item" role="option" [attr.aria-selected]="v === value()"
+         [class.selected]="v === value()" (click)="selectByClick(v)">{{ pad(v) }}</div>
+  }
+  <div class="wheel-spacer"></div>
+</div>

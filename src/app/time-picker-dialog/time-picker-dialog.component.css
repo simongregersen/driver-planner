@@ -1,0 +1,29 @@
+.time-wheels {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.colon {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* The centered "this is what's selected" band, matching the wheels' own item height — sits on
+   top of both wheels (later in DOM order) so it stays visible over their items, but doesn't
+   intercept the scroll/click gestures those items need. */
+.wheel-highlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 40px;
+  transform: translateY(-50%);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  pointer-events: none;
+}

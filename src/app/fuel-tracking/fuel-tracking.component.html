@@ -1,0 +1,307 @@
+<div class="page-header no-print">
+  <h2 class="page-title">
+    Brændstof
+    <small>{{ headerFrom().toDate() | date:'EEEE, d MMMM' }} - {{ headerTo().toDate() | date:'EEEE, d MMMM' }}</small>
+  </h2>
+</div>
+<div class="print-only print-header">
+  <h5 class="page-title">
+    Brændstof
+    <small>{{ headerFrom().toDate() | date:'EEEE, d MMMM' }} - {{ headerTo().toDate() | date:'EEEE, d MMMM' }}</small>
+  </h5>
+</div>
+
+@if (userService.isAdmin$ | async) {
+  <div class="page-layout">
+    <aside class="page-aside admin-aside no-print">
+      <div class="sidebar-stack">
+        <mat-calendar class="inline-calendar"
+                      [selected]="selectedRange"
+                      (selectedChange)="onDateChange($event)"
+                      [minDate]="minDate"
+                      [dateClass]="dateClass">
+        </mat-calendar>
+        <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Periode</mat-label>
+          <mat-date-range-input [rangePicker]="rangePicker" [min]="minDate">
+            <input matStartDate readonly placeholder="Fra" [value]="from()" (dateChange)="setFrom($event.value)" (click)="rangePicker.open()">
+            <input matEndDate readonly placeholder="Til" [value]="to()" (dateChange)="setTo($event.value)" (click)="rangePicker.open()">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+          <mat-date-range-picker #rangePicker [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
+        </mat-form-field>
+        <div class="admin-start-tankning-row">
+          <button matButton="filled" type="button" (click)="startFuelingAsAdmin()">Start tankning</button>
+          <button matButton="outlined" type="button" (click)="addToTank()">Tilføj til tank</button>
+        </div>
+        <div>
+          <h5 class="section-title">Køretøjer</h5>
+          <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()" [multiple]="true"
+                            (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
+        </div>
+      </div>
+    </aside>
+
+    <app-collapsible-bottom-bar class="mobile-admin-bar no-print">
+      <div bar-collapsed class="admin-start-tankning-row">
+        <button matButton="filled" type="button" (click)="startFuelingAsAdmin()">Start tankning</button>
+        <button matButton="outlined" type="button" (click)="addToTank()">Tilføj til tank</button>
+      </div>
+      <div bar-expanded class="mobile-admin-bar-expanded">
+        <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Periode</mat-label>
+          <mat-date-range-input [rangePicker]="rangePickerMobile" [min]="minDate">
+            <input matStartDate readonly placeholder="Fra" [value]="from()" (dateChange)="setFrom($event.value)" (click)="rangePickerMobile.open()">
+            <input matEndDate readonly placeholder="Til" [value]="to()" (dateChange)="setTo($event.value)" (click)="rangePickerMobile.open()">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="rangePickerMobile"></mat-datepicker-toggle>
+          <mat-date-range-picker #rangePickerMobile [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
+        </mat-form-field>
+        <div>
+          <h5 class="section-title">Køretøjer</h5>
+          <app-chip-filter [options]="vehicleOptions()" [selectedIds]="selectedVehicleKeys()" [multiple]="true"
+                            (selectionChange)="selectedVehicleKeys.set($event)"></app-chip-filter>
+        </div>
+      </div>
+    </app-collapsible-bottom-bar>
+
+    <main class="page-main admin-main">
+      @if (loadingReports()) {
+        <div class="loading no-print">
+          <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+        </div>
+      } @else if (vehicleGroups().length > 0) {
+        @for (category of categoryGroups(); track category.label) {
+          @if (category.groups.length > 0) {
+            <h3 class="tank-heading">{{ category.label }}</h3>
+            <div class="table-scroll">
+              <table class="data-table overview-table">
+                <colgroup>
+                  <col>
+                  <col>
+                  <col>
+                  <col>
+                  <col class="col-expand no-print">
+                </colgroup>
+                <thead>
+                <tr>
+                  <th>Køretøj</th>
+                  <th>Km</th>
+                  <th>Brændstof</th>
+                  <th>Km/L</th>
+                  <th class="no-print"></th>
+                </tr>
+                </thead>
+                <tbody>
+                @for (group of category.groups; track group.vehicleKey) {
+                  <tr class="hoverable">
+                    <td>{{ group.vehicleName }}</td>
+                    <td>@if (group.distanceKm !== null) { {{ group.distanceKm }} km } @else { &mdash; }</td>
+                    <td>{{ group.totalLiters | number:'1.0-2' }} L</td>
+                    <td>@if (group.kmPerLiter !== null) { {{ group.kmPerLiter | number:'1.1-1' }} km/L }</td>
+                    <td class="no-print cell-expand">
+                      <button matIconButton type="button"
+                              [attr.aria-label]="isExpanded(group.vehicleKey) ? 'Skjul tankninger' : 'Vis tankninger'"
+                              [matTooltip]="isExpanded(group.vehicleKey) ? 'Skjul tankninger' : 'Vis tankninger'"
+                              (click)="toggleExpanded(group.vehicleKey)">
+                        <mat-icon>{{ isExpanded(group.vehicleKey) ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+                      </button>
+                    </td>
+                  </tr>
+                  @if (isExpanded(group.vehicleKey)) {
+                    <tr>
+                      <td colspan="5" class="detail-cell">
+                        <div class="table-scroll">
+                          <table class="data-table detail-table">
+                            <colgroup>
+                              <col>
+                              <col>
+                              <col>
+                              @if (!breakpoints.isMobile()) { <col> }
+                              <col>
+                              <col class="col-toggle no-print">
+                              <col class="col-actions no-print">
+                            </colgroup>
+                            <thead>
+                            <tr>
+                              <th>Dato</th>
+                              <th>Triptæller</th>
+                              <th>Brændstof</th>
+                              @if (!breakpoints.isMobile()) { <th>Bemærkning</th> }
+                              <th>Chauffør</th>
+                              <th class="no-print">Ekskluder</th>
+                              <th class="no-print"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @if (group.baselineRow; as baseline) {
+                              <tr class="row-baseline" [matTooltip]="'Seneste tankning før perioden — udgangspunktet for den første kilometer-beregning i perioden'">
+                                <td>{{ baseline.date.toDate() | date:'d/M/y' }}</td>
+                                <td>{{ baseline.odometerKm | number }}</td>
+                                <td>{{ baseline.liters | number:'1.0-2' }} L</td>
+                                @if (!breakpoints.isMobile()) {
+                                  <td><span class="note-cell" [matTooltip]="baseline.note ?? ''">{{ baseline.note }}</span></td>
+                                }
+                                <td>{{ baseline.driverName }}</td>
+                                <td class="no-print"></td>
+                                <td class="no-print"></td>
+                              </tr>
+                            }
+                            @for (row of group.rows; track row.$key) {
+                              <tr class="hoverable" [class.row-excluded]="row.excludeFromStatistics">
+                                <td>{{ row.date.toDate() | date:'d/M/y' }}</td>
+                                <td>{{ row.odometerKm | number }}</td>
+                                <td>{{ row.liters | number:'1.0-2' }} L</td>
+                                @if (!breakpoints.isMobile()) {
+                                  <td class="muted"><span class="note-cell" [matTooltip]="row.note ?? ''">{{ row.note }}</span></td>
+                                }
+                                <td>{{ row.driverName }}</td>
+                                <td class="no-print cell-toggle">
+                                  <mat-slide-toggle [checked]="row.excludeFromStatistics"
+                                                    [matTooltip]="row.excludeFromStatistics ? 'Ekskluderet fra statistik' : 'Medtages i statistik'"
+                                                    (change)="setExcludedFromStatistics(row, $event)">
+                                  </mat-slide-toggle>
+                                </td>
+                                <td class="no-print cell-actions">
+                                  <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger" (click)="editRow(row)">
+                                    <mat-icon>edit</mat-icon>
+                                  </button>
+                                </td>
+                              </tr>
+                            }
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+                </tbody>
+                <tfoot>
+                <tr class="row-total">
+                  <td>Total</td>
+                  <td>{{ category.total.totalDistance }} km</td>
+                  <td>{{ category.total.totalLiters | number:'1.0-2' }} L</td>
+                  <td>@if (category.total.kmPerLiter !== null) { {{ category.total.kmPerLiter | number:'1.1-1' }} km/L }</td>
+                  <td class="no-print"></td>
+                </tr>
+                </tfoot>
+              </table>
+            </div>
+          }
+        }
+        <p class="period-total">
+          I alt: {{ grandTotal().totalDistance }} km &middot; {{ grandTotal().totalLiters | number:'1.0-2' }} L
+        </p>
+      } @else {
+        <em class="no-print">Ingen tankninger i denne periode.</em>
+      }
+
+      <h3 class="tank-heading">Tank</h3>
+      @if (tankRows().length > 0) {
+        <div class="table-scroll">
+          <table class="data-table tank-table">
+            <colgroup>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col class="col-actions no-print">
+            </colgroup>
+            <thead>
+            <tr>
+              <th>Dato</th>
+              <th>Brændstof</th>
+              <th>Pris</th>
+              <th>Kr/L</th>
+              <th class="no-print"></th>
+            </tr>
+            </thead>
+            <tbody>
+            @for (row of tankRows(); track row.refill.$key) {
+              <tr class="hoverable">
+                <td>{{ row.refill.date.toDate() | date:'d/M/y' }}</td>
+                <td>{{ row.refill.liters | number:'1.0-2' }} L</td>
+                <td>{{ row.refill.price | number:'1.0-2' }} kr.</td>
+                <td>@if (row.krPerLiter !== null) { {{ row.krPerLiter | number:'1.2-2' }} kr/L }</td>
+                <td class="no-print cell-actions">
+                  <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger" (click)="editTankRefill(row.refill)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+            </tbody>
+            <tfoot>
+            <tr class="row-total">
+              <td>Total</td>
+              <td>{{ tankTotal().totalLiters | number:'1.0-2' }} L</td>
+              <td>{{ tankTotal().totalPrice | number:'1.0-2' }} kr.</td>
+              <td>@if (tankTotal().krPerLiter !== null) { {{ tankTotal().krPerLiter | number:'1.2-2' }} kr/L }</td>
+              <td class="no-print"></td>
+            </tr>
+            </tfoot>
+          </table>
+        </div>
+      } @else {
+        <em class="no-print">Ingen tilførsler til tanken i denne periode.</em>
+      }
+
+      <h3 class="tank-heading">Omkostning</h3>
+      @if (categoryCosts().length > 0) {
+        <div class="table-scroll">
+          <table class="data-table cost-table">
+            <colgroup>
+              <col>
+              <col>
+              <col>
+            </colgroup>
+            <thead>
+            <tr>
+              <th>Type</th>
+              <th>Brændstof</th>
+              <th>
+                Pris
+                @if (tankTotal().krPerLiter !== null) {
+                  (brændstof &times; {{ tankTotal().krPerLiter | number:'1.2-2' }})
+                }
+              </th>
+            </tr>
+            </thead>
+            <tbody>
+            @for (row of categoryCosts(); track row.label) {
+              <tr class="hoverable">
+                <td>{{ row.label }}</td>
+                <td>{{ row.totalLiters | number:'1.0-2' }} L</td>
+                <td>@if (row.cost !== null) { {{ row.cost | number:'1.0-2' }} kr. } @else { &mdash; }</td>
+              </tr>
+            }
+            </tbody>
+            <tfoot>
+            <tr class="row-total">
+              <td>Total</td>
+              <td>{{ grandTotal().totalLiters | number:'1.0-2' }} L</td>
+              <td>@if (totalCost() !== null) { {{ totalCost() | number:'1.0-2' }} kr. } @else { &mdash; }</td>
+            </tr>
+            </tfoot>
+          </table>
+        </div>
+      } @else {
+        <em class="no-print">Ingen tankninger i denne periode.</em>
+      }
+    </main>
+  </div>
+} @else if (userService.driverProfile$ | async; as driver) {
+  <div class="page-layout">
+    <aside class="page-aside no-print">
+      <div class="sidebar-stack">
+        <div class="start-tankning-row">
+          <button matButton="filled" type="button" (click)="startFueling(driver.$key)">Start tankning</button>
+        </div>
+      </div>
+    </aside>
+    <main class="page-main driver-main">
+      <app-fuel-reporting [driverKey]="driver.$key" [from]="recordsWindowStart" [limit]="10"></app-fuel-reporting>
+    </main>
+  </div>
+}

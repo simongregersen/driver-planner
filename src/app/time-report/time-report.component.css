@@ -1,0 +1,140 @@
+.button-row {
+  display: flex;
+  gap: 4px;
+}
+
+.button-row > button {
+  flex: 1 1 0;
+}
+
+/* Below the bottom-nav breakpoint (see app.component.css), period navigation is pinned above
+   that bottom nav bar instead of sitting above a potentially long report — reachable with a
+   thumb without scrolling back up. Only the buttons move; the admin-only Chauffør filter
+   above them stays in normal flow, it's reached for far less often. The heading is dropped
+   since the buttons are self-explanatory once they're their own bottom toolbar. */
+@media (max-width: 1024px) {
+  .periode-heading {
+    display: none;
+  }
+
+  .periode-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    /* See the bottom comment on collapsible-bottom-bar's :host for the full explanation. */
+    bottom: calc(var(--bottom-nav-height) - env(safe-area-inset-bottom));
+    z-index: 900;
+    margin: 0;
+    background: var(--mat-sys-surface-container);
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    padding: 8px 12px;
+    box-sizing: border-box;
+  }
+
+  /* Room for the pinned bar above, in addition to the bottom nav it already accounts for
+     via body's own padding (see styles.css). */
+  .page-main {
+    padding-bottom: 68px;
+  }
+
+  /* A non-admin driver never sees the Chauffør filter above, and the period nav right below
+     it is pinned out of flow (see .periode-nav above) — .page-aside renders with nothing
+     visible in it at all, making .page-main the effective first thing on the page. Its own
+     24px margin-top (styles.css) would otherwise stack with .container's own top padding
+     (also styles.css), doubling up the gap under the toolbar — same fix as my-trips/day-plans/
+     time-tracking, just conditional here since an admin's driver filter genuinely does need
+     that 24px gap below it. */
+  .page-aside.aside-empty + .page-main {
+    margin-top: 0;
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.week-heading {
+  margin: 24px 0 8px;
+  font: var(--mat-sys-title-large);
+}
+
+.week-heading:first-child {
+  margin-top: 0;
+}
+
+.day-block {
+  margin-bottom: 16px;
+}
+
+.day-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 4px;
+}
+
+.day-heading {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  text-transform: capitalize;
+}
+
+.day-trips {
+  margin: 0 0 6px;
+  padding-left: 18px;
+  font: var(--mat-sys-body-small);
+}
+
+.day-trip-time {
+  margin-right: 4px;
+}
+
+.week-total {
+  margin: 4px 0 0;
+  text-align: right;
+  font-weight: 600;
+}
+
+.period-total {
+  margin-top: 16px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.in-progress {
+  font-style: italic;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.report-start {
+  color: #2e7d32;
+}
+
+.report-end {
+  color: var(--mat-sys-error);
+}
+
+/* Marks off Tid, the one column that's computed from the others, from the reported
+   Start/Slut/Bemærkning data (and the action button) to its left. */
+.col-computed {
+  border-left: 1px solid var(--mat-sys-outline-variant);
+}
+
+/* Each day renders its own <table>, so without a fixed layout their columns can
+   drift out of alignment depending on how much text lands in a given day's rows. Start/Slut/Tid
+   are just wide enough for their content (matching the Arbejdstid widget's table),
+   Bemærkning absorbs whatever's left. */
+.data-table {
+  table-layout: fixed;
+}
+
+.col-time {
+  width: 4.5em;
+}
+
+.col-actions {
+  width: 40px;
+}

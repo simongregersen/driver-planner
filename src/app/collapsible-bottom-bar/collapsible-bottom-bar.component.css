@@ -1,0 +1,101 @@
+:host {
+  display: block;
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* .bottom-nav (app.component.css) anchors itself `env(safe-area-inset-bottom)` below where
+     this bar's own `bottom` is measured from (both against the same WebKit-buggy reference
+     point — see the --bottom-nav-* variables in styles.css) — so its top edge, which this bar
+     needs to sit flush against, is --bottom-nav-height *minus* one inset, not the full height.
+     Deriving it from that variable (rather than hand-copying "64px + 2 * env(...)") means this
+     stays correct automatically if --bottom-nav-content-height or -safe-area-padding changes. */
+  bottom: calc(var(--bottom-nav-height) - env(safe-area-inset-bottom));
+  z-index: 900;
+  background: var(--mat-sys-surface-container);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  box-sizing: border-box;
+}
+
+.collapsed-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 8px 12px;
+}
+
+.collapsed-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.expand-toggle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* arrow_drop_up is already a solid triangle — pointing up (more content below the fold, tap to
+   reveal) at rest, flipped to point down once that content is showing. */
+.triangle {
+  transition: transform 0.25s ease;
+}
+
+.triangle.expanded {
+  transform: rotate(180deg);
+}
+
+/* The 0fr/1fr grid-row trick animates open/closed without having to measure the panel's actual
+   content height in JS first — height/max-height transitions need a concrete end value, this
+   doesn't. */
+.expand-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.expand-panel.expanded {
+  grid-template-rows: 1fr;
+}
+
+/* padding is part of an element's own box regardless of content height, so unlike min-height
+   it's NOT zeroed out by the grid row collapsing to 0fr — a padding set unconditionally here
+   would keep this box (and whatever of its content peeks out through that padding) visible
+   even while "collapsed". Gating it on .expanded, in step with grid-template-rows above, is
+   what actually gets it to nothing. */
+.expand-panel-inner {
+  overflow: hidden;
+  min-height: 0;
+  transition: padding 0.25s ease;
+}
+
+/* Top padding specifically has to clear the outline-appearance fields' floating label, which
+   sits just above the field's own top border — without it, that label read as clipped by the
+   collapsed row directly above. Horizontal padding keeps content off the screen edges, which
+   this panel would otherwise run flush into (it's not inside .container like normal content). */
+.expand-panel.expanded .expand-panel-inner {
+  padding: 16px 16px 8px;
+  /* The panel's content can be taller than the space left above the bottom nav — Day Plans' bar
+     carries a date field, the operations buttons and three chip filters — in which case it has to
+     scroll rather than run off the top of the screen. overflow-y only: the base rule's
+     `overflow: hidden` still governs the x axis, and is what lets the 0fr grid collapse clip
+     cleanly.
+       overscroll-behavior: contain is the half that makes this safe. Without it, scrolling past
+     this panel's own end chains into the page behind — the exact behaviour the touchmove handler
+     exists to prevent — so the handler now defers to this element instead of blocking it (see
+     CollapsibleBottomBarComponent.onTouchMove). styles.css already leans on the same property for
+     dialog content. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Leaves the bottom nav clear plus roughly the collapsed row and a strip of the page above, so
+     the bar never grows to cover the whole screen and there is always something to tap past it. */
+  max-height: calc(100dvh - var(--bottom-nav-height) - 140px);
+}

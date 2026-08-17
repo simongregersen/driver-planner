@@ -1,59 +1,208 @@
-<ng-template #empty><em class="hidden-print">Ingen ture.</em></ng-template>
-<table class="table table-hover table-sm" *ngIf="trips && trips.length > 0; else empty">
-  <thead>
-  <tr>
-    <th class="w-6">Start</th>
-    <th class="w-6">Slut</th>
-    <th>Tur</th>
-    <th class="w-15">Chauffører</th>
-    <th class="w-15">Køretøjer</th>
-    <th class="w-5 hidden-print"></th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr *ngFor="let trip of trips; trackBy: trackByFn">
-    <th>
-      <span ngbTooltip="{{trip.start | date: 'short'}}" container="'body'">
-      {{trip.start | date: 'HH:mm' }}
-      </span>
-    </th>
-    <td class="text-muted">
-      <span ngbTooltip="{{trip.end | date: 'short'}}" container="'body'">
-        {{trip.end | date:'HH:mm' }}
-      </span>
-    </td>
-    <td>
-      {{trip.name}}
-      <small class="text-muted visible-print-inline newline"><br>{{trip.description}}</small>
-    </td>
-    <td [class.table-warning]="!trip.drivers || trip.drivers.length < trip.vehicles?.length">
-      <span *ngFor="let key of trip.drivers; let isLast=last">
-      {{ getDriver(key)?.displayName }}{{isLast ? '' : ', '}}
-      </span>
-    </td>
-    <td [class.table-warning]="!trip.vehicles || trip.drivers?.length > trip.vehicles.length">
-      <span *ngFor="let key of trip.vehicles; let isLast=last">
-      {{ getVehicle(key)?.displayName }}{{isLast ? '' : ', '}}
-      </span>
-    </td>
-    <td class="hidden-print">
-      <div class="pull-right icons">
-        <a class="pointer"
-           (click)="edit.emit(trip)">
-          <i class="fa fa-pencil" ngbTooltip="Rediger"></i>
-        </a>
-        <a mwlConfirmationPopover
-           class="pointer"
-           [message]="'Er du sikker på, at du vil slette turen<br>\'' + trip.name + '\'?'"
-           [confirmButtonType]="'danger'"
-           [confirmText]="'Slet'"
-           [cancelText]="'Annuller'"
-           placement="left"
-           (confirm)="remove.emit(trip)">
-          <i class="fa fa-trash" ngbTooltip="Slet"></i>
-        </a>
-      </div>
-    </td>
-  </tr>
-  </tbody>
-</table>
+@if (viewModel$ | async; as viewModel) {
+  @let drivers = viewModel.drivers;
+  @let vehicles = viewModel.vehicles;
+  @if (trips().length > 0) {
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th class="col-w-6">Start</th>
+        <th class="col-w-6">Slut</th>
+        <th>Tur</th>
+        <th class="col-w-15">Chauffører</th>
+        <th class="col-w-15">Køretøjer</th>
+        @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
+          <th class="col-w-5 no-print"></th>
+        }
+      </tr>
+      </thead>
+      <tbody>
+      @for (trip of trips(); track trip.$key) {
+        <ng-template #vehicleChips>
+          <mat-chip-set class="no-print">
+            @for (key of trip.vehicles; track key) {
+              <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
+                        [class.chip-warning]="vehicleConflicts(trip, key).length > 0"
+                        [matTooltip]="conflictTooltip(getVehicle(vehicles, key)?.displayName, vehicleConflicts(trip, key))"
+                        (removed)="removeVehicle.emit({trip, vehicleKey: key})">
+                {{ getVehicle(vehicles, key)?.displayName }}
+                @if (!readonly()) {
+                  <button matChipRemove aria-label="Fjern køretøj" (click)="$event.stopPropagation()">
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                }
+              </mat-chip>
+            }
+          </mat-chip-set>
+          <span class="print-only">
+            @for (key of trip.vehicles; track key; let isLast = $last) {
+              {{ getVehicle(vehicles, key)?.displayName }}{{ isLast ? '' : ', ' }}
+            }
+          </span>
+        </ng-template>
+
+        <ng-template #driverChips let-applyHideSingle="applyHideSingle">
+          @if (!applyHideSingle || !hideSingleDriver() || trip.drivers.length > 1) {
+            <mat-chip-set class="no-print">
+              @for (key of trip.drivers; track key) {
+                <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
+                          [class.chip-warning]="driverConflicts(trip, key).length > 0"
+                          [class.chip-deleted]="isDeletedDriver(drivers, key)"
+                          [matTooltip]="conflictTooltip(getDriver(drivers, key)?.displayName, driverConflicts(trip, key))"
+                          (removed)="removeDriver.emit({trip, driverKey: key})">
+                  {{ getDriver(drivers, key)?.displayName }}
+                  @if (!readonly()) {
+                    <button matChipRemove aria-label="Fjern chauffør" (click)="$event.stopPropagation()">
+                      <mat-icon>cancel</mat-icon>
+                    </button>
+                  }
+                </mat-chip>
+              }
+            </mat-chip-set>
+            <span class="print-only">
+              @for (key of trip.drivers; track key; let isLast = $last) {
+                {{ getDriver(drivers, key)?.displayName }}{{ isLast ? '' : ', ' }}
+              }
+            </span>
+          }
+        </ng-template>
+
+        <ng-template #finishToggle>
+          @if (showFinishToggle()) {
+            <button matIconButton type="button" class="finish-toggle no-print"
+                    [class.finish-toggle-active]="isFinished(trip)"
+                    [attr.aria-label]="isFinished(trip) ? 'Marker som ikke afsluttet' : 'Marker som afsluttet'"
+                    [matTooltip]="isFinished(trip) ? 'Marker som ikke afsluttet' : 'Marker som afsluttet'"
+                    (click)="toggleFinished(trip, $event)">
+              <mat-icon>check</mat-icon>
+            </button>
+          }
+        </ng-template>
+
+        <ng-template #reportButton>
+          @if (showReportButton()) {
+            <button matIconButton type="button" class="report-toggle no-print"
+                    [class.report-toggle-active]="hasMyReport(trip)"
+                    [attr.aria-label]="hasMyReport(trip) ? 'Rediger rapport' : 'Tilføj rapport'"
+                    [matTooltip]="hasMyReport(trip) ? 'Rediger rapport' : 'Tilføj rapport'"
+                    (click)="openMyReport(trip, $event)">
+              <mat-icon>assignment</mat-icon>
+            </button>
+          }
+        </ng-template>
+
+        <ng-template #reportsIndicator>
+          @if (showReportsColumn() && hasAnyReport(trip)) {
+            <button matIconButton type="button" class="reports-indicator no-print"
+                    aria-label="Se chaufførrapporter"
+                    matTooltip="Se chaufførrapporter"
+                    (click)="openReports(trip, $event)">
+              <mat-icon>assignment</mat-icon>
+            </button>
+          }
+        </ng-template>
+
+        <tr class="hoverable"
+            [class.row-highlight]="isRecentlyModified(trip)"
+            [class.trip-finished]="isFinished(trip)"
+            [class.pointer]="!readonly()"
+            [matTooltip]="isRecentlyModified(trip) ? modifiedTooltip(trip) : ''"
+            (click)="onRowClick(trip)">
+          <td data-label="Start">
+            <span [matTooltip]="startsOutsideReference(trip) ? ((trip.start.toDate() | date:'EEE d/M HH:mm') ?? '') : ''">
+              @if (startsOutsideReference(trip)) { &mdash; } @else { {{trip.start.toDate() | date: 'HH:mm' }} }
+            </span>
+          </td>
+          <td class="muted" data-label="Slut">
+            <span [matTooltip]="endsOutsideReference(trip) ? ((trip.end?.toDate() | date:'EEE d/M HH:mm') ?? '') : ''">
+              @if (endsOutsideReference(trip)) { &mdash; } @else { {{trip.end?.toDate() | date:'HH:mm' }} }
+            </span>
+          </td>
+          <td class="trip-cell">
+            <div class="desktop-trip-info">
+              <app-rich-text [text]="trip.name"></app-rich-text>
+              @if (showLabels() && trip.labels?.length) {
+                <span class="trip-labels">
+                  @for (label of trip.labels; track label) {
+                    <span class="trip-label-chip">{{ label }}</span>
+                  }
+                </span>
+              }
+              @if (showOfficeNotes() && trip.officeDescription) {
+                <div class="office-note"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
+              }
+              @if (!hideDescriptionOnScreen()) {
+                <span class="muted newline"><br><app-rich-text [text]="trip.description"></app-rich-text></span>
+              }
+            </div>
+            <div class="mobile-trip-info">
+              <strong>
+                <span class="mobile-trip-time">{{ mobileTimeLabel(trip) }}</span>
+                <span class="mobile-trip-name"><app-rich-text [text]="trip.name"></app-rich-text></span>
+                @if (showLabels() && trip.labels?.length) {
+                  <span class="trip-labels">
+                    @for (label of trip.labels; track label) {
+                      <span class="trip-label-chip">{{ label }}</span>
+                    }
+                  </span>
+                }
+              </strong>
+              @if (showOfficeNotes() && trip.officeDescription) {
+                <div class="mobile-line office-note"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
+              }
+              <div class="mobile-line mobile-chips-line">
+                <ng-container [ngTemplateOutlet]="driverChips" [ngTemplateOutletContext]="{applyHideSingle: true}"></ng-container>
+                <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
+              </div>
+              @if (!hideDescriptionOnScreen() || showFinishToggle() || showReportButton() || showReportsColumn()) {
+                <div class="mobile-line newline muted trip-footer">
+                  @if (!hideDescriptionOnScreen()) {
+                    <span><app-rich-text [text]="trip.description"></app-rich-text></span>
+                  }
+                  <!-- Floated (see .css), and placed as the LAST element inside the same block as
+                       the description text (not a preceding sibling) — a float only attaches to
+                       the tail end of inline content that comes before it in its own containing
+                       block, so this sits right after the last line of text: beside it if that
+                       line has room (a short description), or wrapped onto its own line — still
+                       at the bottom, never the top — if it doesn't (a long one). Unlike a
+                       reserved-padding corner, this only costs width on the line(s) it actually
+                       shares, not every line of a long description. -->
+                  @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
+                    <div class="trip-card-actions">
+                      <ng-container [ngTemplateOutlet]="reportButton"></ng-container>
+                      <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
+                      <ng-container [ngTemplateOutlet]="reportsIndicator"></ng-container>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </td>
+          <td data-label="Chauffører" [class.cell-warning]="hasDriverCountMismatch(trip)"
+              [matTooltip]="hasDriverCountMismatch(trip) ? countMismatchTooltip() : ''">
+            <ng-container [ngTemplateOutlet]="driverChips"></ng-container>
+          </td>
+          <td data-label="Køretøjer" [class.cell-warning]="hasVehicleCountMismatch(trip)"
+              [matTooltip]="hasVehicleCountMismatch(trip) ? countMismatchTooltip() : ''">
+            <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
+          </td>
+          @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
+            <td class="no-print cell-actions cell-trip-actions">
+              <div class="trip-actions-inner">
+                <ng-container [ngTemplateOutlet]="reportButton"></ng-container>
+                <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
+                <ng-container [ngTemplateOutlet]="reportsIndicator"></ng-container>
+              </div>
+            </td>
+          }
+        </tr>
+      }
+      </tbody>
+    </table>
+  } @else {
+    <em class="no-print" [class.empty-state-centered]="centerEmptyState()">Ingen ture.</em>
+  }
+} @else {
+  <div class="loading no-print">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+}

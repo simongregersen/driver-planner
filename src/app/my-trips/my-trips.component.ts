@@ -1,0 +1,164 @@
+import {afterRenderEffect, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, signal, viewChild} from '@angular/core';
+import {takeUntilDestroyed, toObservable, toSignal} from '@angular/core/rxjs-interop';
+import {DatePipe} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
+import {MatCalendar, MatCalendarCellClassFunction, MatDatepickerModule} from '@angular/material/datepicker';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {switchMap} from 'rxjs/operators';
+import moment, {Moment} from 'moment';
+import {Note} from '../note';
+import {DataStore} from '../data.service';
+import {UserService} from '../user.service';
+import {AuthenticationService} from '../authentication.service';
+import {Utility} from '../utility';
+import {DateUtility} from '../date-utility';
+import {TripsComponent} from '../trips/trips.component';
+import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
+import {BreakpointService} from '../breakpoint.service';
+import {PageHeaderService} from '../page-header.service';
+
+@Component({
+  standalone: true,
+  selector: 'app-my-trips',
+  templateUrl: './my-trips.component.html',
+  styleUrls: ['./my-trips.component.css'],
+  imports: [
+    FormsModule,
+    MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatInputModule,
+    TripsComponent, CollapsibleBottomBarComponent,
+  ],
+  providers: [DatePipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class MyTripsComponent implements OnInit {
+  readonly dataStore = inject(DataStore);
+  readonly userService = inject(UserService);
+  readonly dateUtility = inject(DateUtility);
+  private readonly authService = inject(AuthenticationService);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly breakpoints = inject(BreakpointService);
+  private readonly pageHeader = inject(PageHeaderService);
+  private readonly datePipe = inject(DatePipe);
+
+  readonly minDate = this.dateUtility.minDate(5);
+  readonly selectedDate = signal<Moment>(this.dateUtility.today());
+
+  readonly driver = toSignal(this.userService.driverProfile$);
+
+  readonly trips = toSignal(
+    toObservable(this.selectedDate).pipe(switchMap(date => this.dataStore.getTrips(date)))
+  );
+  readonly dayPublic = toSignal(
+    toObservable(this.selectedDate).pipe(switchMap(date => this.dataStore.getDayPublic(date))),
+    {initialValue: false}
+  );
+  private readonly notes = toSignal(this.dataStore.getAllNotes(), {initialValue: [] as Note[]});
+
+  // Read-only here — unlike Day Plans, My Day has no edit dialog for notes; a driver sees the
+  // ones that apply to them, not the full set, and can't touch them either way.
+  readonly visibleNotes = computed(() => {
+    const driver = this.driver();
+    if (!driver) return [];
+    const date = this.selectedDate();
+    return this.notes().filter(n => (n.drivers || []).includes(driver.$key) && Utility.noteAppliesToDate(n, date));
+  });
+
+  readonly filteredTrips = computed(() => {
+    const driver = this.driver();
+    if (!driver) return [];
+    return (this.trips() ?? []).filter(t => Utility.isAssigned(driver, t));
+  });
+
+  private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);
+  private readonly publicDates = toSignal(this.dataStore.getPublicDates(), {initialValue: [] as string[]});
+
+  readonly dateFilter = computed<(date: Moment | null) => boolean>(() => {
+    const publicDates = this.publicDates();
+    return date => !!date && this.isPublicDate(date, publicDates);
+  });
+
+  // Same green "public-day" marking as Day Plans' own dateClass.
+  readonly dateClass = computed<MatCalendarCellClassFunction<Moment>>(() => {
+    const publicDates = this.publicDates();
+    return date => this.isPublicDate(date, publicDates) ? 'public-day' : '';
+  });
+
+  constructor() {
+    // A calendar only rebuilds its cells on an explicit refresh, never on a new dateFilter/
+    // dateClass alone. This has to run *after* render, so the calendar has already received the
+    // new bindings by the time it re-reads them.
+    afterRenderEffect(() => {
+      this.dateFilter();
+      this.dateClass();
+      this.calendar()?.updateTodaysDate();
+    });
+    effect(() => {
+      this.pageHeader.set(this.formattedDate(this.selectedDate()));
+    });
+  }
+
+  ngOnInit(): void {
+    this.userService.driverProfile$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(driver => {
+        if (driver?.deleted) {
+          this.authService.logout();
+        }
+      });
+  }
+
+  isPublicDate(date: Moment, publicDates: string[]): boolean {
+    return publicDates.includes(this.dateUtility.dateKey(date));
+  }
+
+  previousDay() {
+    const date = this.adjacentPublicDate(-1);
+    if (date) this.selectedDate.set(date);
+  }
+
+  nextDay() {
+    const date = this.adjacentPublicDate(1);
+    if (date) this.selectedDate.set(date);
+  }
+
+  hasPreviousPublicDate(): boolean {
+    return !!this.adjacentPublicDate(-1);
+  }
+
+  hasNextPublicDate(): boolean {
+    return !!this.adjacentPublicDate(1);
+  }
+
+  // Previous/next skip over non-public gaps rather than landing on a disabled day, so they
+  // always agree with what the datepicker filter allows a user to pick directly.
+  private adjacentPublicDate(direction: 1 | -1): Moment | null {
+    const currentKey = this.dateUtility.dateKey(this.selectedDate());
+    const publicDates = [...this.publicDates()].sort();
+    const key = direction > 0
+      ? publicDates.find(k => k > currentKey)
+      : publicDates.reverse().find(k => k < currentKey);
+    return key ? moment(key, 'YYYY-MM-DD') : null;
+  }
+
+  goToToday() {
+    this.selectedDate.set(this.dateUtility.today());
+  }
+
+  isToday(): boolean {
+    return this.dateUtility.equals(this.selectedDate(), this.dateUtility.today());
+  }
+
+  onDateSelected(date: Moment | null) {
+    if (date) this.selectedDate.set(date);
+  }
+
+  // DatePipe's 'EEEE' gives the weekday lowercase (Danish locale convention) — capitalized here
+  // since it leads the title, unlike the day-in-a-sentence style used elsewhere in this app.
+  formattedDate(date: Moment): string {
+    const formatted = this.datePipe.transform(date.toDate(), 'EEEE, d MMMM y')!;
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+
+}

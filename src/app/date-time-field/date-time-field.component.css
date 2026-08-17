@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.datetime-row {
+  display: flex;
+  gap: 12px;
+}
+
+.picker-field {
+  flex: 1 1 0;
+  /* Flex items default to min-width: auto, which floors their shrinking at the field's own
+     content width (label + suffix icon) regardless of flex-basis — without this override two
+     fields side by side can overflow a narrow dialog instead of sharing the available space. */
+  min-width: 0;
+}

@@ -1,68 +1,145 @@
-<div class="row mt-4 mb-2 hidden-print">
-  <div class="col-12">
-    <h2 class="font-weight-bold">
-      Periodeplan
-      <small>
-        {{ ngbUtility.toMoment(from) | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to) | date:'EEEE, d MMMM' }}
-      </small>
-    </h2>
-  </div>
-</div>
-<div class="visible-print-block">
-  <h5 class="font-weight-bold">
+<div class="page-header no-print">
+  <h2 class="page-title">
     Periodeplan
     <small>
-      {{ ngbUtility.toMoment(from) | date:'EEEE, d MMMM' }} - {{ ngbUtility.toMoment(to) | date:'EEEE, d MMMM' }}
+      {{ from()?.toDate() | date:'EEEE, d MMMM' }} - {{ to()?.toDate() | date:'EEEE, d MMMM' }}
+    </small>
+  </h2>
+</div>
+<div class="print-only print-header">
+  <h5 class="page-title">
+    Periodeplan
+    <small>
+      {{ from()?.toDate() | date:'EEEE, d MMMM' }} - {{ to()?.toDate() | date:'EEEE, d MMMM' }}
     </small>
   </h5>
-  <h6 *ngIf="selectedDriver">
-    Chauffør: {{ selectedDriver.displayName }}
-  </h6>
+  @if (filterState.selectedDriverKeys().length > 0 || filterState.selectedVehicleKeys().length > 0) {
+    <h6 class="page-subtitle">
+      @if (filterState.selectedDriverKeys().length > 0) { Chauffører: {{ filterState.selectedDriverNames() }} }
+      @if (filterState.selectedVehicleKeys().length > 0) { Køretøjer: {{ filterState.selectedVehicleNames() }} }
+    </h6>
+  }
 </div>
-<div class="row">
-  <div class="col-12 col-xl-2 push-xl-10 hidden-print">
-    <aside class="float-right">
-      <h5>Periode</h5>
-      <div class="form-group">
-        <ngb-datepicker #dp
-                        ngModel
-                        (ngModelChange)="onDateChange($event)"
-                        [displayMonths]="1"
-                        [dayTemplate]="t"
-                        [showWeekNumbers]="true">
-        </ngb-datepicker>
-        <ng-template #t let-date="date" let-focused="focused">
-          <span class="custom-day"
-                [class.focused]="focused"
-                [class.range]="isFrom(date) || isTo(date) || isInside(date) || isHovered(date)"
-                [class.faded]="isHovered(date) || isInside(date)"
-                (mouseenter)="hovered = date"
-                (mouseleave)="hovered = null">
-          {{ date.day }}
-          </span>
-        </ng-template>
+<div class="page-layout">
+  <aside class="page-aside no-print">
+    <div class="sidebar-stack">
+      <mat-calendar class="inline-calendar"
+                    [selected]="selectedRange"
+                    (selectedChange)="onDateChange($event)"
+                    [minDate]="minDate"
+                    [dateClass]="dateClass">
+      </mat-calendar>
+      <div>
+        <h5 class="section-title">Vis</h5>
+        <mat-button-toggle-group multiple [hideMultipleSelectionIndicator]="true" [disabled]="filterState.isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)">
+            Chaufførnoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)">
+            Kontornoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)">
+            Mærkater
+          </mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
-      <div class="list-group">
-        <h5>Chauffører</h5>
-        <button
-          *ngFor="let driver of drivers"
-          type="button"
-          class="list-group-item list-group-item-action text-truncate pointer"
-          [class.active]="selectedDriver?.$key === driver?.$key"
-          (click)="selectedDriver = driver">
-          {{driver.displayName}}
-        </button>
+      <div>
+        <h5 class="section-title">Chauffører</h5>
+        <app-chip-filter [options]="filterState.driverOptions()" [selectedIds]="filterState.selectedDriverKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedDriverKeys($event)"></app-chip-filter>
       </div>
-    </aside>
-  </div>
-  <div class="col-12 col-xl-10 pull-xl-2">
-    <main>
-      <div *ngFor="let date of range">
-        <h5 class="mt-4 mb-4">{{ ngbUtility?.toMoment(date) | date:'EEEE, d MMMM y'}}</h5>
-        <app-trips [trips]="filterByDate(filteredTrips, date)"
-                   (edit)="edit($event)"
-                   (remove)="removeTrip($event)"></app-trips>
+      <div>
+        <h5 class="section-title">Køretøjer</h5>
+        <app-chip-filter [options]="filterState.vehicleOptions()" [selectedIds]="filterState.selectedVehicleKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
       </div>
-    </main>
-  </div>
+      @if (trips()) {
+      <div>
+        <h5 class="section-title">Mærkater</h5>
+        <app-chip-filter [options]="labelOptions()" [selectedIds]="filterState.selectedLabelKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
+      </div>
+      }
+    </div>
+  </aside>
+
+  <app-collapsible-bottom-bar class="mobile-period-bar no-print">
+    <div bar-collapsed class="period-picker-row">
+      <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Periode</mat-label>
+        <mat-date-range-input [rangePicker]="rangePickerMobile" [min]="minDate">
+          <input matStartDate readonly placeholder="Fra" [value]="from()" (dateChange)="setFrom($event.value)" (click)="rangePickerMobile.open()">
+          <input matEndDate readonly placeholder="Til" [value]="to()" (dateChange)="setTo($event.value)" (click)="rangePickerMobile.open()">
+        </mat-date-range-input>
+        <mat-datepicker-toggle matIconSuffix [for]="rangePickerMobile"></mat-datepicker-toggle>
+        <mat-date-range-picker #rangePickerMobile [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
+      </mat-form-field>
+    </div>
+    <div bar-expanded class="mobile-period-bar-expanded">
+      <div>
+        <h5 class="section-title">Vis</h5>
+        <mat-button-toggle-group multiple [disabled]="filterState.isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)">
+            Chaufførnoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)">
+            Kontornoter
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)">
+            Mærkater
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+      <div>
+        <h5 class="section-title">Chauffører</h5>
+        <app-chip-filter [options]="filterState.driverOptions()" [selectedIds]="filterState.selectedDriverKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedDriverKeys($event)"></app-chip-filter>
+      </div>
+      <div>
+        <h5 class="section-title">Køretøjer</h5>
+        <app-chip-filter [options]="filterState.vehicleOptions()" [selectedIds]="filterState.selectedVehicleKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
+      </div>
+      @if (trips()) {
+      <div>
+        <h5 class="section-title">Mærkater</h5>
+        <app-chip-filter [options]="labelOptions()" [selectedIds]="filterState.selectedLabelKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
+      </div>
+      }
+    </div>
+  </app-collapsible-bottom-bar>
+
+  <main class="page-main">
+    @if (filterState.isFiltering() || isLoadingTrips()) {
+      <div class="loading no-print">
+        <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+      </div>
+    } @else if (trips()) {
+      @for (date of range(); track dateUtility.dateKey(date)) {
+        <div class="day-block">
+          <h5 class="day-heading">{{ date.toDate() | date:'EEEE, d MMMM y'}}</h5>
+          <app-trips [trips]="tripsByDate().get(dateUtility.dateKey(date)) ?? []"
+                     [assignmentWarnings]="tripWarnings()"
+                     [hideDescriptionOnScreen]="!filterState.showDriverNotes()"
+                     [showOfficeNotes]="filterState.showOfficeNotes()"
+                     [showLabels]="filterState.showLabels()"
+                     [referenceDate]="date"
+                     (edit)="tripEditing.edit($event)"
+                     (removeDriver)="tripEditing.removeDriverFromTrip($event)"
+                     (removeVehicle)="tripEditing.removeVehicleFromTrip($event)"></app-trips>
+        </div>
+      }
+    } @else {
+      <div class="loading no-print">
+        <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+      </div>
+    }
+  </main>
 </div>

@@ -1,0 +1,51 @@
+/* MDC's chip-set gives its inner wrapper a -8px left margin (compensating for the first
+   chip's own left margin so chips still sit flush within THAT wrapper) — harmless where
+   there's another chip-set to its left to bleed into (see trips.component.css), but this is
+   a standalone listbox, so that -8px instead bled past this component's own left edge,
+   misaligning it against whatever sits above it (the calendar, the date field). Padding here
+   directly cancels it back out. */
+mat-chip-listbox {
+  margin: 0;
+  padding-left: 8px;
+}
+
+/* Same shrinking as the read-only trip chips (see trips.component.css) — denser than
+   Material's defaults via ::ng-deep since there's no token for label padding or chip margin.
+   Selected chips use the app's primary blue, matching the standard buttons; the built-in
+   checkmark is hidden since the background color alone communicates selection. */
+mat-chip-option {
+  --mat-chip-elevated-selected-container-color: var(--mat-sys-primary);
+  --mat-chip-selected-label-text-color: var(--mat-sys-on-primary);
+  --mat-chip-container-height: 22px;
+  margin: 0 2px 2px 0 !important;
+}
+
+mat-chip-option ::ng-deep .mat-mdc-chip-action-label {
+  padding: 0 4px;
+}
+
+mat-chip-option ::ng-deep .mdc-evolution-chip__graphic {
+  display: none;
+}
+
+/* Material's own padding differs depending on whether the (now-hidden) checkmark graphic is
+   present, so it has to be pinned explicitly here rather than just compensating one side. */
+mat-chip-option ::ng-deep .mdc-evolution-chip__action--primary {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.chip-filter-select {
+  display: none;
+  width: 100%;
+}
+
+@media screen and (max-width: 767px) {
+  .chip-filter-chips {
+    display: none;
+  }
+
+  .chip-filter-select {
+    display: block;
+  }
+}

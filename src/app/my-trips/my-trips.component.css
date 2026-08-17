@@ -1,0 +1,69 @@
+.inline-calendar {
+  width: 296px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+/* The inline calendar takes over from the compact date field once the sidebar
+   sits beside the content, mirroring day-plans' responsive split. */
+.compact-date-field {
+  display: none;
+  width: 296px;
+}
+
+@media (max-width: 1199px) {
+  .inline-calendar {
+    display: none;
+  }
+
+  .compact-date-field {
+    display: block;
+  }
+}
+
+.button-row {
+  display: flex;
+  gap: 4px;
+}
+
+.button-row > button {
+  flex: 1 1 0;
+}
+
+/* The desktop/tablet sidebar and the mobile collapsible bar below show the same controls, just
+   arranged differently — only one of the two is ever in play at a given width. */
+.mobile-date-bar {
+  display: none;
+}
+
+/* .compact-date-field's 296px is sized for sitting next to the 296px-wide calendar in the
+   sidebar — here it's the panel's only content, so it should fill the available width instead. */
+.mobile-date-bar-expanded .compact-date-field {
+  width: 100%;
+}
+
+/* Below the bottom-nav breakpoint (see app.component.css), Forrige/I dag/Næste are the
+   controls a driver reaches for most often, so they're pinned above that bottom nav bar
+   instead of sitting in normal flow above the trip list — reachable with a thumb without
+   scrolling back up. The date field itself is one tap away behind the expand toggle rather
+   than always shown, so the bar doesn't eat too much of the screen on short-height phones. */
+@media (max-width: 1024px) {
+  .page-aside {
+    display: none;
+  }
+
+  .mobile-date-bar {
+    display: block;
+  }
+
+  /* Room for the pinned bar above, in addition to the bottom nav it already accounts for
+     via body's own padding (see styles.css) — sized for the bar fully expanded, otherwise
+     the last trip card ends up hidden behind it once the date field is revealed. */
+  .page-main {
+    padding-bottom: 150px;
+    /* .page-aside is hidden above, so this is the first visible thing on the page — its own
+       24px margin-top (styles.css) would otherwise stack with .container's own top padding
+       (also styles.css), doubling up the gap under the toolbar. */
+    margin-top: 0;
+  }
+}

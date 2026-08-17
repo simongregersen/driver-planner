@@ -1,0 +1,6 @@
+<mat-form-field class="picker-field" subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  <input matInput [formControl]="materialDateControl" [matDatepicker]="picker" [min]="minDate()" placeholder="yyyy-MM-dd">
+  <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+  <mat-datepicker #picker [startView]="startView()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+</mat-form-field>

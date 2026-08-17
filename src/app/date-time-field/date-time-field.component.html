@@ -1,0 +1,9 @@
+<div class="datetime-row">
+  <mat-form-field class="picker-field" subscriptSizing="dynamic">
+    <mat-label>{{ dateLabel() }}</mat-label>
+    <input matInput readonly [formControl]="materialDateControl" [matDatepicker]="datePicker" [min]="minDate" (click)="datePicker.open()">
+    <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
+    <mat-datepicker #datePicker [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+  </mat-form-field>
+  <app-time-field class="picker-field" [label]="timeLabel()" [fallbackTime]="fallbackValue()" [formControl]="materialTimeControl"></app-time-field>
+</div>

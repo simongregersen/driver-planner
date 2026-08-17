@@ -1,0 +1,41 @@
+<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger registrering' : 'Start tidsregistrering' }}</h2>
+
+<mat-dialog-content>
+  <form id="clockRecordForm" class="form-stack" (ngSubmit)="onSubmit()">
+    <div class="field-group field-start">
+      <span class="field-group-title">Start</span>
+      <app-date-time-field [value]="clockIn" (valueChange)="clockIn = $event"></app-date-time-field>
+    </div>
+
+    <div class="field-group field-end">
+      <div class="field-group-header">
+        <span class="field-group-title">Slut</span>
+        <button matIconButton type="button" aria-label="Ikke afsluttet endnu" matTooltip="Ikke afsluttet endnu" (click)="clearClockOut()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <app-date-time-field [value]="clockOut" [fallbackValue]="clockIn" (valueChange)="clockOut = $event"></app-date-time-field>
+    </div>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Bemærkning</mat-label>
+      <input matInput [(ngModel)]="note" name="note" placeholder="Fx kunde eller destination">
+    </mat-form-field>
+
+    <mat-slide-toggle [(ngModel)]="dognbetaling" name="dognbetaling">Døgnbetaling</mat-slide-toggle>
+
+    @if (error(); as msg) {
+      <div class="app-error">{{ msg }}</div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (mode === 'edit') {
+    <button matButton class="delete-btn" type="button" [disabled]="saving()" (click)="confirmDelete()">Slet</button>
+  }
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="clockRecordForm" [class.start-btn]="mode === 'create'" [disabled]="!!error() || saving()">
+    {{ mode === 'edit' ? 'Gem' : 'Start' }}
+  </button>
+</mat-dialog-actions>

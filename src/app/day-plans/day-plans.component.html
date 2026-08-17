@@ -1,68 +1,242 @@
-<div class="row mt-4 mb-2 hidden-print">
-  <div class="col-12">
-    <h2 class="font-weight-bold">
-      Dagsplan
-      <small>{{ ngbUtility.toMoment(selectedDate) | date:'EEEE, d MMMM y' }}</small>
-    </h2>
-  </div>
-</div>
-<div class="visible-print-block">
-  <h5 class="font-weight-bold">
+<div class="page-header no-print">
+  <h2 class="page-title">
     Dagsplan
-    <small>{{ ngbUtility.toMoment(selectedDate) | date:'EEEE, d MMMM y' }}</small>
-  </h5>
-  <h6 *ngIf="selectedDriver">
-    Chauffør: {{ selectedDriver.displayName }}
-  </h6>
+    <small>{{ selectedDate().toDate() | date:'EEEE, d MMMM y' }}</small>
+  </h2>
 </div>
-<div class="row">
-  <div class="col-12 col-xl-2 push-xl-10 hidden-print">
-    <aside class="float-right">
-      <h5>Dato</h5>
-      <div class="form-group">
-        <ngb-datepicker [(ngModel)]="selectedDate"
-                        [showWeekNumbers]="true">
-        </ngb-datepicker>
+<div class="print-only print-header">
+  <h5 class="page-title">
+    Dagsplan
+    <small>{{ selectedDate().toDate() | date:'EEEE, d MMMM y' }}</small>
+  </h5>
+  @if (filterState.selectedDriverKeys().length > 0 || filterState.selectedVehicleKeys().length > 0) {
+    <h6 class="page-subtitle">
+      @if (filterState.selectedDriverKeys().length > 0) { Chauffører: {{ filterState.selectedDriverNames() }} }
+      @if (filterState.selectedVehicleKeys().length > 0) { Køretøjer: {{ filterState.selectedVehicleNames() }} }
+    </h6>
+  }
+</div>
+<div class="page-layout">
+  <aside class="page-aside no-print">
+    <div class="sidebar-stack">
+      <mat-calendar class="inline-calendar"
+                    [selected]="selectedDate()"
+                    (selectedChange)="onDateSelected($event)"
+                    [minDate]="minDate"
+                    [dateClass]="dateClass()">
+      </mat-calendar>
+      <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Dato</mat-label>
+        <input matInput
+               readonly
+               [matDatepicker]="d"
+               [min]="minDate"
+               [ngModel]="selectedDate()"
+               (ngModelChange)="onDateSelected($event)"
+               (click)="d.open()">
+        <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
+        <mat-datepicker #d [dateClass]="dateClass()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+      </mat-form-field>
+      <div class="button-row" role="group" aria-label="Dato-navigation">
+        <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>
+        <button [matButton]="isToday() ? 'filled' : 'outlined'" type="button" (click)="goToToday()">I dag</button>
+        <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
       </div>
-      <div class="list-group">
-        <h5>Chauffører</h5>
-        <button
-          *ngFor="let driver of drivers | async"
-          type="button"
-          class="list-group-item list-group-item-action text-truncate pointer"
-          [class.active]="selectedDriver?.$key === driver?.$key"
-          (click)="selectedDriver = driver">
-          {{driver.displayName}}
-        </button>
+      <div>
+        <mat-slide-toggle class="day-public-toggle"
+                    [checked]="dayPublic()"
+                    (change)="setDayPublic($event)">
+          Synlig for chauffører
+        </mat-slide-toggle>
       </div>
-    </aside>
-  </div>
-  <div class="col-12 col-xl-10 pull-xl-2" style="margin-top: 30px">
-    <main>
-      <app-trips [trips]="filteredTrips"
-                 (edit)="edit($event)"
-                 (remove)="removeTrip($event)">
-      </app-trips>
-      <div class="row mt-4 mb-3 hidden-print">
-        <div class="col-12 btn-group" data-toggle="buttons">
-          <button type="button" class="btn btn-primary mr-3" (click)="create()">Opret tur</button>
-          <ss-multiselect-dropdown [(ngModel)]="selectedTemplate"
-                                   [options]="availableTemplates"
-                                   [settings]="{dynamicTitleMaxItems: 10, enableSearch: true, selectionLimit: 1, buttonClasses: 'btn btn-default btn-block'}"
-                                   [texts]="{defaultTitle: 'Vælg skabelon', searchPlaceholder: 'Søg'}">
-          </ss-multiselect-dropdown>
-          <button mwlConfirmationPopover
-                  class="btn btn-primary"
-                  [message]="'Er du sikker på, at du vil indsætte denne skabelon?'"
-                  [confirmButtonType]="'success'"
-                  [confirmText]="'Indsæt'"
-                  [cancelText]="'Annuller'"
-                  [appendToBody]="true"
-                  (confirm)="insertTemplate()">
-            Indsæt
+      @if (trips()) {
+      <div>
+        <h5 class="section-title">Operationer</h5>
+        <div class="toolbar-row">
+          <button matButton="filled" type="button" (click)="create()">Opret tur</button>
+          <button matButton="filled" type="button" (click)="createNote()">Opret dagsnote</button>
+          <button matButton="outlined" type="button" [matMenuTriggerFor]="templateMenu">
+            Skabelon
+            <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
           </button>
         </div>
+        <mat-menu #templateMenu="matMenu">
+          @for (template of (availableTemplates$ | async) ?? []; track template.id) {
+            <button mat-menu-item type="button" [disabled]="insertingTemplate()"
+                    (click)="insertTemplateWithConfirm(template.id, template.name)">{{ template.name }}</button>
+          }
+        </mat-menu>
       </div>
-    </main>
-  </div>
+      }
+      <div>
+        <h5 class="section-title">Vis</h5>
+        <mat-button-toggle-group multiple [hideMultipleSelectionIndicator]="true" [disabled]="filterState.isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)"
+                              aria-label="Chaufførnoter" matTooltip="Chaufførnoter">
+            <mat-icon>notes</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)"
+                              aria-label="Kontornoter" matTooltip="Kontornoter">
+            <mat-icon>admin_panel_settings</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)"
+                              aria-label="Mærkater" matTooltip="Mærkater">
+            <mat-icon>label</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showDayNotes()" (change)="filterState.setShowDayNotes($event.source.checked)"
+                              aria-label="Dagsnoter" matTooltip="Dagsnoter">
+            <mat-icon>event_note</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+      <div>
+        <h5 class="section-title">Chauffører</h5>
+        <app-chip-filter [options]="filterState.driverOptions()" [selectedIds]="filterState.selectedDriverKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedDriverKeys($event)"></app-chip-filter>
+      </div>
+      <div>
+        <h5 class="section-title">Køretøjer</h5>
+        <app-chip-filter [options]="filterState.vehicleOptions()" [selectedIds]="filterState.selectedVehicleKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
+      </div>
+      @if (trips()) {
+      <div>
+        <h5 class="section-title">Mærkater</h5>
+        <app-chip-filter [options]="labelOptions()" [selectedIds]="filterState.selectedLabelKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
+      </div>
+      }
+    </div>
+  </aside>
+
+  <app-collapsible-bottom-bar class="mobile-day-bar no-print">
+    <div bar-collapsed class="button-row" role="group" aria-label="Dato-navigation">
+      <button matButton="outlined" type="button" (click)="previousDay()">Forrige</button>
+      <button [matButton]="isToday() ? 'filled' : 'outlined'" type="button" (click)="goToToday()">I dag</button>
+      <button matButton="outlined" type="button" (click)="nextDay()">Næste</button>
+    </div>
+    <div bar-expanded class="mobile-day-bar-expanded">
+      <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Dato</mat-label>
+        <input matInput
+               readonly
+               [matDatepicker]="dMobile"
+               [min]="minDate"
+               [ngModel]="selectedDate()"
+               (ngModelChange)="onDateSelected($event)"
+               (click)="dMobile.open()">
+        <mat-datepicker-toggle matIconSuffix [for]="dMobile"></mat-datepicker-toggle>
+        <mat-datepicker #dMobile [dateClass]="dateClass()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+      </mat-form-field>
+      <div>
+        <mat-slide-toggle class="day-public-toggle"
+                    [checked]="dayPublic()"
+                    (change)="setDayPublic($event)">
+          Synlig for chauffører
+        </mat-slide-toggle>
+      </div>
+      @if (trips()) {
+      <div>
+        <h5 class="section-title">Operationer</h5>
+        <div class="toolbar-row">
+          <button matButton="filled" type="button" (click)="create()">Opret tur</button>
+          <button matButton="filled" type="button" (click)="createNote()">Opret dagsnote</button>
+          <button matButton="outlined" type="button" [matMenuTriggerFor]="templateMenuMobile">
+            Skabelon
+            <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+          </button>
+        </div>
+        <mat-menu #templateMenuMobile="matMenu">
+          @for (template of (availableTemplates$ | async) ?? []; track template.id) {
+            <button mat-menu-item type="button" [disabled]="insertingTemplate()"
+                    (click)="insertTemplateWithConfirm(template.id, template.name)">{{ template.name }}</button>
+          }
+        </mat-menu>
+      </div>
+      }
+      <div>
+        <h5 class="section-title">Vis</h5>
+        <mat-button-toggle-group multiple [disabled]="filterState.isFiltering()" class="visibility-toggles" aria-label="Vis-indstillinger">
+          <mat-button-toggle [checked]="filterState.showDriverNotes()" (change)="filterState.setShowDriverNotes($event.source.checked)"
+                              aria-label="Chaufførnoter" matTooltip="Chaufførnoter">
+            <mat-icon>notes</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showOfficeNotes()" (change)="filterState.setShowOfficeNotes($event.source.checked)"
+                              aria-label="Kontornoter" matTooltip="Kontornoter">
+            <mat-icon>admin_panel_settings</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showLabels()" (change)="filterState.setShowLabels($event.source.checked)"
+                              aria-label="Mærkater" matTooltip="Mærkater">
+            <mat-icon>label</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle [checked]="filterState.showDayNotes()" (change)="filterState.setShowDayNotes($event.source.checked)"
+                              aria-label="Dagsnoter" matTooltip="Dagsnoter">
+            <mat-icon>event_note</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+      <div>
+        <h5 class="section-title">Chauffører</h5>
+        <app-chip-filter [options]="filterState.driverOptions()" [selectedIds]="filterState.selectedDriverKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedDriverKeys($event)"></app-chip-filter>
+      </div>
+      <div>
+        <h5 class="section-title">Køretøjer</h5>
+        <app-chip-filter [options]="filterState.vehicleOptions()" [selectedIds]="filterState.selectedVehicleKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedVehicleKeys($event)"></app-chip-filter>
+      </div>
+      @if (trips()) {
+      <div>
+        <h5 class="section-title">Mærkater</h5>
+        <app-chip-filter [options]="labelOptions()" [selectedIds]="filterState.selectedLabelKeys()"
+                          [disabled]="filterState.isFiltering()"
+                          (selectionChange)="filterState.setSelectedLabelKeys($event)"></app-chip-filter>
+      </div>
+      }
+    </div>
+  </app-collapsible-bottom-bar>
+
+  <main class="page-main">
+    @if (filterState.showDayNotes()) {
+      @for (note of visibleNotes(); track note.$key) {
+        <div class="note-alert" tabindex="0" role="button" (click)="editNote(note)"
+             (keydown.enter)="editNote(note)" (keydown.space)="$event.preventDefault(); editNote(note)">
+          <span class="note-alert-text">{{ note.text }}</span>
+          @if (noteNames().get(note.$key)?.drivers; as driverNames) {
+            <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ driverNames }}</span>
+          }
+          @if (noteNames().get(note.$key)?.vehicles; as vehicleNames) {
+            <span class="note-alert-sep">&middot;</span><span class="note-alert-meta">{{ vehicleNames }}</span>
+          }
+        </div>
+      }
+    }
+    @if (filterState.isFiltering() || isLoadingTrips()) {
+      <div class="loading no-print">
+        <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+      </div>
+    } @else if (trips()) {
+      <app-trips [trips]="filteredTrips()"
+                 [assignmentWarnings]="tripWarnings()"
+                 [hideDescriptionOnScreen]="!filterState.showDriverNotes()"
+                 [showOfficeNotes]="filterState.showOfficeNotes()"
+                 [showLabels]="filterState.showLabels()"
+                 [showReportsColumn]="true"
+                 [centerEmptyState]="true"
+                 [referenceDate]="selectedDate()"
+                 (edit)="tripEditing.edit($event)"
+                 (removeDriver)="tripEditing.removeDriverFromTrip($event)"
+                 (removeVehicle)="tripEditing.removeVehicleFromTrip($event)">
+      </app-trips>
+    } @else {
+      <div class="loading no-print">
+        <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+      </div>
+    }
+  </main>
 </div>

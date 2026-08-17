@@ -1,0 +1,23 @@
+<mat-chip-listbox class="chip-filter-chips" [multiple]="multiple()" [disabled]="disabled()" (change)="onChipChange($event)">
+  @for (option of options(); track option.id) {
+    <mat-chip-option [value]="option.id" [selected]="selectedIds().includes(option.id)">{{ option.name }}</mat-chip-option>
+  }
+</mat-chip-listbox>
+
+<mat-form-field class="chip-filter-select" appearance="outline" subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  @if (multiple()) {
+    <mat-select multiple [value]="selectedIds()" [disabled]="disabled()" (selectionChange)="onSelectChange($event.value)">
+      @for (option of options(); track option.id) {
+        <mat-option [value]="option.id">{{ option.name }}</mat-option>
+      }
+    </mat-select>
+  } @else {
+    <mat-select [value]="selectedIds().at(0) ?? null" [disabled]="disabled()" (selectionChange)="onSelectChange($event.value)">
+      <mat-option [value]="null">Alle</mat-option>
+      @for (option of options(); track option.id) {
+        <mat-option [value]="option.id">{{ option.name }}</mat-option>
+      }
+    </mat-select>
+  }
+</mat-form-field>

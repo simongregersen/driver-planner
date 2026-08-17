@@ -1,0 +1,146 @@
+import {ChangeDetectionStrategy, Component, OnInit, inject, signal} from '@angular/core';
+import {FormsModule} from '@angular/forms';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatIconModule} from '@angular/material/icon';
+import {MatInputModule} from '@angular/material/input';
+import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import moment, {Moment} from 'moment';
+import {ClockRecord} from '../clock-record';
+import {DataStore} from '../data.service';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
+import {DateTimeFieldComponent} from '../date-time-field/date-time-field.component';
+import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
+import {WriteFeedbackService} from '../write-feedback.service';
+import {guardDialogDismissal} from '../dialog-dismiss-guard';
+
+export type ClockRecordFormMode = 'create' | 'edit';
+
+export interface ClockRecordUpdates {
+  clockIn: Moment;
+  clockOut: Moment | null;
+  note: string | null;
+  dognbetaling: boolean;
+}
+
+// Create and edit share one form, following DriverFormComponent/FuelReportFormComponent's
+// convention — replaces the previously separate ClockRecordCreatorComponent/
+// ClockRecordEditorComponent. ClockRecordStopComponent stays its own component on purpose: it's
+// specifically the "confirm and stop" step (clockOut always defaults to now, primary action is a
+// red "Stop"), a distinct workflow from either starting or correcting a record — sharing one
+// component there made stopping and correcting indistinguishable from each other.
+//
+// Opened via MatDialog.open() with no data binding — mode/driverKey/record/initialClockIn are
+// set directly on componentInstance by the caller straight after open(); that assignment happens
+// before Angular runs ngOnInit (dialog creation defers it), so ngOnInit sees the final values.
+@Component({
+  standalone: true,
+  selector: 'app-clock-record-form',
+  templateUrl: './clock-record-form.component.html',
+  styleUrls: ['./clock-record-form.component.css'],
+  imports: [
+    FormsModule,
+    MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSlideToggleModule, MatTooltipModule,
+    DateTimeFieldComponent,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ClockRecordFormComponent implements OnInit {
+  mode: ClockRecordFormMode = 'create';
+  driverKey!: string;
+  /** Required when mode is 'edit'. */
+  record!: ClockRecord;
+  /** Create mode only: pre-fills "Start" with this day instead of defaulting to now — used when
+   * a record is added for a specific day from the report view rather than punched in live. */
+  initialClockIn?: Moment;
+
+  private readonly dataStore = inject(DataStore);
+  private readonly dialog = inject(MatDialog);
+  private readonly writeFeedback = inject(WriteFeedbackService);
+
+  /** True while a submit's write is in flight. Gates the submit button so a slow connection
+   * can't turn an impatient second tap into a second record — and stays true for a write that
+   * hasn't been acknowledged yet, which offline is every write. See WriteFeedbackService. */
+  readonly saving = signal(false);
+  readonly dialogRef = inject(MatDialogRef<ClockRecordFormComponent>);
+
+  clockIn: Moment | null = null;
+  clockOut: Moment | null = null;
+  note = '';
+  dognbetaling = false;
+
+  /** The field values as ngOnInit left them. This form is template-driven, so there's no
+   * FormGroup.dirty to consult — comparing against this snapshot is what tells the dismissal
+   * guard whether anything has actually been typed. */
+  private pristineSnapshot = '';
+
+  constructor() {
+    guardDialogDismissal(this.dialogRef, () => this.snapshot() !== this.pristineSnapshot);
+  }
+
+  private snapshot(): string {
+    return JSON.stringify([
+      this.clockIn?.valueOf() ?? null,
+      this.clockOut?.valueOf() ?? null,
+      this.note,
+      this.dognbetaling,
+    ]);
+  }
+
+  ngOnInit(): void {
+    const isEdit = this.mode === 'edit';
+    this.clockIn = isEdit
+      ? moment(this.record.clockIn)
+      : (this.initialClockIn ? this.initialClockIn.clone() : this.roundToFiveMinutes(moment()));
+    this.clockOut = (isEdit && this.record.clockOut) ? moment(this.record.clockOut) : null;
+    this.note = isEdit ? (this.record.note ?? '') : '';
+    this.dognbetaling = isEdit ? !!this.record.dognbetaling : false;
+    this.pristineSnapshot = this.snapshot();
+  }
+
+  clearClockOut(): void {
+    this.clockOut = null;
+  }
+
+  error(): string | null {
+    if (!this.clockIn || !this.clockIn.isValid()) return 'Ugyldig dato eller tid for "Start".';
+    if (this.clockOut && !this.clockOut.isValid()) return 'Ugyldig dato eller tid for "Slut".';
+    if (this.clockOut && this.clockOut.isBefore(this.clockIn)) return '"Slut" kan ikke være før "Start".';
+    return null;
+  }
+
+  onSubmit(): void {
+    if (this.saving()) return;
+    if (this.error()) return;
+    const note = this.note.trim() || null;
+    // A Slut filled in on create closes the record immediately — otherwise it'd read as still
+    // open ("I gang") and the punch button on Arbejdstid would switch into its recording state.
+    const saved = this.mode === 'edit'
+      ? this.dataStore.updateClockRecord(this.driverKey, this.record, {clockIn: this.clockIn!, clockOut: this.clockOut, note, dognbetaling: this.dognbetaling})
+      : this.dataStore.addClockRecord(this.driverKey, this.clockIn!, note, this.clockOut, this.dognbetaling);
+    void this.writeFeedback.closeDialogOn(this.dialogRef, saved, this.saving);
+  }
+
+  confirmDelete(): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...CONFIRM_DIALOG_CONFIG,
+      data: {
+        message: 'Er du sikker på, at du vil slette denne registrering?',
+        confirmLabel: 'Slet',
+        danger: true,
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        void this.writeFeedback.closeDialogOn(
+          this.dialogRef, this.dataStore.removeClockRecord(this.driverKey, this.record), this.saving, {failureMessage: 'Kunne ikke slette registreringen. Prøv igen.'});
+      }
+    });
+  }
+
+  private roundToFiveMinutes(m: Moment): Moment {
+    return m.clone().minutes(Math.round(m.minutes() / 5) * 5).seconds(0).milliseconds(0);
+  }
+}

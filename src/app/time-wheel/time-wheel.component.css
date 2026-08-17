@@ -1,0 +1,45 @@
+:host {
+  display: block;
+  width: 64px;
+}
+
+.wheel {
+  height: 200px; /* 5 * 40px items */
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  /* Once a scroll within this wheel hits its own top/bottom edge, don't let the rest of the
+     gesture chain into whatever scrollable ancestor is behind it (the dialog's own content,
+     ultimately the page — see styles.css for the matching rule on .mat-mdc-dialog-content). */
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.wheel::-webkit-scrollbar {
+  display: none;
+}
+
+/* Lets the first/last real item scroll all the way to the centered highlight band (see
+   TimePickerDialogComponent's .wheel-highlight) instead of stopping short against the edge of
+   the scroll area — half the visible height (5 items) minus half an item. */
+.wheel-spacer {
+  height: 80px;
+}
+
+.wheel-item {
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  /* Matches the app's own enlarged touchUi calendar-cell size (see .mat-calendar-body-cell-content
+     in styles.css) rather than Material's own headline scale, for visual consistency between
+     the two touch-friendly pickers. */
+  font-size: 1.1rem;
+  scroll-snap-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+  user-select: none;
+}
+
+.wheel-item.selected {
+  color: var(--mat-sys-on-surface);
+  font-weight: 700;
+}

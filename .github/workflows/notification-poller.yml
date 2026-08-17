@@ -1,0 +1,23 @@
+name: Notification poller
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Safety-net fallback in case the immediate workflow_dispatch trigger from the app
+    # fails (network blip, blocked request, rotated token) — GitHub's own scheduling can
+    # add extra delay under load, so this is a backstop, not the primary delivery path.
+    - cron: '*/5 * * * *'
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run send-notifications
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}

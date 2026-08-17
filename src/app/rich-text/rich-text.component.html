@@ -1,0 +1,7 @@
+@for (segment of segments(); track $index) {
+  @switch (segment.type) {
+    @case ('highlight') {<mark>{{ segment.text }}</mark>}
+    @case ('address') {<a [href]="mapsUrl(segment.address)" target="_blank" rel="noopener noreferrer">{{ segment.address }}</a>}
+    @default {{{ segment.text }}}
+  }
+}

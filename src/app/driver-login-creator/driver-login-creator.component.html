@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>Opret login til {{driver.displayName}}</h2>
+
+<mat-dialog-content>
+  <form id="driverLoginForm" class="form-stack" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    @if (error()) {
+      <div class="app-error">{{error()}}</div>
+    }
+
+    <mat-form-field class="full-width">
+      <mat-label>E-mail</mat-label>
+      <input matInput type="email" formControlName="email">
+      @if (loginForm.controls['email'].invalid) {
+        <mat-error>En gyldig e-mail er påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width">
+      <mat-label>Kodeord</mat-label>
+      <input matInput type="password" formControlName="password">
+      @if (loginForm.controls['password'].invalid) {
+        <mat-error>Kodeordet skal være mindst 6 tegn.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton type="button" mat-dialog-close>Annuller</button>
+  <button matButton="filled" type="submit" form="driverLoginForm"
+          [disabled]="!loginForm.valid || saving()">Opret login
+  </button>
+</mat-dialog-actions>

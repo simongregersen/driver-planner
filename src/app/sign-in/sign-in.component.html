@@ -1,8 +1,42 @@
-<form class="form-signin">
-  <h4>Driver Planner</h4>
-  <input type="email" id="inputEmail" #email class="form-control" placeholder="Email" required autofocus>
-  <input type="password" id="inputPassword" #password class="form-control" placeholder="Password" required>
-  <button class="btn btn-block btn-default" type="submit" (click)="login(email.value, password.value)">
-    Log ind
+<div class="brand-header">
+  <app-brand-icon [height]="72"></app-brand-icon>
+</div>
+<form class="form-signin" (ngSubmit)="login(email.value, password.value)">
+  <h4 class="section-title">Planner</h4>
+  @if (error()) {
+    <div class="app-error">{{ error() }}</div>
+  }
+  <!-- name + autocomplete are what iOS Keychain, Android autofill and password managers key
+       off to offer a saved credential; without them this form is invisible to all of them and
+       a driver has to type both fields by hand on a phone every time. -->
+  <mat-form-field class="full-width">
+    <mat-label>Email</mat-label>
+    <input matInput type="email" id="inputEmail" name="email"
+           autocomplete="username" inputmode="email" autocapitalize="none"
+           spellcheck="false" #email required>
+  </mat-form-field>
+  <mat-form-field class="full-width">
+    <mat-label>Password</mat-label>
+    <input matInput type="password" id="inputPassword" name="password"
+           autocomplete="current-password" #password required>
+  </mat-form-field>
+  <button matButton="filled" class="full-width" type="submit" [disabled]="signingIn()">
+    {{ signingIn() ? 'Logger ind…' : 'Log ind' }}
   </button>
 </form>
+
+@if (!installPrompt.isStandalone()) {
+  @if (installPrompt.canInstall()) {
+    <div class="install-row">
+      <button matButton="outlined" class="full-width" type="button" (click)="installPrompt.install()">
+        <mat-icon>download</mat-icon>
+        Installer app
+      </button>
+    </div>
+  } @else if (installPrompt.isIOS()) {
+    <p class="install-hint">
+      <mat-icon inline>ios_share</mat-icon>
+      Tilføj til hjemmeskærm: tryk på <strong>Del</strong>-knappen, og vælg derefter <strong>"Tilføj til hjemmeskærm"</strong>.
+    </p>
+  }
+}

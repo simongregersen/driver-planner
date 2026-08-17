@@ -1,0 +1,21 @@
+:host {
+  display: block;
+  /* The sheet already sits above the bottom nav bar visually, but on a phone with a home
+     indicator the last list item would otherwise sit right under it — same clearance as
+     .bottom-nav itself (--bottom-nav-safe-area-padding in styles.css), not because this sheet
+     is part of that stack, just deliberately matching its amount of breathing room. */
+  padding-bottom: var(--bottom-nav-safe-area-padding);
+}
+
+a[mat-list-item].active-link {
+  font-weight: 700;
+}
+
+/* A little extra breathing room around the notification/sign-out actions specifically — they
+   read as a distinct "account" group from the nav links above (already set off by mat-divider).
+   mat-list-item sets an explicit (not min-) height with box-sizing: border-box, so padding here
+   would just be absorbed into that fixed box rather than adding visible space — margin is what
+   actually grows the row's own footprint. */
+button.account-action {
+  margin: 4px 0;
+}

@@ -1,0 +1,40 @@
+/* row-gap/column-gap rather than one shorthand value: column-gap is the horizontal spacing
+   between the date and time fields side by side on desktop; row-gap only ever applies once
+   flex-wrap actually stacks them (mobile, too narrow for both side by side) — matching it to
+   .form-stack's own 4px row gap (rather than reusing column-gap's 12px there too) keeps a
+   date+time pair visually closer together than the gap to the next pair, instead of the
+   reverse. */
+.datetime-row {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  column-gap: 12px;
+}
+
+.datetime-row > mat-form-field,
+.datetime-row > app-time-field {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-body-small);
+}
+
+/* Non-blocking — unlike .form-error, this never affects tripForm.valid. Same amber "OBS" family
+   as .cell-warning/.chip-warning elsewhere in the app, but as a solid, legible text color rather
+   than their pale translucent background tint. */
+.field-warning {
+  margin: 0;
+  color: #7a5c0a;
+  font: var(--mat-sys-body-small);
+}
+
+/* Placed above its field rather than as a mat-hint below it — read before typing, not after. */
+.field-hint {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}

@@ -1,0 +1,30 @@
+<h2 mat-dialog-title>Stop Tidsregistrering</h2>
+
+<mat-dialog-content>
+  <form id="clockRecordStopForm" class="form-stack" (ngSubmit)="onSubmit()">
+    <div class="field-group field-start">
+      <span class="field-group-title">Start</span>
+      <app-date-time-field [value]="clockIn" (valueChange)="clockIn = $event"></app-date-time-field>
+    </div>
+
+    <div class="field-group field-end">
+      <span class="field-group-title">Slut</span>
+      <app-date-time-field [value]="clockOut" [fallbackValue]="clockIn" (valueChange)="clockOut = $event"></app-date-time-field>
+    </div>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Bemærkning</mat-label>
+      <input matInput [(ngModel)]="note" name="note" placeholder="Fx kunde eller destination">
+    </mat-form-field>
+
+    @if (error(); as msg) {
+      <div class="app-error">{{ msg }}</div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button matButton class="delete-btn" type="button" [disabled]="saving()" (click)="confirmDelete()">Slet</button>
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="clockRecordStopForm" class="stop-btn" [disabled]="!!error() || saving()">Stop</button>
+</mat-dialog-actions>

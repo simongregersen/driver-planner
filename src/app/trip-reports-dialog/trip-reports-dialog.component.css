@@ -1,0 +1,35 @@
+.report-row {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.report-row:last-child {
+  border-bottom: none;
+}
+
+.report-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.report-row-header button {
+  --mdc-icon-button-state-layer-size: 44px;
+  width: 44px;
+  height: 44px;
+}
+
+.report-row-header mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.report-row-summary {
+  font-weight: 600;
+}
+
+.report-row-note {
+  margin-top: 2px;
+  font-style: italic;
+}

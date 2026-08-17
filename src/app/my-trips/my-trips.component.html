@@ -1,0 +1,83 @@
+@if (driver(); as driver) {
+  <div class="page-header">
+    <h2 class="page-title">{{ formattedDate(selectedDate()) }}</h2>
+  </div>
+  <div class="page-layout">
+    <aside class="page-aside no-print">
+      <div class="sidebar-stack">
+        <mat-calendar class="inline-calendar"
+                      [selected]="selectedDate()"
+                      (selectedChange)="onDateSelected($event)"
+                      [minDate]="minDate"
+                      [dateFilter]="dateFilter()"
+                      [dateClass]="dateClass()">
+        </mat-calendar>
+        <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Dato</mat-label>
+          <input matInput
+                 readonly
+                 [matDatepicker]="d"
+                 [min]="minDate"
+                 [matDatepickerFilter]="dateFilter()"
+                 [ngModel]="selectedDate()"
+                 (ngModelChange)="onDateSelected($event)"
+                 (click)="d.open()">
+          <mat-datepicker-toggle matIconSuffix [for]="d"></mat-datepicker-toggle>
+          <mat-datepicker #d [dateClass]="dateClass()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+        </mat-form-field>
+        <div class="button-row" role="group" aria-label="Dato-navigation">
+          <button matButton="outlined" type="button" [disabled]="!hasPreviousPublicDate()" (click)="previousDay()">Forrige</button>
+          <button [matButton]="isToday() ? 'filled' : 'outlined'" type="button" (click)="goToToday()">I dag</button>
+          <button matButton="outlined" type="button" [disabled]="!hasNextPublicDate()" (click)="nextDay()">Næste</button>
+        </div>
+      </div>
+    </aside>
+
+    <app-collapsible-bottom-bar class="mobile-date-bar no-print">
+      <div bar-collapsed class="button-row" role="group" aria-label="Dato-navigation">
+        <button matButton="outlined" type="button" [disabled]="!hasPreviousPublicDate()" (click)="previousDay()">Forrige</button>
+        <button [matButton]="isToday() ? 'filled' : 'outlined'" type="button" (click)="goToToday()">I dag</button>
+        <button matButton="outlined" type="button" [disabled]="!hasNextPublicDate()" (click)="nextDay()">Næste</button>
+      </div>
+      <div bar-expanded class="mobile-date-bar-expanded">
+        <mat-form-field class="compact-date-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Dato</mat-label>
+          <input matInput
+                 readonly
+                 [matDatepicker]="dMobile"
+                 [min]="minDate"
+                 [matDatepickerFilter]="dateFilter()"
+                 [ngModel]="selectedDate()"
+                 (ngModelChange)="onDateSelected($event)"
+                 (click)="dMobile.open()">
+          <mat-datepicker-toggle matIconSuffix [for]="dMobile"></mat-datepicker-toggle>
+          <mat-datepicker #dMobile [dateClass]="dateClass()" [touchUi]="breakpoints.isMobile()"></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </app-collapsible-bottom-bar>
+
+    <main class="page-main">
+      @for (note of visibleNotes(); track note.$key) {
+        <div class="note-alert">
+          <span class="note-alert-text">{{ note.text }}</span>
+        </div>
+      }
+      @if (dayPublic()) {
+        @if (trips()) {
+          <app-trips [trips]="filteredTrips()"
+                     [readonly]="true"
+                     [showWarnings]="false"
+                     [highlightModified]="true"
+                     [hideSingleDriver]="true"
+                     [showFinishToggle]="true"
+                     [showReportButton]="true"
+                     [currentDriverKey]="driver.$key"
+                     [centerEmptyState]="true"
+                     [referenceDate]="selectedDate()"></app-trips>
+        }
+      } @else {
+        <p class="muted">Denne dag er endnu ikke gjort synlig af en administrator.</p>
+      }
+    </main>
+  </div>
+}

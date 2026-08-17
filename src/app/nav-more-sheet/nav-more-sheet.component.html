@@ -1,0 +1,33 @@
+<mat-nav-list>
+  @if (data.isAdmin$ | async) {
+    <a mat-list-item routerLink="/time-report" routerLinkActive="active-link" (click)="close()">
+      <mat-icon matListItemIcon>receipt_long</mat-icon>
+      <span matListItemTitle>Timeseddel</span>
+    </a>
+    <a mat-list-item routerLink="/period-plans" routerLinkActive="active-link" (click)="close()">
+      <mat-icon matListItemIcon>date_range</mat-icon>
+      <span matListItemTitle>Periodeplaner</span>
+    </a>
+    <a mat-list-item routerLink="/templates" routerLinkActive="active-link" (click)="close()">
+      <mat-icon matListItemIcon>description</mat-icon>
+      <span matListItemTitle>Skabeloner</span>
+    </a>
+    <a mat-list-item routerLink="/drivers" routerLinkActive="active-link" (click)="close()">
+      <mat-icon matListItemIcon>people</mat-icon>
+      <span matListItemTitle>Chauffører</span>
+    </a>
+    <a mat-list-item routerLink="/vehicles" routerLinkActive="active-link" (click)="close()">
+      <mat-icon matListItemIcon>directions_bus</mat-icon>
+      <span matListItemTitle>Køretøjer</span>
+    </a>
+    <mat-divider></mat-divider>
+  }
+  <button mat-list-item type="button" class="account-action" (click)="enableNotifications()">
+    <mat-icon matListItemIcon>notifications</mat-icon>
+    <span matListItemTitle>Slå notifikationer til</span>
+  </button>
+  <button mat-list-item type="button" class="account-action" (click)="logout()">
+    <mat-icon matListItemIcon>logout</mat-icon>
+    <span matListItemTitle>Log ud ({{ data.email$ | async }})</span>
+  </button>
+</mat-nav-list>

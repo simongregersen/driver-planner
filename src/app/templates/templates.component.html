@@ -1,61 +1,49 @@
-<div class="row mt-4 mb-2 hidden-print">
-  <div class="col-12">
-    <h2 class="font-weight-bold">Skabeloner</h2>
-  </div>
+<div class="page-header no-print">
+  <h2 class="page-title">Skabeloner</h2>
 </div>
-<div class="row">
-  <div class="col-12 col-xl-2 push-xl-10 hidden-print">
-    <aside>
-      <div class="row list-group mb-4">
-        <h5>Oversigt</h5>
-        <button
-          *ngFor="let template of templates"
-          type="button"
-          class="list-group-item list-group-item-action text-truncate pointer justify-content-between"
-          [class.active]="selectedTemplate?.$key === template?.$key"
-          (click)="selectedTemplate = template">
-
-          {{template.name}}
-          <a mwlConfirmationPopover
-             class="pointer"
-             [message]="'Er du sikker på, at du vil slette skabelonen<br>\'' + template.name + '\'?'"
-             [confirmButtonType]="'danger'"
-             [confirmText]="'Slet'"
-             [cancelText]="'Annuller'"
-             [appendToBody]="true"
-             placement="left"
-             (confirm)="removeTemplate(template)">
-            <i class="fa fa-trash" ngbTooltip="Slet" container="body"></i>
-          </a>
-        </button>
+<div class="page-layout">
+  <aside class="page-aside no-print">
+    <div class="sidebar-stack">
+      <div>
+        <h5 class="section-title">Oversigt</h5>
+        <mat-list class="template-list">
+          @for (template of (templates$ | async) ?? []; track template.$key) {
+            <mat-list-item [class.active-item]="selectedTemplate?.$key === template?.$key">
+              <button matListItemTitle type="button" class="template-name"
+                      (click)="selectedTemplate = template">{{template.name}}</button>
+              <button matIconButton matListItemMeta type="button" aria-label="Slet" matTooltip="Slet"
+                      (click)="removeTemplate(template)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-list-item>
+          }
+        </mat-list>
       </div>
-      <div class="list-group">
-        <form [formGroup]="templateForm" (ngSubmit)="createTemplate()">
-          <div class="row form-group"
-               [class.has-danger]="!templateForm.controls['name'].valid && templateForm.controls['name'].dirty">
-            <label for="name">Opret skabelon</label>
-            <div class="input-group">
-              <input class="form-control" placeholder="Navn" id="name" formControlName="name">
-              <span class="input-group-btn">
-                <button class="btn btn-secondary" type="button" (click)="createTemplate()">Opret</button>
-              </span>
-            </div>
-          </div>
-        </form>
-      </div>
-    </aside>
-  </div>
-  <div class="col-12 col-xl-9 pull-xl-2" style="margin-top: 30px">
-    <main>
-      <app-trips [trips]="trips"
-                 (edit)="edit($event)"
-                 (remove)="removeTrip($event)">
-      </app-trips>
-      <div class="row mt-4 mb-3 hidden-print">
-        <div class="col-12 btn-group" data-toggle="buttons">
-          <button type="button" class="btn btn-primary mr-3" (click)="create()">Opret tur</button>
-        </div>
-      </div>
-    </main>
-  </div>
+      <form [formGroup]="templateForm" (ngSubmit)="createTemplate()">
+        <mat-form-field class="full-width" subscriptSizing="dynamic">
+          <mat-label>Opret skabelon</mat-label>
+          <input matInput placeholder="Navn" formControlName="name">
+          <button matIconButton matIconSuffix type="submit" aria-label="Opret" matTooltip="Opret">
+            <mat-icon>add</mat-icon>
+          </button>
+        </mat-form-field>
+      </form>
+    </div>
+  </aside>
+  <main class="page-main">
+    <!-- Deliberately NOT readonly. That input freezes the whole row, including the row-click that
+         is the only way to open a trip for editing (see TripsComponent.onRowClick) — templates
+         have to stay editable. The chips' remove "X" is wired up properly instead, so it does
+         what it advertises rather than being a dead control. -->
+    <app-trips [trips]="(trips$ | async) ?? []"
+               [showLabels]="true"
+               [showWarnings]="false"
+               (edit)="edit($event)"
+               (removeDriver)="removeDriverFromTrip($event)"
+               (removeVehicle)="removeVehicleFromTrip($event)">
+    </app-trips>
+    <div class="toolbar-row no-print">
+      <button matButton="filled" type="button" (click)="create()">Opret tur</button>
+    </div>
+  </main>
 </div>

@@ -25,6 +25,7 @@
 !.vscode/extensions.json
 
 # misc
+/.angular/cache
 /.sass-cache
 /connect.lock
 /coverage
@@ -33,10 +34,17 @@ npm-debug.log
 testem.log
 /typings
 
-# e2e
-/e2e/*.js
-/e2e/*.map
-
 # System Files
 .DS_Store
 Thumbs.db
+
+# Firebase emulators
+.firebase/
+.emulator-data/
+firebase-debug.log
+database-debug.log
+ui-debug.log
+.firebase-export*
+
+# local secrets (GitHub PAT used to trigger the notification-poller workflow)
+/src/environments/secrets.ts

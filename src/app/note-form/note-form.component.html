@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger note' : 'Opret dagsnote' }}</h2>
+
+<mat-dialog-content>
+  <form id="noteForm" class="form-stack" [formGroup]="noteForm" (ngSubmit)="onSubmit()">
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Note</mat-label>
+      <textarea matInput rows="4" formControlName="text"></textarea>
+      @if (noteForm.controls['text'].hasError('required')) {
+        <mat-error>Note påkrævet.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="date-row">
+      <app-date-field class="date-field" label="Fra dato"
+                       [value]="noteForm.controls['start'].value"
+                       (valueChange)="setStart($event)"></app-date-field>
+      <app-date-field class="date-field" label="Til dato"
+                       [value]="noteForm.controls['end'].value"
+                       (valueChange)="setEnd($event)"></app-date-field>
+    </div>
+    @if (noteForm.hasError('endBeforeStart')) {
+      <p class="form-error">Til-dato skal være efter eller lig med fra-dato.</p>
+    }
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Chauffører</mat-label>
+      <mat-select formControlName="drivers" multiple placeholder="Vælg chauffører">
+        @for (option of (availableDrivers$ | async) ?? []; track option.id) {
+          <mat-option [value]="option.id">{{ option.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Køretøjer</mat-label>
+      <mat-select formControlName="vehicles" multiple placeholder="Vælg køretøjer">
+        @for (option of (availableVehicles$ | async) ?? []; track option.id) {
+          <mat-option [value]="option.id">{{ option.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (mode === 'edit') {
+    <button matButton type="button" class="confirm-danger" [disabled]="saving()" (click)="deleteNote()">Slet</button>
+  }
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="noteForm" [disabled]="!noteForm.valid || saving()">{{ mode === 'edit' ? 'Gem' : 'Opret' }}</button>
+</mat-dialog-actions>

@@ -1,3 +1,225 @@
-.navbar {
-  min-height: 50px;
+.app-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  gap: 4px;
+  padding: 0 10px;
+  /* Extends the toolbar's own background up under the status bar/notch instead of leaving
+     that area blank — paired with body's matching padding-top in styles.css. */
+  padding-top: env(safe-area-inset-top);
+  height: calc(64px + env(safe-area-inset-top));
+  box-sizing: border-box;
+  background: var(--mat-sys-inverse-surface);
+  color: var(--mat-sys-inverse-on-surface);
+  /* This is app chrome, not content — long-pressing a nav link/button shouldn't pop up a
+     text-selection callout the way it would on a webpage. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.app-toolbar a {
+  color: inherit;
+}
+
+/* mat-icon-button doesn't follow the toolbar's inherited text color on its own -
+   it resolves its icon color against its own theme tokens instead. */
+.app-toolbar .mat-mdc-icon-button {
+  color: var(--mat-sys-inverse-on-surface);
+}
+
+/* Print/Log ud are plain matButtons - like the icon button above, their text color and
+   ripple/state-layer both default to theme tokens (on-surface / primary) instead of
+   following the toolbar's inherited color, which read as near-black text with a blue-tinted
+   hover. */
+.toolbar-actions .mat-mdc-button {
+  color: var(--mat-sys-inverse-on-surface);
+  --mat-button-text-state-layer-color: var(--mat-sys-inverse-on-surface);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+/* Mobile-only (see the 1024px breakpoint below) — desktop keeps each page's own in-page
+   title/subtitle untouched, so these stay hidden here by default. */
+.mobile-page-title {
+  display: none;
+}
+
+.mobile-driver-chip {
+  display: none;
+}
+
+/* The tab bar's default M3 tokens resolve against on-surface/primary, which read fine on a
+   light surface but disappear against this toolbar's dark inverse-surface background. */
+.nav-links {
+  --mat-tab-divider-height: 0;
+  --mat-tab-active-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-hover-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-focus-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-inactive-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-inactive-hover-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-inactive-focus-label-text-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-indicator-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-hover-indicator-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-focus-indicator-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-active-ripple-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-inactive-ripple-color: var(--mat-sys-inverse-on-surface);
+  --mat-tab-pagination-icon-color: var(--mat-sys-inverse-on-surface);
+}
+
+/* Text color alone doesn't distinguish the active tab since both share inverse-on-surface;
+   the ink bar plus bold weight together do the job the old underline+bold link style did. */
+.nav-links .mat-mdc-tab-link.mdc-tab--active .mdc-tab__text-label {
+  font-weight: 700;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.active-link {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+}
+
+.bottom-nav {
+  display: none;
+}
+
+/* This breakpoint is intentionally wider than the app's usual 767px mobile cutoff — with
+   Chauffører/Køretøjer/Skabeloner etc. now in the nav, the full link row overflows well before
+   phone width, e.g. on iPad portrait/landscape (768-1024px). Below it the desktop tab row and
+   toolbar actions give way to the bottom nav bar instead (see .bottom-nav below). */
+@media (max-width: 1024px) {
+  .nav-links {
+    display: none;
+  }
+
+  .toolbar-actions {
+    display: none;
+  }
+
+  /* Smaller and no longer centered — the page title now takes over as the toolbar's primary
+     left-aligned content, so the brand just sits ahead of it as a small identity mark rather
+     than the toolbar's sole content. */
+  .brand {
+    margin-right: 6px;
+  }
+
+  .mobile-page-title {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    line-height: 1.15;
+  }
+
+  .mobile-page-title-main {
+    font-size: 18px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-page-title-sub {
+    font-size: 11px;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-driver-chip {
+    display: inline-block;
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    max-width: 96px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bottom-nav {
+    display: flex;
+  }
+}
+
+.bottom-nav {
+  position: fixed;
+  /* Not plain 0: iOS's installed-PWA WebKit has a known bug (see the --bottom-nav-* variables
+     in styles.css for the full explanation) where the viewport box used to resolve `bottom: 0`
+     for fixed elements is itself short by exactly safe-area-inset-bottom. bottom:0 therefore
+     anchors this many px above the true screen edge, leaving the gap below visible through
+     height/padding-bottom alone, however correct they are on their own — shifting the anchor
+     itself down by that same amount corrects it. This is *not* --bottom-nav-safe-area-padding:
+     it's a fixed, always-exactly-1x correction for the bug itself, unrelated to how much extra
+     breathing room --bottom-nav-height reserves below. */
+  bottom: calc(-1 * env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  height: var(--bottom-nav-height);
+  padding-bottom: var(--bottom-nav-safe-area-padding);
+  background: var(--mat-sys-surface-container);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  /* Without this, the buttons (cross-axis default: stretch) would grow to fill the full
+     content height above instead of staying pinned to their own original height. */
+  align-items: flex-start;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bottom-nav-link {
+  flex: 1 1 0;
+  /* No explicit height — .bottom-nav's own align-items: flex-start means this sizes to its
+     own natural content (icon + label + padding) instead of stretching to fill however tall
+     --bottom-nav-content-height (styles.css) grows. A hardcoded height here fought that
+     natural sizing (confirmed: it visibly misaligned the plain-<button> "Mere" link against
+     the <a>-based ones next to it), so this is deliberately left alone rather than pinned. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  border: none;
+  border-radius: var(--mat-sys-corner-large, 16px);
+  background: none;
+  padding: 6px 0 4px;
+  margin: 6px 4px;
+  color: var(--mat-sys-on-surface-variant);
+  font: inherit;
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.bottom-nav-link mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.bottom-nav-link.active {
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-weight: 600;
 }

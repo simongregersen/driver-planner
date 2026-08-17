@@ -1,0 +1,67 @@
+@if (loading()) {
+  <div class="loading no-print">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+} @else if (sortedRecords().length > 0) {
+  <table class="data-table time-reporting-table">
+    <colgroup>
+      <col class="col-date">
+      <col class="col-time">
+      <col class="col-time">
+      <col>
+      <col class="col-actions">
+    </colgroup>
+    <thead>
+    <tr>
+      <th>Dato</th>
+      <th>Start</th>
+      <th>Slut</th>
+      <th>Bemærkning</th>
+      <th class="no-print"></th>
+    </tr>
+    </thead>
+    <tbody>
+    @for (record of visibleRecords(); track record.$key; let i = $index) {
+      <tr class="hoverable" [class.latest-row]="!record.clockOut" [class.date-boundary]="isDateBoundary(i)">
+        <td data-label="Dato">{{ record.clockIn.toDate() | date:'EEE d/M' }}</td>
+        <td data-label="Start"><span class="report-start">{{ record.clockIn.toDate() | date:'HH:mm' }}</span></td>
+        <td data-label="Slut">
+          @if (record.clockOut) {
+            <span class="report-end"
+                  [matTooltip]="!sameDay(record.clockIn, record.clockOut) ? (record.clockOut.toDate() | date:'EEE d/M HH:mm') : ''">
+              {{ record.clockOut.toDate() | date:'HH:mm' }}@if (!sameDay(record.clockIn, record.clockOut)) {*}
+            </span>
+          } @else {
+            <span class="in-progress">I gang</span>
+          }
+        </td>
+        <td data-label="Bemærkning" class="muted note-cell" [matTooltip]="record.note ?? ''">{{ record.note }}</td>
+        <td class="no-print cell-actions">
+          <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger" (click)="editRecord(record)">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </tr>
+    }
+    </tbody>
+    @if (hasMore()) {
+      <tfoot>
+      <tr>
+        <td colspan="5" class="no-print show-all-cell">
+          <button matButton type="button" (click)="showRecentWeekRecords()">Se seneste uges registreringer</button>
+        </td>
+      </tr>
+      </tfoot>
+    } @else if (showRecentWeek()) {
+      <tfoot>
+      <tr>
+        <td colspan="5" class="no-print show-all-cell">
+          <button matButton type="button" (click)="collapseRecords()">Se færre</button>
+        </td>
+      </tr>
+      </tfoot>
+    }
+  </table>
+} @else {
+  <em class="no-print" [class.empty-state-centered]="centerEmptyState()">Ingen registreringer.</em>
+}

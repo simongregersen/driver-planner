@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>{{ mode === 'edit' ? 'Rediger tankning' : 'Start tankning' }}</h2>
+
+<mat-dialog-content>
+  <form id="fuelReportForm" class="form-stack" [formGroup]="fuelReportForm" (ngSubmit)="onSubmit()">
+    @if (mode === 'edit') {
+      <div class="vehicle-readonly">
+        <span class="vehicle-readonly-label">Køretøj</span>
+        <span>{{ existingVehicleName }}</span>
+      </div>
+    } @else {
+      <mat-form-field class="full-width" subscriptSizing="dynamic">
+        <mat-label>Køretøj</mat-label>
+        <mat-select formControlName="vehicleKey">
+          @for (vehicle of (vehicles$ | async) ?? []; track vehicle.$key) {
+            <mat-option [value]="vehicle.$key">{{ vehicle.displayName }}</mat-option>
+          }
+        </mat-select>
+        @if (fuelReportForm.controls['vehicleKey'].hasError('required')) {
+          <mat-error>Vælg et køretøj.</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    @if (needsDriverPicker) {
+      <mat-form-field class="full-width" subscriptSizing="dynamic">
+        <mat-label>Chauffør</mat-label>
+        <mat-select formControlName="driverKey">
+          @for (driver of (drivers$ | async) ?? []; track driver.$key) {
+            <mat-option [value]="driver.$key">{{ driver.displayName }}</mat-option>
+          }
+        </mat-select>
+        @if (fuelReportForm.controls['driverKey'].hasError('required')) {
+          <mat-error>Vælg en chauffør.</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <app-date-field class="date-field" label="Dato"
+                     [value]="fuelReportForm.controls['date'].value"
+                     [minDate]="minDate"
+                     (valueChange)="setDate($event)"></app-date-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Triptæller</mat-label>
+      <input matInput type="text" inputmode="numeric" formControlName="odometerKm">
+      <span matSuffix>km</span>
+      @if (fuelReportForm.controls['odometerKm'].hasError('decimal')) {
+        <mat-error>Angiv et gyldigt tal.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Brændstof</mat-label>
+      <input matInput type="text" inputmode="numeric" formControlName="liters">
+      <span matSuffix>L</span>
+      @if (fuelReportForm.controls['liters'].hasError('decimal')) {
+        <mat-error>Angiv et gyldigt tal.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Bemærkning</mat-label>
+      <textarea matInput rows="3" formControlName="note"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (mode === 'edit') {
+    <button matButton type="button" class="confirm-danger" [disabled]="saving()" (click)="deleteReport()">Slet</button>
+  }
+  <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
+  <button matButton="filled" type="submit" form="fuelReportForm" [disabled]="!fuelReportForm.valid || saving()">
+    {{ mode === 'edit' ? 'Gem' : 'Registrer' }}
+  </button>
+</mat-dialog-actions>

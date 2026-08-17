@@ -1,3 +1,369 @@
+:host {
+  display: block;
+  overflow-x: auto;
+  /* Per spec, overflow-x: auto paired with overflow-y: visible gets silently force-computed
+     back to overflow-y: auto — so "visible" doesn't actually stick here. When the table is
+     wide enough to need the horizontal scrollbar, that scrollbar's own height eats into the
+     box, and the resulting auto overflow-y then clips the last few pixels of the table
+     behind a spurious vertical scrollbar. hidden is the only value that actually prevents it;
+     there's nothing to legitimately clip since this box has no max-height of its own.
+     https://www.w3.org/TR/css-overflow-3/#overflow-control */
+  overflow-y: hidden;
+}
+
 .newline {
   white-space: pre-line;
+}
+
+/* Admin-only labels, next to the trip name — margin on the wrapper (not a gap on a flex
+   container around app-rich-text) since app-rich-text's :host is display:contents, and a flex
+   gap there would leak in between its own internal segments (e.g. a **highlighted** word)
+   rather than just separating it from these chips. Deliberately left inline (not block): a
+   label stays right after the name when the two fit on the same line together, and only wraps
+   to its own line — as an ordinary consequence of inline layout, not anything forced here —
+   once the name's own wrapping (a long one spans 2-3 lines especially in print's narrower,
+   fixed-width Tur column) leaves it no room to fit after the last line. nowrap keeps that wrap
+   an all-or-nothing move for the whole label group — several labels drop to the new line
+   together, never splitting mid-group with some trailing the name and the rest below it. */
+.trip-labels {
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.trip-label-chip {
+  display: inline-block;
+  background: var(--mat-sys-secondary);
+  color: var(--mat-sys-on-secondary);
+  font-size: 0.7em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Auto layout only takes Start/Slut/Chauffører/Køretøjer's percentage hints as loose
+   suggestions — a long unbroken value in any column (most commonly Tur's description, shown
+   inline on My Dag) could still nudge the whole table a few px past 100%, which then showed up
+   as a faint horizontal scrollbar on this box (see :host above) rather than actual page
+   overflow. Fixed layout makes those percentages authoritative instead of advisory, so any
+   overflow is forced into a wrap within its own column rather than widening the table. */
+.data-table {
+  table-layout: fixed;
+}
+
+/* Tur has no fixed column width, so — unlike Start/Slut's percentage hints — it's the column
+   that absorbs whatever's left, and the one that most needs to wrap rather than overflow
+   (a finish time plus a garage time, or an unusually long, unbroken name/description). */
+.trip-cell {
+  word-break: break-word;
+}
+
+/* The composed mobile summary (time range + name, vehicle, drivers, description) is only
+   shown below the card breakpoint — see .desktop-trip-info below and the media query. */
+.mobile-trip-info {
+  display: none;
+}
+
+.mobile-line {
+  margin-top: 2px;
+}
+
+/* Admin-only — never shown to a driver on-screen, and printed only when explicitly toggled on
+   (showOfficeNotes), same as the driver-facing description. Visually set apart with a left
+   accent bar and the theme's tertiary color, rather than the plain muted grey used for the
+   driver's own description. */
+.office-note {
+  margin-top: 2px;
+  padding-left: 6px;
+  border-left: 2px solid var(--mat-sys-tertiary);
+  color: var(--mat-sys-tertiary);
+  font-style: italic;
+}
+
+/* mat-chip-set is a block-level flex container (display: flex, not inline-flex), so two of
+   them stacked in normal flow would each claim the full row width and land on their own line
+   regardless of how little content they hold — this row has to lay them out as flex items
+   itself so they shrink to content and sit side by side instead. The gap is load-bearing, not
+   just visual spacing: each chip-set's inner wrapper carries its own -8px margin (compensating
+   for its first chip's left margin so it sits flush within its own set), which bleeds into the
+   previous set's box and overlaps its last chip unless something re-adds that 8px between them. */
+.mobile-chips-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-trip-time {
+  margin-right: 6px;
+}
+
+/* Chips for assigned vehicles/drivers — used both in the desktop Chauffører/Køretøjer columns
+   and the mobile composed block, via the same #vehicleChips/#driverChips templates. Plain
+   (no color-coding), a pale outline instead of a filled background, and denser than Material's
+   defaults — there's no official token for the label padding or the inter-chip margin, so
+   those go through ::ng-deep. */
+mat-chip-set {
+  margin: 0;
+}
+
+.trip-chip {
+  --mat-chip-container-height: 22px;
+  /* Lighter than Material's default (on-surface-variant) so the remove "X" reads as a quiet,
+     secondary action rather than competing visually with the chip's own label text. */
+  --mat-chip-with-trailing-icon-trailing-icon-color: var(--mat-sys-outline-variant);
+  /* The default hover/focus state-layer circle behind the "X" comes out as an oval rather than
+     a circle at this chip's compact size (Material sizes it off fixed pixel insets tuned for
+     its default, taller chip) — simplest fix is to drop the overlay entirely and rely on the
+     icon's own color change on hover instead (see .trip-chip .mat-mdc-chip-remove:hover below).
+     Material adds --mat-chip-hover-state-layer-opacity and --mat-chip-trailing-action-hover-
+     state-layer-opacity together for this one overlay, so both have to be zeroed — the first
+     alone still left a faint (and still oval) overlay behind. */
+  --mat-chip-hover-state-layer-opacity: 0;
+  --mat-chip-focus-state-layer-opacity: 0;
+  --mat-chip-trailing-action-hover-state-layer-opacity: 0;
+  --mat-chip-trailing-action-focus-state-layer-opacity: 0;
+  /* !important: Material's own default chip margin (4px) otherwise wins the cascade despite
+     this being more specific — CSS custom properties above cascade fine without it since
+     Material just reads whatever value is set, but a literal margin has to out-fight theirs. */
+  margin: 1px 2px 1px 2px !important;
+}
+
+.trip-chip ::ng-deep .mat-mdc-chip-action-label {
+  padding: 0 4px;
+}
+
+/* Same tightened padding as the chip-filter component's chips — Material's own default (12px
+   each side) otherwise leaves these noticeably wider than the label-padding change above. */
+.trip-chip ::ng-deep .mdc-evolution-chip__action--primary {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+/* The remove ("X") button sits in its own trailing cell, so it doesn't inherit the primary
+   cell's right padding above — that padding still applies before the icon, on top of its own
+   (already-zeroed) left padding, so the actual name-to-X gap was that 8px, not this one. */
+.trip-chip ::ng-deep .mdc-evolution-chip__action--secondary {
+  padding-left: 0 !important;
+}
+
+/* Drop the primary cell's own right padding specifically when there's a trailing remove button,
+   so the name-to-X gap collapses to just the label's padding — the symmetric 8px on both sides
+   above is only wanted for the (button-less) name-to-border case. */
+.trip-chip.mdc-evolution-chip--with-trailing-action ::ng-deep .mdc-evolution-chip__action--primary {
+  padding-right: 0 !important;
+}
+
+.trip-chip .mat-mdc-chip-remove:hover mat-icon {
+  color: var(--mat-sys-error);
+}
+
+/* The hover/focus custom properties above only cover those two states — the same oval overlay
+   still shows at 0.12 opacity while the button is pressed (mousedown/tap), since MDC's ripple
+   surface applies its "pressed" opacity as a hardcoded value with no exposed token to zero it
+   through. Overriding the pseudo-element directly, unconditionally, closes that gap without
+   needing to chase every interaction state individually. */
+.trip-chip .mat-mdc-chip-remove::after {
+  opacity: 0 !important;
+}
+
+/* Same amber "OBS" cue as .cell-warning/.row-highlight (styles.css) — this driver/vehicle is
+   also assigned to another, time-overlapping trip. Chip-level (not the whole cell) since only
+   some of a trip's assigned drivers/vehicles are typically the conflicting ones. */
+.chip-warning {
+  --mat-chip-elevated-container-color: rgba(255, 193, 7, 0.25);
+}
+
+/* A driver who has left the company but is still assigned to this trip. Deleting a driver is a
+   soft delete that deliberately doesn't unassign them from trips already planned, so the name
+   still has to render — dimmed and struck through so it reads as "no longer here" rather than as
+   an ordinary assignment. Deliberately not the amber warning cue above: this isn't a conflict to
+   resolve before the day runs, it's a statement of fact about the roster. Strikethrough as well
+   as colour, so it doesn't rely on colour alone. */
+.chip-deleted {
+  --mat-chip-elevated-container-color: transparent;
+  --mat-chip-label-text-color: var(--mat-sys-outline);
+  border: 1px dashed var(--mat-sys-outline-variant);
+  text-decoration: line-through;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+}
+
+/* Grey when off, green when on — the icon itself is deliberately not covered by the
+   .trip-finished dimming below, so it stays legible/clickable on an already-dimmed row.
+   The stroke is a fake-bold trick: this icon font has no variable weight axis to lean on. */
+.finish-toggle mat-icon {
+  color: var(--mat-sys-outline);
+  -webkit-text-stroke: 1px currentColor;
+}
+
+.finish-toggle-active mat-icon {
+  color: #2e7d32;
+}
+
+/* Deliberately understated relative to the finish-toggle above (far from every trip needs a
+   report) — same grey-off/accent-on pattern, but the app's primary blue rather than green, so
+   the two read as clearly different concerns at a glance. */
+.report-toggle mat-icon {
+  color: var(--mat-sys-outline);
+}
+
+.report-toggle-active mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+/* The admin-facing indicator (Dagsplaner) only ever renders once a trip actually has a report
+   (see hasAnyReport), so it's always this accent color — its mere presence is already the
+   signal, there's no separate "off" state to contrast against. */
+.reports-indicator mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+/* .cell-trip-actions itself stays a plain table cell (no display override) — giving it
+   display: flex directly used to strip out its inherited vertical-align: top (a table-cell-only
+   property that a flex/grid display value no longer applies to), which let it drift out of
+   alignment with the row's other, still top-aligned cells whenever a neighboring cell (usually
+   Tur) made the row taller than this one's own content. The actual flex layout — row, unlike
+   .trip-card-actions below, since these sit side by side rather than in a reserved corner — now
+   lives on this inner wrapper instead, where it can't affect the cell's own alignment. */
+.trip-actions-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Marking a trip finished is purely a local/on-device thing (see FinishedTripsService) — tints
+   the whole row, including its driver/vehicle chips, a light green so "done" reads clearly at
+   a glance rather than just a subtle dimming. */
+.trip-finished {
+  background: rgba(46, 125, 50, 0.16);
+}
+
+.trip-finished td {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.trip-finished .trip-chip {
+  --mat-chip-elevated-container-color: rgba(46, 125, 50, 0.22);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
+/* Below 768px the table becomes a stack of cards, one per trip. Start/Slut/Chauffører/Køretøjer
+   fold into the single composed .mobile-trip-info block instead of remaining separate fields —
+   screen-only, printing always uses the full table layout regardless of the printing device's
+   reported page width. */
+@media screen and (max-width: 767px) {
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table,
+  .data-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tbody tr {
+    display: block;
+    margin-bottom: 8px;
+    /* Bottom trimmed well below the other sides — the last line's floated icon (see
+       .trip-card-actions below) has an invisible 48px touch target around a much smaller visible
+       button, and that overlay is deliberately allowed to spill past this padding into the gap
+       toward the next card rather than reserving real space just to keep it inside. */
+    padding: 8px 10px 2px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--mat-sys-corner-medium);
+  }
+
+  /* Floated right, placed inside .trip-footer as the LAST element after the description text
+     (see the .html) — not a preceding sibling. A float only pulls in text that comes after it
+     within its own containing block, so putting it after the text instead attaches it to the
+     tail end of the last line: beside a short description (saving the vertical space a
+     dedicated row would cost), or wrapped onto its own line — still at the bottom of the text,
+     never floating up next to the first line — once a long one's last line has no room left.
+     Still sized for a comfortable thumb tap (see .report-toggle/.finish-toggle below) — real-
+     phone testing found the icons too small and fiddly when squeezed into a corner or a narrow
+     stacked column, which this isn't. No vertical margin of its own: the button's invisible
+     48px touch target is allowed to spill past the card's own border/padding into the gap
+     toward the next card — deliberately, to avoid reserving real layout space just to keep that
+     invisible overlay inside the visible card. */
+  .trip-card-actions {
+    float: right;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 0 8px;
+  }
+
+  .trip-card-actions .report-toggle,
+  .trip-card-actions .finish-toggle,
+  .trip-card-actions .reports-indicator {
+    --mat-icon-button-state-layer-size: 44px;
+    --mat-icon-button-icon-size: 24px;
+  }
+
+  /* The --mat-icon-button-icon-size token above only sizes the button's own padding math — the
+     actual <mat-icon> glyph size is set by the global ".data-table mat-icon" rule (16px, tuned
+     for this table's compact desktop buttons), which otherwise wins here too since it's at least
+     as specific. Left unfixed, that mismatch is exactly what read as "the ripple is centered but
+     the icon isn't": the button pads itself for a 24px icon while the actual glyph renders at a
+     stray 16px inside that space. Matching the glyph's own size here to the token above is what
+     actually centers it. */
+  .trip-card-actions .report-toggle mat-icon,
+  .trip-card-actions .finish-toggle mat-icon,
+  .trip-card-actions .reports-indicator mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .data-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  /* display:block, not just the parent tr — a <td> left at its default display:table-cell here
+     has no table-row parent (the tr above is display:block now), so the browser synthesizes an
+     anonymous table around it sized by shrink-to-fit content instead of the card's full width.
+     That silently capped .trip-cell (and everything inside it, including .trip-card-actions) to
+     whatever its widest text line happened to be — flex-end alignment then lands wherever that
+     narrower box's edge is, not the card's actual right edge, which is what made the actions row
+     appear to drift left on cards whose content didn't happen to run wide. */
+  .data-table tbody tr > td {
+    display: block;
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    border-bottom: none;
+    overflow-wrap: break-word;
+  }
+
+  .data-table tbody tr > td[data-label="Start"],
+  .data-table tbody tr > td[data-label="Slut"],
+  .data-table tbody tr > td[data-label="Chauffører"],
+  .data-table tbody tr > td[data-label="Køretøjer"],
+  .data-table tbody tr > td.cell-trip-actions {
+    display: none;
+  }
+
+  .desktop-trip-info {
+    display: none;
+  }
+
+  /* flow-root, not plain block — establishes a new block formatting context so this card
+     properly contains the floated .trip-card-actions' height (a float otherwise doesn't count
+     toward its container's own height at all, which would let the card's border end above the
+     bottom of a description-less or very-short-description card's icon row). */
+  .mobile-trip-info {
+    display: flow-root;
+  }
 }
