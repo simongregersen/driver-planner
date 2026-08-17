@@ -85,10 +85,20 @@ async function main() {
     try {
       const {tokens, owners} = await collectTokens(entry.uids || []);
       if (tokens.length) {
+        // Data-only, deliberately. combined-sw.js ends up with three independent push handlers
+        // in the one service worker — the FCM SDK's own, ngsw-worker's, and the app's
+        // onBackgroundMessage — and a top-level `notification` payload makes all three display
+        // it, so one trip change arrived on the phone as three identical notifications. Both of
+        // the first two bail when there is no `notification` key, which leaves the app's own
+        // handler as the single display, and it's the one whose icon and click behaviour the app
+        // controls. FCM rejects a data payload whose values aren't all strings.
         const response = await messaging.sendEachForMulticast({
           tokens,
-          notification: {title: entry.title, body: entry.body},
-          data: entry.data || {},
+          data: {
+            title: String(entry.title ?? ''),
+            body: String(entry.body ?? ''),
+            ...Object.fromEntries(Object.entries(entry.data || {}).map(([k, v]) => [k, String(v)])),
+          },
         });
         await pruneStaleTokens(owners, response.responses);
         console.log(`Sent "${entry.title}" to ${response.successCount}/${tokens.length} device(s).`);

@@ -14,9 +14,12 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Title and body arrive under `data`, not `notification` — the sender deliberately omits the
+// `notification` key so that neither the FCM SDK's own push handler nor ngsw-worker's (imported
+// below) displays a second and third copy of the same message. See scripts/send-notifications.mjs.
 messaging.onBackgroundMessage((payload) => {
-  self.registration.showNotification(payload.notification?.title ?? 'Planner', {
-    body: payload.notification?.body,
+  self.registration.showNotification(payload.data?.title || 'Planner', {
+    body: payload.data?.body,
     icon: 'icons/icon-192x192.png',
     data: payload.data,
   });

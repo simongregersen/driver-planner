@@ -123,6 +123,31 @@ html {
   overscroll-behavior: contain;
 }
 
+/* Snack bars sit at the very bottom edge of the viewport by default (Material's own 8px margin),
+   which on mobile puts them behind .bottom-nav — the message either disappears under the tab bar
+   or reads as part of it. Lifting them clear of the nav is all this does; the arithmetic works
+   out simply because both are anchored to the same true screen bottom (.cdk-global-overlay-wrapper
+   above already applies the safe-area correction to the snack bar's own wrapper, and
+   --bottom-nav-height already includes the inset the nav reserves). !important for the same
+   reason as the rules above: same specificity as Material's own, and source order isn't
+   guaranteed to put this after the prebuilt theme. */
+.mat-mdc-snack-bar-container {
+  margin-bottom: 24px !important;
+}
+
+@media (max-width: 1024px) {
+  .mat-mdc-snack-bar-container {
+    margin-bottom: calc(var(--bottom-nav-height) + 16px) !important;
+  }
+}
+
+/* Notification snack bars are "\n"-joined title + body (see MessagingService) — without this
+   they collapse onto one run-on line. pre-line and not pre so the single-line messages
+   everywhere else still wrap normally at the container edge. */
+.mat-mdc-snack-bar-label {
+  white-space: pre-line;
+}
+
 /* The touchUi datepicker (date-field, date-time-field, ...) hits the exact same white-bar bug,
    but can't be fixed the same way as dialogs/the "Mere" sheet: MatDatepicker hardcodes CDK's
    BlockScrollStrategy for touchUi mode directly in its source rather than reading it from an

@@ -25,7 +25,13 @@ export class MessagingService {
         return;
       }
       onMessage(m, payload => {
-        this.snackBar.open(payload.notification?.body ?? payload.notification?.title ?? 'New notification', 'Dismiss', {
+        // Reads `data` rather than `notification` — the sender is data-only, see
+        // scripts/send-notifications.mjs. Title first and body under it, matching what the
+        // service worker puts on the lock screen: showing the body alone left a driver with
+        // "Tur 12 d. 5. maj kl. 08:00" and no indication of what had actually happened to it.
+        // The newline renders as a line break via the pre-line rule in styles.css.
+        const {title, body} = payload.data ?? {};
+        this.snackBar.open([title, body].filter(Boolean).join('\n') || 'Ny besked', 'OK', {
           duration: 8000,
         });
       });
