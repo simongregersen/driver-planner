@@ -11,6 +11,10 @@ on:
 jobs:
   send:
     runs-on: ubuntu-latest
+    # Draining the queue takes seconds. The cron fires every five minutes, so anything still
+    # running past this is wedged rather than busy, and capping it stops a stuck run from
+    # occupying a runner for GitHub's six-hour default.
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -3,7 +3,7 @@
 // Run from GitHub Actions (see .github/workflows/notification-poller.yml); the service
 // account JSON and database URL come from environment variables so no secret is ever
 // committed to the repo.
-import {initializeApp, cert} from 'firebase-admin/app';
+import {initializeApp, cert, deleteApp} from 'firebase-admin/app';
 import {getDatabase} from 'firebase-admin/database';
 import {getMessaging} from 'firebase-admin/messaging';
 
@@ -15,7 +15,7 @@ if (!serviceAccountJson || !databaseURL) {
   process.exit(1);
 }
 
-initializeApp({
+const app = initializeApp({
   credential: cert(JSON.parse(serviceAccountJson)),
   databaseURL,
 });
@@ -113,7 +113,17 @@ async function main() {
   }
 }
 
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+// The database client holds an open WebSocket to RTDB from the first read onwards, and an open
+// socket keeps Node's event loop alive — so tearing the app down is what actually ends the
+// process. Without it the script printed its output, finished its work, and then sat idle until
+// Actions killed the job hours later, once per run of a five-minute cron.
+//
+// The failure path sets exitCode rather than calling process.exit() for the same reason: exiting
+// there would skip this cleanup, and it's the one path most likely to have left the connection
+// in a state worth closing properly.
+main()
+  .catch(err => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(() => deleteApp(app));

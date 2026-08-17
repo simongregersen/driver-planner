@@ -30,6 +30,7 @@ export class AppErrorHandler implements ErrorHandler {
 
   handleError(error: unknown): void {
     console.error(error);
+    if (isOpaqueCrossOriginError(error)) return;
     this.showNotice();
   }
 
@@ -44,4 +45,26 @@ export class AppErrorHandler implements ErrorHandler {
       // an unbreakable loop. The console.error above has already recorded the original.
     }
   }
+}
+
+/**
+ * True for a window 'error' event the browser has stripped of all detail.
+ *
+ * When a script from another origin throws and its response carries no CORS headers, browsers
+ * deliberately blank out the filename, line number and error object, leaving only the message
+ * "Script error.". provideBrowserGlobalErrorListeners() then has no real error to forward, so it
+ * fabricates one as `new Error(event.message, {cause: event})` — the ErrorEvent it hangs off
+ * `cause` is what lets us recognise these here.
+ *
+ * Every script this app loads is served same-origin from Firebase Hosting (the gstatic
+ * importScripts in combined-sw.js run in worker scope and can't reach window), so a stripped
+ * event is never this app failing — it's other script running in the page: Safari's own
+ * Add-to-Home-Screen UI, a content blocker, an extension. Observed in practice on iOS when
+ * tapping Share to install the PWA, which popped the generic notice for no reason a driver
+ * could act on. There is nothing in such an event to debug and nothing to do about it, so it
+ * must not become a snackbar; handleError's console.error still records it.
+ */
+function isOpaqueCrossOriginError(error: unknown): boolean {
+  const cause = error instanceof Error ? error.cause : null;
+  return cause instanceof ErrorEvent && cause.error == null;
 }
