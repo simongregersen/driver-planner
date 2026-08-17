@@ -39,10 +39,36 @@ messaging.onBackgroundMessage(async (payload) => {
   // so it always notifies and lets the page decide: MessagingService only raises the snackbar if
   // the document really is visible, and ignores this otherwise rather than queueing a snackbar
   // that would surface much later when the app is next opened.
+  //
+  // Two routes, because on iOS neither is dependable alone. clients.matchAll() is the direct
+  // one, but the same WebKit gap that hides the window from hasVisibleClients above can leave
+  // this list empty too, in which case there is nobody to post to. BroadcastChannel doesn't
+  // enumerate clients at all, so it survives that — at the cost of not existing in every
+  // service-worker implementation, hence the feature check. When both work the page receives the
+  // push twice and dedupes on `id`.
+  const message = {
+    type: PUSH_TO_WINDOW,
+    // FCM's own per-message id where there is one; the text is a good enough fallback, since
+    // the only thing this has to distinguish is one push from the next.
+    id: payload.messageId ?? `${payload.data?.title ?? ''}|${payload.data?.body ?? ''}`,
+    data: payload.data ?? {},
+  };
+
   const clients = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
   for (const client of clients) {
-    client.postMessage({type: PUSH_TO_WINDOW, data: payload.data ?? {}});
+    client.postMessage(message);
   }
+
+  if (typeof BroadcastChannel === 'function') {
+    const channel = new BroadcastChannel(PUSH_TO_WINDOW);
+    channel.postMessage(message);
+    channel.close();
+  }
+
+  // Deliberately left in: this path is invisible from the page when it fails (no error, just no
+  // snackbar), and the client count is the one number that says which of the two routes above
+  // had any chance of working. Readable on a phone via Safari's Web Inspector.
+  console.log(`[push] forwarded to ${clients.length} client(s), BroadcastChannel: ${typeof BroadcastChannel === 'function'}`);
 });
 
 self.addEventListener('notificationclick', (event) => {

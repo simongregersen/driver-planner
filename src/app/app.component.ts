@@ -66,7 +66,13 @@ export class AppComponent {
     window.print();
   }
 
+  // The acknowledgement matters more than it looks: register() takes seconds (see its own
+  // comment), and on mobile the "Mere" sheet this is tapped from dismisses immediately, so
+  // without this the tap visibly did nothing at all until the result arrived. No action button
+  // or duration on the first snackbar — it stays until the second one replaces it, which
+  // MatSnackBar does on its own since only one can be open at a time.
   async enableNotifications() {
+    this.snackBar.open('Slår notifikationer til…');
     const enabled = await this.messagingService.register();
     this.snackBar.open(
       enabled ? 'Notifikationer er slået til.' : 'Kunne ikke slå notifikationer til.',

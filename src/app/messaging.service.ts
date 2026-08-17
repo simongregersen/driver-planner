@@ -10,6 +10,13 @@ import {AuthenticationService} from './authentication.service';
 // from the app bundle, so the string is duplicated rather than shared.
 const PUSH_TO_WINDOW = 'planner-push';
 
+// The message combined-sw.js forwards, over either route.
+interface ForwardedPush {
+  type: string;
+  id?: string;
+  data?: Record<string, string>;
+}
+
 async function sha256Hex(value: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -22,6 +29,9 @@ export class MessagingService {
   private readonly authService = inject(AuthenticationService);
   private readonly snackBar = inject(MatSnackBar);
   private currentTokenHash: string | null = null;
+  private pushChannel: BroadcastChannel | null = null;
+  private lastPushId: string | null = null;
+  private registration: Promise<boolean> | null = null;
 
   constructor() {
     messaging.then(m => {
@@ -37,18 +47,38 @@ export class MessagingService {
 
   // iOS doesn't report an installed PWA that's open in the foreground as a visible client, so
   // the SDK's own foreground path above never runs there and the push is handled as a background
-  // one instead. combined-sw.js forwards those to us anyway (see its comment) — hence the
-  // visibility check, which is the part the service worker couldn't do for itself.
+  // one instead. combined-sw.js forwards those to us anyway over both routes below (see its
+  // comment for why it takes two) — hence the visibility check in handleForwardedPush, which is
+  // the part the service worker couldn't do for itself.
   private listenForServiceWorkerPushes(): void {
-    if (!('serviceWorker' in navigator)) {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', event => this.handleForwardedPush(event.data));
+      // Required because the listener above went on with addEventListener rather than by
+      // assigning onmessage: a ServiceWorkerContainer's message queue starts out disabled, and
+      // assigning onmessage is what normally enables it. Without this, messages are buffered and
+      // simply never delivered. (The FCM SDK gets away with omitting it only because some
+      // browsers enable the queue anyway.)
+      navigator.serviceWorker.startMessages();
+    }
+    if (typeof BroadcastChannel === 'function') {
+      // Held in a field: a channel that goes out of scope can be garbage-collected along with
+      // its listener, which would make this work and then silently stop.
+      this.pushChannel = new BroadcastChannel(PUSH_TO_WINDOW);
+      this.pushChannel.addEventListener('message', event => this.handleForwardedPush(event.data));
+    }
+  }
+
+  private handleForwardedPush(message: ForwardedPush | undefined): void {
+    if (message?.type !== PUSH_TO_WINDOW || document.visibilityState !== 'visible') {
       return;
     }
-    navigator.serviceWorker.addEventListener('message', event => {
-      if (event.data?.type !== PUSH_TO_WINDOW || document.visibilityState !== 'visible') {
-        return;
-      }
-      this.showPushSnackbar(event.data.data);
-    });
+    // Both routes carry the same push whenever both work, so the second arrival is a duplicate
+    // rather than a new notification.
+    if (message.id && message.id === this.lastPushId) {
+      return;
+    }
+    this.lastPushId = message.id ?? null;
+    this.showPushSnackbar(message.data);
   }
 
   // Reads `data` rather than `notification` — the sender is data-only, see
@@ -66,11 +96,23 @@ export class MessagingService {
   // Call this from an explicit user action (e.g. an "Enable notifications" button),
   // not automatically on load, per notification-permission best practice.
   //
+  // Takes seconds rather than milliseconds — getToken() alone fetches the Firebase installation,
+  // subscribes with the platform's push service and registers the result with FCM, each a
+  // separate round-trip — so a second tap while the first is still running is easy to provoke.
+  // Concurrent callers share the one attempt instead of racing two subscriptions, and each still
+  // gets the real outcome rather than a "no" that only means "already busy".
+  register(): Promise<boolean> {
+    this.registration ??= this.runRegistration().finally(() => {
+      this.registration = null;
+    });
+    return this.registration;
+  }
+
   // Every early exit below (and the catch at the end) logs *why*, since the UI only ever shows
   // a generic "couldn't enable" message on failure — without this, there was no way to tell a
   // browser that doesn't support push apart from a previously-denied permission apart from a
   // real Firebase/FCM error from the console alone.
-  async register(): Promise<boolean> {
+  private async runRegistration(): Promise<boolean> {
     try {
       const m = await messaging;
       if (!m) {
