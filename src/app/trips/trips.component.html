@@ -22,13 +22,9 @@
             @for (key of trip.vehicles; track key) {
               <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
                         [class.chip-warning]="vehicleConflicts(trip, key).length > 0"
-                        [class.chip-mine]="isMyVehicle(trip, key)"
                         [matTooltip]="conflictTooltip(getVehicle(vehicles, key)?.displayName, vehicleConflicts(trip, key))"
                         (removed)="removeVehicle.emit({trip, vehicleKey: key})">
                 {{ getVehicle(vehicles, key)?.displayName }}
-                @if (isMyVehicle(trip, key)) {
-                  <span class="chip-mine-badge no-print">Din bil</span>
-                }
                 @if (!readonly()) {
                   <button matChipRemove aria-label="Fjern køretøj" (click)="$event.stopPropagation()">
                     <mat-icon>cancel</mat-icon>
@@ -100,11 +96,8 @@
           @if (combinedStandaloneVehicleKeys(trip).length) {
             <mat-chip-set class="no-print">
               @for (key of combinedStandaloneVehicleKeys(trip); track key) {
-                <mat-chip class="trip-chip" disableRipple [class.chip-mine]="isMyVehicle(trip, key)">
+                <mat-chip class="trip-chip" disableRipple>
                   {{ getVehicle(vehicles, key)?.displayName }}
-                  @if (isMyVehicle(trip, key)) {
-                    <span class="chip-mine-badge no-print">Din bil</span>
-                  }
                 </mat-chip>
               }
             </mat-chip-set>

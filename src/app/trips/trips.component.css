@@ -197,16 +197,6 @@ mat-chip-set {
   color: var(--mat-sys-outline);
 }
 
-/* The signed-in driver's own assigned vehicle, on My Trips (see TripsComponent.isMyVehicle) —
-   distinct from .chip-warning's amber "OBS" cue and .chip-deleted's dashed "no longer here" cue,
-   since this isn't a problem to flag, just a "this one's yours" pointer. Text as well as colour
-   (.chip-mine-badge below), so it doesn't rely on colour alone; always false on admin views
-   (which never set currentDriverKey), so this never applies there. */
-.chip-mine {
-  --mat-chip-elevated-container-color: var(--mat-sys-primary-container);
-  --mat-chip-label-text-color: var(--mat-sys-on-primary-container);
-}
-
 /* combineAssignedChips (Min dag's mobile card layout) — a driver+vehicle pairing as one chip,
    split into two text halves by a vertical divider the same colour as the app's other subtle
    borders/dividers (e.g. the mobile card's own outline, .data-table tbody tr in the mobile media
@@ -222,14 +212,6 @@ mat-chip-set {
   vertical-align: middle;
   margin: 0 6px;
   background: var(--mat-sys-outline-variant);
-}
-
-.chip-mine-badge {
-  font-size: 0.7em;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  margin-left: 4px;
 }
 
 .loading {

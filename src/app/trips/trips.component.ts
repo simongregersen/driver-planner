@@ -47,7 +47,7 @@ export class TripsComponent implements OnInit {
    * the vehicle is dropped from the standalone vehicle chips. Off elsewhere (Dagsplaner,
    * Periodeplaner, Skabeloner, and Min dag's own desktop table columns) — those already show
    * drivers/vehicles in two structurally separate places (a column each, or two chip-sets with
-   * real room to breathe), where the sub-label/badge combination isn't redundant the same way. */
+   * real room to breathe), where the sub-label isn't redundant the same way. */
   combineAssignedChips = input(false);
   showFinishToggle = input(false);
   /** Min dag, driver-facing: shows a small report-icon-button letting the signed-in driver
@@ -126,15 +126,6 @@ export class TripsComponent implements OnInit {
     return vehicleKey ? (this.getVehicle(vehicles, vehicleKey)?.displayName ?? null) : null;
   }
 
-  /** Whether `vehicleKey` is the signed-in driver's own assigned vehicle on this trip — used on
-   * My Trips (currentDriverKey set) to mark it even when hideSingleDriver hides the driver
-   * chip-set itself (see #driverChips), which is exactly when a driver most needs to know which
-   * of several vehicles is theirs. Always false on admin views, which never set currentDriverKey. */
-  isMyVehicle(trip: Trip, vehicleKey: string): boolean {
-    const driverKey = this.currentDriverKey();
-    return !!driverKey && trip.vehicleAssignments?.[driverKey] === vehicleKey;
-  }
-
   /** combineAssignedChips's driver list — same hideSingleDriver suppression #driverChips itself
    * applies (see its own applyHideSingle check), kept as its own method here because
    * standaloneVehicleKeys below needs to know exactly which drivers actually rendered a chip, not
@@ -153,7 +144,7 @@ export class TripsComponent implements OnInit {
    * appears once, folded into that driver's own split chip, not a second time as its own chip.
    * A vehicle still surfaces here on its own whenever there's no rendered driver chip to fold it
    * into — no assignment for it, or its only assigned driver was itself suppressed by
-   * hideSingleDriver (the "Din bil" badge below is what covers that single-driver case instead). */
+   * hideSingleDriver. */
   combinedStandaloneVehicleKeys(trip: Trip): string[] {
     const pairedVehicleKeys = new Set(
       this.combinedChipDriverKeys(trip)
