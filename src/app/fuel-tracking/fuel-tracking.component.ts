@@ -18,6 +18,7 @@ import {DateUtility} from '../date-utility';
 import {BreakpointService} from '../breakpoint.service';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
+import {Utility} from '../utility';
 import {FuelReport} from '../fuel-report';
 import {TankRefill} from '../tank-refill';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
@@ -133,7 +134,10 @@ export class FuelTrackingComponent {
 
   private readonly vehicleList = toSignal(this.dataStore.getAllVehicles(), {initialValue: [] as Vehicle[]});
   private readonly driverList = toSignal(this.dataStore.getAllDrivers(), {initialValue: [] as Driver[]});
-  readonly vehicleOptions = computed(() => this.vehicleList().map(v => ({id: v.$key, name: v.displayName})));
+  // A picker, so deleted vehicles are excluded here — unlike vehiclesToQuery below, which reads
+  // the same unfiltered vehicleList since a report already logged against a deleted vehicle must
+  // still be queryable/shown.
+  readonly vehicleOptions = computed(() => Utility.filterDeleted(this.vehicleList()).map(v => ({id: v.$key, name: v.displayName})));
 
   // Empty selection means "every vehicle" — the query is scoped to exactly what's asked for,
   // rather than fetching everything and filtering client-side.

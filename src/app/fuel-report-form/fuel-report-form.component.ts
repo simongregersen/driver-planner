@@ -96,8 +96,8 @@ export class FuelReportFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject(MatDialogRef<FuelReportFormComponent>);
 
-  readonly vehicles$: Observable<Vehicle[]> = this.dataStore.getAllVehicles();
-  // A picker: excludes deleted drivers, same as the vehicle/driver selects elsewhere.
+  // Both are pickers: exclude deleted drivers/vehicles, same as the selects elsewhere.
+  readonly vehicles$: Observable<Vehicle[]> = this.dataStore.getAllVehicles().pipe(map(Utility.filterDeleted));
   readonly drivers$: Observable<Driver[]> = this.dataStore.getAllDrivers().pipe(map(Utility.filterDeleted));
   readonly minDate = this.dateUtility.minDate(5);
 
