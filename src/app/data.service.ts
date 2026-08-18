@@ -169,6 +169,7 @@ export class DataStore {
           description: trip.description || '',
           drivers: trip.drivers || [],
           vehicles: trip.vehicles || [],
+          vehicleAssignments: trip.vehicleAssignments || {},
           multiDayStart: this.multiDayStart(trip.start, trip.end),
           ...(isPublic ? {modified: moment().valueOf()} : {}),
         },
@@ -266,6 +267,7 @@ export class DataStore {
     if (updates.description !== undefined && (updates.description || '') !== (trip.description || '')) return true;
     if (updates.drivers !== undefined && !this.sameMembers(updates.drivers, trip.drivers)) return true;
     if (updates.vehicles !== undefined && !this.sameMembers(updates.vehicles, trip.vehicles)) return true;
+    if (updates.vehicleAssignments !== undefined && !this.sameAssignments(updates.vehicleAssignments, trip.vehicleAssignments)) return true;
     return false;
   }
 
@@ -274,6 +276,12 @@ export class DataStore {
     const sortedA = [...a].sort();
     const sortedB = [...b].sort();
     return sortedA.every((v, i) => v === sortedB[i]);
+  }
+
+  private sameAssignments(a: Record<string, string> | undefined, b: Record<string, string> | undefined): boolean {
+    const entriesA = Object.entries(a ?? {}).sort();
+    const entriesB = Object.entries(b ?? {}).sort();
+    return entriesA.length === entriesB.length && entriesA.every(([k, v], i) => k === entriesB[i][0] && v === entriesB[i][1]);
   }
 
   // Always a full replacement of that one driver's report (never a partial update) — matches
@@ -781,7 +789,8 @@ export class DataStore {
       officeDescription: trip.officeDescription || '',
       labels: trip.labels || [],
       drivers: trip.drivers || [],
-      vehicles: trip.vehicles || []
+      vehicles: trip.vehicles || [],
+      vehicleAssignments: trip.vehicleAssignments || {}
     });
   }
 

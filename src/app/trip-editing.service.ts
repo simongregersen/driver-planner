@@ -46,14 +46,20 @@ export class TripEditingService {
 
   removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
     const name = this.driverList().find(d => d.$key === driverKey)?.displayName ?? 'chaufføren';
+    // Also prunes the removed driver's own vehicleAssignments entry (if any) in the same update,
+    // so removing a driver can never leave a dangling pairing behind.
+    const {[driverKey]: _removed, ...vehicleAssignments} = trip.vehicleAssignments ?? {};
     this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen?`, () =>
-      this.dataStore.updateTrip(trip, {drivers: trip.drivers.filter(k => k !== driverKey)}));
+      this.dataStore.updateTrip(trip, {drivers: trip.drivers.filter(k => k !== driverKey), vehicleAssignments}));
   }
 
   removeVehicleFromTrip({trip, vehicleKey}: {trip: Trip; vehicleKey: string}) {
     const name = this.vehicleList().find(v => v.$key === vehicleKey)?.displayName ?? 'køretøjet';
+    // Also prunes any driver(s) paired with the removed vehicle, so removing a vehicle can never
+    // leave a dangling pairing behind.
+    const vehicleAssignments = Object.fromEntries(Object.entries(trip.vehicleAssignments ?? {}).filter(([, v]) => v !== vehicleKey));
     this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen?`, () =>
-      this.dataStore.updateTrip(trip, {vehicles: trip.vehicles.filter(k => k !== vehicleKey)}));
+      this.dataStore.updateTrip(trip, {vehicles: trip.vehicles.filter(k => k !== vehicleKey), vehicleAssignments}));
   }
 
   // Chip removal happens right next to the row-click-to-edit target, and on a phone screen

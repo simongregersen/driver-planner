@@ -164,7 +164,7 @@ describe('TripFormComponent', () => {
         name: 'Randers tur',
         fromDate: moment('2026-03-01'), fromTime: moment('1970-01-01 09:00', 'YYYY-MM-DD HH:mm'),
         toDate: moment('2026-03-01'), toTime: moment('1970-01-01 12:00', 'YYYY-MM-DD HH:mm'),
-        drivers: ['d1'], vehicles: ['v1'], description: 'Note', officeDescription: '', labels: [],
+        drivers: ['d1'], vehicles: ['v1'], vehicleAssignments: {}, description: 'Note', officeDescription: '', labels: [],
       });
       c.onSubmit();
 

@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, output, signal} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
 import {COMMA, ENTER} from '@angular/cdk/keycodes';
@@ -24,6 +24,7 @@ import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 import {BreakpointService} from '../breakpoint.service';
 import {TimeFieldComponent} from '../time-field/time-field.component';
 import {guardDialogDismissal} from '../dialog-dismiss-guard';
+import {DriverVehicleAssignmentComponent} from '../driver-vehicle-assignment/driver-vehicle-assignment.component';
 
 export type TripFormMode = 'create' | 'edit';
 
@@ -44,6 +45,7 @@ export type TripFormMode = 'create' | 'edit';
     ReactiveFormsModule, AsyncPipe,
     MatButtonModule, MatChipsModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule,
     MatIconModule, MatInputModule, MatSelectModule, TimeFieldComponent,
+    DriverVehicleAssignmentComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -89,6 +91,11 @@ export class TripFormComponent implements OnInit {
     .pipe(map(ds => new Map(ds.map(d => [d.$key, d.displayName]))));
   private readonly vehicleNames$ = this.dataStore.getAllVehicles()
     .pipe(map(vs => new Map(vs.map(v => [v.$key, v.displayName]))));
+  // Same Maps as above, as signals — DriverVehicleAssignmentComponent's inputs are plain values,
+  // not observables, and this reuses the existing (already-unfiltered, name-lookup-only) data
+  // rather than fetching it a second time.
+  readonly driverNamesSignal = toSignal(this.driverNames$, {initialValue: new Map<string, string>()});
+  readonly vehicleNamesSignal = toSignal(this.vehicleNames$, {initialValue: new Map<string, string>()});
 
 
   // Escape / backdrop click ask before discarding typed-in input, rather than
@@ -111,6 +118,7 @@ export class TripFormComponent implements OnInit {
       toTime: end ? this.dateUtility.getTime(end) : null,
       drivers: [isEdit ? this.trip.drivers : []],
       vehicles: [isEdit ? this.trip.vehicles : []],
+      vehicleAssignments: [isEdit ? (this.trip.vehicleAssignments ?? {}) : {}],
       description: isEdit ? this.trip.description : '',
       officeDescription: isEdit ? this.trip.officeDescription : '',
       labels: [isEdit ? (this.trip.labels ?? []) : []]
@@ -230,6 +238,13 @@ export class TripFormComponent implements OnInit {
     this.tripForm.markAsDirty();
   }
 
+  // setValue (like patchValue above) doesn't mark the control dirty on its own — same reasoning
+  // as clearEnd's comment: the unsaved-changes guard on this dialog reads tripForm.dirty.
+  setVehicleAssignments(vehicleAssignments: Record<string, string>): void {
+    this.tripForm.controls['vehicleAssignments'].setValue(vehicleAssignments);
+    this.tripForm.markAsDirty();
+  }
+
   addLabel(event: MatChipInputEvent): void {
     const value = (event.value || '').trim();
     if (value) {
@@ -258,10 +273,38 @@ export class TripFormComponent implements OnInit {
     this.tripForm.controls['labels'].setValue(updated);
   }
 
+  // Whether the driver-vehicle pairing is actually ambiguous enough to be worth asking about —
+  // most trips have exactly one driver and one vehicle, where the pairing is obvious and not
+  // worth recording explicitly at all. Shared by the template (whether to show
+  // DriverVehicleAssignmentComponent) and onSubmit (whether to keep whatever's in the
+  // vehicleAssignments control, or drop it) so the two can never disagree about what counts as
+  // "trivial".
+  private hasAmbiguousAssignment(drivers: string[], vehicles: string[]): boolean {
+    return drivers.length > 0 && vehicles.length > 0 && (drivers.length > 1 || vehicles.length > 1);
+  }
+
+  showVehicleAssignment(): boolean {
+    return this.hasAmbiguousAssignment(this.tripForm.value.drivers || [], this.tripForm.value.vehicles || []);
+  }
+
   onSubmit() {
     if (this.saving()) return;
     const val = this.tripForm.value;
     const {start, end} = this.computeStartEnd(val);
+    const drivers: string[] = val.drivers || [];
+    const vehicles: string[] = val.vehicles || [];
+    const rawAssignments: Record<string, string> = val.vehicleAssignments || {};
+    // Trivial (single driver, single vehicle) case: never record an assignment at all, even if
+    // one is still sitting in the control from before the trip was edited down to this — per
+    // hasAmbiguousAssignment above, there's nothing to disambiguate. Otherwise, defensively
+    // filter to pairs where both keys are still present in the submitted drivers/vehicles arrays
+    // — DriverVehicleAssignmentComponent derives what it shows from these same arrays on every
+    // render, but that's a display-time computation, not a guarantee about what's sitting in the
+    // vehicleAssignments control itself; this is what actually keeps a stale pairing from ever
+    // reaching Firebase.
+    const vehicleAssignments: Record<string, string> = this.hasAmbiguousAssignment(drivers, vehicles)
+      ? Object.fromEntries(Object.entries(rawAssignments).filter(([d, v]) => drivers.includes(d) && vehicles.includes(v)))
+      : {};
 
     this.save.emit({
       start: start,
@@ -270,8 +313,9 @@ export class TripFormComponent implements OnInit {
       description: val.description || '',
       officeDescription: val.officeDescription || '',
       labels: val.labels || [],
-      drivers: val.drivers || [],
-      vehicles: val.vehicles || []
+      drivers: drivers,
+      vehicles: vehicles,
+      vehicleAssignments: vehicleAssignments,
     });
   }
 

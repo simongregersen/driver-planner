@@ -80,6 +80,17 @@
       <p class="field-warning">{{ message }}</p>
     }
 
+    @if (showVehicleAssignment()) {
+      <app-driver-vehicle-assignment
+        [driverIds]="tripForm.value.drivers ?? []"
+        [vehicleIds]="tripForm.value.vehicles ?? []"
+        [driverNames]="driverNamesSignal()"
+        [vehicleNames]="vehicleNamesSignal()"
+        [assignments]="tripForm.value.vehicleAssignments ?? {}"
+        (assignmentsChange)="setVehicleAssignments($event)">
+      </app-driver-vehicle-assignment>
+    }
+
     <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Note (chauffør)</mat-label>
       <textarea matInput rows="6" formControlName="description"></textarea>

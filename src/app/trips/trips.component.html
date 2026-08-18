@@ -22,9 +22,13 @@
             @for (key of trip.vehicles; track key) {
               <mat-chip class="trip-chip" disableRipple [removable]="!readonly()"
                         [class.chip-warning]="vehicleConflicts(trip, key).length > 0"
+                        [class.chip-mine]="isMyVehicle(trip, key)"
                         [matTooltip]="conflictTooltip(getVehicle(vehicles, key)?.displayName, vehicleConflicts(trip, key))"
                         (removed)="removeVehicle.emit({trip, vehicleKey: key})">
                 {{ getVehicle(vehicles, key)?.displayName }}
+                @if (isMyVehicle(trip, key)) {
+                  <span class="chip-mine-badge no-print">Din bil</span>
+                }
                 @if (!readonly()) {
                   <button matChipRemove aria-label="Fjern køretøj" (click)="$event.stopPropagation()">
                     <mat-icon>cancel</mat-icon>
@@ -50,6 +54,9 @@
                           [matTooltip]="conflictTooltip(getDriver(drivers, key)?.displayName, driverConflicts(trip, key))"
                           (removed)="removeDriver.emit({trip, driverKey: key})">
                   {{ getDriver(drivers, key)?.displayName }}
+                  @if (assignedVehicleName(trip, key, vehicles); as assignedVehicle) {
+                    <span class="chip-assignment"> · {{ assignedVehicle }}</span>
+                  }
                   @if (!readonly()) {
                     <button matChipRemove aria-label="Fjern chauffør" (click)="$event.stopPropagation()">
                       <mat-icon>cancel</mat-icon>
@@ -63,6 +70,44 @@
                 {{ getDriver(drivers, key)?.displayName }}{{ isLast ? '' : ', ' }}
               }
             </span>
+          }
+        </ng-template>
+
+        <!-- combineAssignedChips only (Min dag's mobile card layout) — deliberately simpler than
+             driverChips/vehicleChips above: no removability, no conflict warnings/tooltips, since
+             the only caller that turns this on is also readonly with showWarnings off, so those
+             would always be no-ops here anyway. A driver paired with a vehicle renders as one
+             split chip instead of two separate ones (see combinedDriverKeys/
+             combinedStandaloneVehicleKeys and .split-chip in the .css). -->
+        <ng-template #combinedChips>
+          @if (combinedDriverKeys(trip).length) {
+            <mat-chip-set class="no-print">
+              @for (key of combinedDriverKeys(trip); track key) {
+                @if (assignedVehicleName(trip, key, vehicles); as assignedVehicle) {
+                  <mat-chip class="trip-chip split-chip" disableRipple [class.chip-deleted]="isDeletedDriver(drivers, key)">
+                    <span class="split-chip-half">{{ getDriver(drivers, key)?.displayName }}</span>
+                    <span class="split-chip-divider"></span>
+                    <span class="split-chip-half">{{ assignedVehicle }}</span>
+                  </mat-chip>
+                } @else {
+                  <mat-chip class="trip-chip" disableRipple [class.chip-deleted]="isDeletedDriver(drivers, key)">
+                    {{ getDriver(drivers, key)?.displayName }}
+                  </mat-chip>
+                }
+              }
+            </mat-chip-set>
+          }
+          @if (combinedStandaloneVehicleKeys(trip).length) {
+            <mat-chip-set class="no-print">
+              @for (key of combinedStandaloneVehicleKeys(trip); track key) {
+                <mat-chip class="trip-chip" disableRipple [class.chip-mine]="isMyVehicle(trip, key)">
+                  {{ getVehicle(vehicles, key)?.displayName }}
+                  @if (isMyVehicle(trip, key)) {
+                    <span class="chip-mine-badge no-print">Din bil</span>
+                  }
+                </mat-chip>
+              }
+            </mat-chip-set>
           }
         </ng-template>
 
@@ -151,8 +196,12 @@
                 <div class="mobile-line office-note"><app-rich-text [text]="trip.officeDescription"></app-rich-text></div>
               }
               <div class="mobile-line mobile-chips-line">
-                <ng-container [ngTemplateOutlet]="driverChips" [ngTemplateOutletContext]="{applyHideSingle: true}"></ng-container>
-                <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
+                @if (combineAssignedChips()) {
+                  <ng-container [ngTemplateOutlet]="combinedChips"></ng-container>
+                } @else {
+                  <ng-container [ngTemplateOutlet]="driverChips" [ngTemplateOutletContext]="{applyHideSingle: true}"></ng-container>
+                  <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
+                }
               </div>
               @if (!hideDescriptionOnScreen() || showFinishToggle() || showReportButton() || showReportsColumn()) {
                 <div class="mobile-line newline muted trip-footer">

@@ -50,6 +50,21 @@ export interface Trip extends AngularFireObject {
   labels?: string[];
   drivers: string[];
   vehicles: string[];
+  /** Optional driver→vehicle pairing for this trip: keyed by driver key, valued by the vehicle
+   * key they're assigned to drive. A driver with no entry here (or the trip having no
+   * assignments at all — the common case for older trips and for trips still being planned)
+   * simply hasn't been paired with a specific vehicle yet; drivers/vehicles counts routinely
+   * differ during planning (see hasDriverCountMismatch/hasVehicleCountMismatch), so this is
+   * always partial-tolerant. Several drivers may point at the same vehicle (shared/relief
+   * driving); a driver points at at most one vehicle by construction of the map. Lives directly
+   * on the trip, not in the admin-only /tripOffice side table (contrast officeDescription/
+   * labels) — a driver needs to see which vehicle is theirs.
+   *
+   * Also deliberately absent for the single-driver/single-vehicle case even when the trip has
+   * other fields set — the pairing there is unambiguous, so TripFormComponent never shows the
+   * assignment UI for it and always submits an empty map (see
+   * TripFormComponent.hasAmbiguousAssignment). */
+  vehicleAssignments?: Record<string, string>;
   modified?: Moment;
   /** Derived and maintained by DataStore (addTrip/updateTrip/multiDayStart) purely as a query
    * optimization for getTrips — never set directly by a form or shown in the UI. Present (as
@@ -71,4 +86,5 @@ export interface NewTrip {
   labels?: string[];
   drivers: string[];
   vehicles: string[];
+  vehicleAssignments?: Record<string, string>;
 }

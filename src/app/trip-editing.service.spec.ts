@@ -119,7 +119,7 @@ describe('TripEditingService', () => {
       mockConfirmDialog(true);
       const service = TestBed.inject(TripEditingService);
       service.removeDriverFromTrip({trip, driverKey: 'd1'});
-      expect(dataStore.updateTrip).toHaveBeenCalledWith(trip, {drivers: []});
+      expect(dataStore.updateTrip).toHaveBeenCalledWith(trip, {drivers: [], vehicleAssignments: {}});
     });
 
     it('does nothing when declined', async () => {
@@ -133,7 +133,7 @@ describe('TripEditingService', () => {
       mockConfirmDialog(true);
       const service = TestBed.inject(TripEditingService);
       service.removeVehicleFromTrip({trip, vehicleKey: 'v1'});
-      expect(dataStore.updateTrip).toHaveBeenCalledWith(trip, {vehicles: []});
+      expect(dataStore.updateTrip).toHaveBeenCalledWith(trip, {vehicles: [], vehicleAssignments: {}});
     });
   });
 

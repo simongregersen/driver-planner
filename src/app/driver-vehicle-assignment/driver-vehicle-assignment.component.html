@@ -1,0 +1,27 @@
+<div class="assignment-label">Tildel køretøjer</div>
+<div class="assignment-board" cdkDropListGroup>
+  <div class="assignment-zone">
+    <div class="zone-label">Ikke tildelt</div>
+    <div class="zone-chips"
+         cdkDropList
+         [cdkDropListData]="unassignedDriverIds()"
+         (cdkDropListDropped)="onDrop($event, null)">
+      @for (driverKey of unassignedDriverIds(); track driverKey) {
+        <div class="assignment-chip" cdkDrag [cdkDragData]="driverKey">{{ driverName(driverKey) }}</div>
+      }
+    </div>
+  </div>
+  @for (vehicleKey of vehicleIds(); track vehicleKey) {
+    <div class="assignment-zone">
+      <div class="zone-label">{{ vehicleName(vehicleKey) }}</div>
+      <div class="zone-chips"
+           cdkDropList
+           [cdkDropListData]="driversFor(vehicleKey)"
+           (cdkDropListDropped)="onDrop($event, vehicleKey)">
+        @for (driverKey of driversFor(vehicleKey); track driverKey) {
+          <div class="assignment-chip" cdkDrag [cdkDragData]="driverKey">{{ driverName(driverKey) }}</div>
+        }
+      </div>
+    </div>
+  }
+</div>

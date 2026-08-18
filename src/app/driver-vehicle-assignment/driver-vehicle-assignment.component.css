@@ -1,0 +1,71 @@
+:host {
+  display: block;
+  margin: 8px 0;
+}
+
+.assignment-label {
+  font-size: 0.85em;
+  color: var(--mat-sys-outline);
+  margin-bottom: 4px;
+}
+
+.assignment-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assignment-zone {
+  flex: 1 1 140px;
+  min-width: 140px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  padding: 6px;
+}
+
+.zone-label {
+  font-size: 0.75em;
+  font-weight: 600;
+  color: var(--mat-sys-outline);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+
+.zone-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 4px;
+  /* Keeps an empty zone (e.g. every driver already assigned, so "Ikke tildelt" has no chips)
+     tall enough to still be a comfortable drop target rather than collapsing to nothing. */
+  min-height: 30px;
+}
+
+.assignment-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-size: 0.85em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: grab;
+  user-select: none;
+}
+
+.assignment-chip:active {
+  cursor: grabbing;
+}
+
+.cdk-drag-preview {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drop-list-dragging .assignment-chip:not(.cdk-drag-placeholder) {
+  transition: transform 200ms ease;
+}

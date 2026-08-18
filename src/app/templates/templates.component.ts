@@ -109,14 +109,20 @@ export class TemplatesComponent implements OnInit {
 
   removeDriverFromTrip({trip, driverKey}: {trip: Trip; driverKey: string}) {
     const name = this.driverList().find(d => d.$key === driverKey)?.displayName ?? 'chaufføren';
+    // Also prunes the removed driver's own vehicleAssignments entry (if any) in the same update,
+    // so removing a driver can never leave a dangling pairing behind.
+    const {[driverKey]: _removed, ...vehicleAssignments} = trip.vehicleAssignments ?? {};
     this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen i skabelonen?`, trip,
-      {drivers: trip.drivers.filter(k => k !== driverKey)});
+      {drivers: trip.drivers.filter(k => k !== driverKey), vehicleAssignments});
   }
 
   removeVehicleFromTrip({trip, vehicleKey}: {trip: Trip; vehicleKey: string}) {
     const name = this.vehicleList().find(v => v.$key === vehicleKey)?.displayName ?? 'køretøjet';
+    // Also prunes any driver(s) paired with the removed vehicle, so removing a vehicle can never
+    // leave a dangling pairing behind.
+    const vehicleAssignments = Object.fromEntries(Object.entries(trip.vehicleAssignments ?? {}).filter(([, v]) => v !== vehicleKey));
     this.confirmRemoval(`Er du sikker på, at du vil fjerne ${name} fra turen i skabelonen?`, trip,
-      {vehicles: trip.vehicles.filter(k => k !== vehicleKey)});
+      {vehicles: trip.vehicles.filter(k => k !== vehicleKey), vehicleAssignments});
   }
 
   // Mirrors TripEditingService.confirmRemoval, and for the same reason: the chip's remove button

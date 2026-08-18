@@ -40,6 +40,15 @@ export class TripsComponent implements OnInit {
   showOfficeNotes = input(false);
   showLabels = input(false);
   hideSingleDriver = input(false);
+  /** Min dag's mobile card layout only (see the .mobile-chips-line branch in the .html) — a
+   * driver-vehicle pairing (Trip.vehicleAssignments) would otherwise show up twice there: once as
+   * the driver chip's "· vehicle" sub-label, and again as that same vehicle's own separate chip.
+   * When on, a paired driver+vehicle render as one split chip instead (see #combinedChips), and
+   * the vehicle is dropped from the standalone vehicle chips. Off elsewhere (Dagsplaner,
+   * Periodeplaner, Skabeloner, and Min dag's own desktop table columns) — those already show
+   * drivers/vehicles in two structurally separate places (a column each, or two chip-sets with
+   * real room to breathe), where the sub-label/badge combination isn't redundant the same way. */
+  combineAssignedChips = input(false);
   showFinishToggle = input(false);
   /** Min dag, driver-facing: shows a small report-icon-button letting the signed-in driver
    * (currentDriverKey) add or edit their own report for this trip — see TripReportFormComponent.
@@ -107,6 +116,51 @@ export class TripsComponent implements OnInit {
 
   getVehicle(vehicles: Vehicle[] | null, key: string): Vehicle | undefined {
     return vehicles?.find(v => v.$key === key);
+  }
+
+  /** The vehicle a given driver has been paired with on this trip (see Trip.vehicleAssignments),
+   * resolved to a display name — null when that driver has no pairing yet (the common case for
+   * older trips and for trips still being planned) or the paired vehicle can't be resolved. */
+  assignedVehicleName(trip: Trip, driverKey: string, vehicles: Vehicle[] | null): string | null {
+    const vehicleKey = trip.vehicleAssignments?.[driverKey];
+    return vehicleKey ? (this.getVehicle(vehicles, vehicleKey)?.displayName ?? null) : null;
+  }
+
+  /** Whether `vehicleKey` is the signed-in driver's own assigned vehicle on this trip — used on
+   * My Trips (currentDriverKey set) to mark it even when hideSingleDriver hides the driver
+   * chip-set itself (see #driverChips), which is exactly when a driver most needs to know which
+   * of several vehicles is theirs. Always false on admin views, which never set currentDriverKey. */
+  isMyVehicle(trip: Trip, vehicleKey: string): boolean {
+    const driverKey = this.currentDriverKey();
+    return !!driverKey && trip.vehicleAssignments?.[driverKey] === vehicleKey;
+  }
+
+  /** combineAssignedChips's driver list — same hideSingleDriver suppression #driverChips itself
+   * applies (see its own applyHideSingle check), kept as its own method here because
+   * standaloneVehicleKeys below needs to know exactly which drivers actually rendered a chip, not
+   * just trip.drivers as a whole. */
+  private combinedChipDriverKeys(trip: Trip): string[] {
+    return (this.hideSingleDriver() && trip.drivers.length <= 1) ? [] : trip.drivers;
+  }
+
+  /** combineAssignedChips's own driver list, exposed to the template. */
+  combinedDriverKeys(trip: Trip): string[] {
+    return this.combinedChipDriverKeys(trip);
+  }
+
+  /** combineAssignedChips's vehicle list — every vehicle NOT already implied by one of the
+   * drivers actually shown above (see combinedChipDriverKeys): a vehicle a driver is paired with
+   * appears once, folded into that driver's own split chip, not a second time as its own chip.
+   * A vehicle still surfaces here on its own whenever there's no rendered driver chip to fold it
+   * into — no assignment for it, or its only assigned driver was itself suppressed by
+   * hideSingleDriver (the "Din bil" badge below is what covers that single-driver case instead). */
+  combinedStandaloneVehicleKeys(trip: Trip): string[] {
+    const pairedVehicleKeys = new Set(
+      this.combinedChipDriverKeys(trip)
+        .map(driverKey => trip.vehicleAssignments?.[driverKey])
+        .filter((vehicleKey): vehicleKey is string => !!vehicleKey)
+    );
+    return trip.vehicles.filter(key => !pairedVehicleKeys.has(key));
   }
 
   hasDriverCountMismatch(trip: Trip): boolean {
