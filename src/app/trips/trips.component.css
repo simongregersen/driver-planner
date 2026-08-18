@@ -273,6 +273,7 @@ mat-chip-set {
   }
 
   .data-table tbody tr {
+    position: relative;
     display: block;
     margin-bottom: 8px;
     /* Bottom trimmed well below the other sides — the last line's floated icon (see
@@ -365,5 +366,23 @@ mat-chip-set {
      bottom of a description-less or very-short-description card's icon row). */
   .mobile-trip-info {
     display: flow-root;
+  }
+
+  /* Mobile-only companion to the row's own hover tooltip (see [matTooltip] on the <tr> in the
+     .html, disabled for touch via matTooltipTouchGestures="off") — a touch-triggered tooltip was
+     blocking scroll on these rows on mobile, so the time is shown as plain text here instead.
+     Positioned absolutely (against .data-table tbody tr's own position: relative above) rather
+     than left in normal flow specifically so it can't affect anything else's layout — an earlier,
+     in-flow version of this pushed .trip-card-actions further up the card than on a row with no
+     modified label at all. Taken out of flow like this, it just overlays whatever blank space is
+     already there below the description/beside the buttons, leaving every other row identical to
+     one with highlightModified off. */
+  .modified-footer {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 2px;
+    font-size: 0.75em;
+    color: var(--mat-sys-outline);
   }
 }

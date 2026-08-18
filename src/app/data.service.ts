@@ -214,8 +214,16 @@ export class DataStore {
       payload.start = updates.start.valueOf();
     }
     if (updates.end) payload.end = updates.end.valueOf();
+    // The trip editor's save always resubmits every field, changed or not, so the presence of a
+    // field in `updates` doesn't mean it actually differs from `trip` — an office-only edit (just
+    // officeDescription/labels) still carries the untouched start/end/name/description/drivers/
+    // vehicles along with it. Compared against `trip` here so that an edit touching only the
+    // admin-only half doesn't read as trip "news": no modified stamp, no highlight, no
+    // notification, since nothing a driver can see actually changed.
+    const tripContentChanged = this.tripContentChanged(trip, updates);
     return this.isDayPublicNow(effectiveStart).then(isPublic => {
-      if (isPublic) payload.modified = moment().valueOf();
+      const isNews = isPublic && tripContentChanged;
+      if (isNews) payload.modified = moment().valueOf();
 
       // One multi-path update so the trip and its office half can never diverge. Keys are
       // written as `/trips/$key/$field` rather than as whole objects, to preserve update()'s
@@ -239,11 +247,33 @@ export class DataStore {
         if (officeDescription !== undefined || labels !== undefined) {
           this.officeUpdated$.next();
         }
-        if (isPublic) {
+        if (isNews) {
           this.enqueueTripChangeNotification(updates.drivers || trip.drivers, trip.name, trip.start);
         }
       });
     });
+  }
+
+  // Whether `updates` actually changes any field a driver can see — as opposed to just
+  // officeDescription/labels, which live in the admin-only /tripOffice side table (see
+  // TripOffice) and are invisible to drivers. Needed because the trip editor's save always
+  // resubmits every field regardless of whether it changed (see updateTrip above), so a field's
+  // mere presence in `updates` doesn't imply a real change.
+  private tripContentChanged(trip: Trip, updates: Partial<NewTrip>): boolean {
+    if (updates.start !== undefined && updates.start.valueOf() !== trip.start.valueOf()) return true;
+    if (updates.end !== undefined && (updates.end?.valueOf() ?? null) !== (trip.end?.valueOf() ?? null)) return true;
+    if (updates.name !== undefined && updates.name !== trip.name) return true;
+    if (updates.description !== undefined && (updates.description || '') !== (trip.description || '')) return true;
+    if (updates.drivers !== undefined && !this.sameMembers(updates.drivers, trip.drivers)) return true;
+    if (updates.vehicles !== undefined && !this.sameMembers(updates.vehicles, trip.vehicles)) return true;
+    return false;
+  }
+
+  private sameMembers(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    return sortedA.every((v, i) => v === sortedB[i]);
   }
 
   // Always a full replacement of that one driver's report (never a partial update) — matches
