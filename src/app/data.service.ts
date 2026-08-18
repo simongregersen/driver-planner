@@ -7,8 +7,8 @@ import {FuelReport, NewFuelReport} from './fuel-report';
 import {NewTankRefill, TankRefill} from './tank-refill';
 import {Driver, NewDriver} from './driver';
 import {AppUser} from './user';
-import {combineLatest, firstValueFrom, from as observableFrom, Observable, of} from 'rxjs';
-import {first, map, shareReplay, switchMap, tap, timeout} from 'rxjs/operators';
+import {combineLatest, firstValueFrom, from as observableFrom, Observable, of, Subject} from 'rxjs';
+import {first, map, shareReplay, startWith, switchMap, tap, timeout} from 'rxjs/operators';
 import {NewVehicle, Vehicle} from './vehicle';
 import {DateUtility} from './date-utility';
 import {Utility} from './utility';
@@ -47,6 +47,15 @@ export class DataStore {
 
   private readonly dateUtility = inject(DateUtility);
   private readonly notificationDispatch = inject(NotificationDispatchService);
+
+  // getTripsWithOffice's re-read of /tripOffice normally rides on the /trips listener firing (see
+  // that method's comment), but that listener only fires on an actual value change — and
+  // updateTrip only stamps `modified` (guaranteeing one) on a public day. On a non-public day, an
+  // edit that touches only officeDescription/labels can leave every /trips field byte-for-byte
+  // identical, so the listener never re-fires and the freshly written office fields never get
+  // re-read. This subject is the fallback trigger for exactly that case — see its .next() in
+  // updateTrip.
+  private officeUpdated$ = new Subject<void>();
 
   // Returns trips *overlapping* [from, to) — including a multi-day trip that started before
   // `from`, as long as it hadn't already ended before `from` — not just ones starting in it.
@@ -120,7 +129,11 @@ export class DataStore {
   // re-read. A record is absent for every trip with no note and no labels — the common case —
   // which keeps both this node and these reads small.
   getTripsWithOffice(from: Moment, to?: Moment): Observable<Trip[]> {
-    return this.getTrips(from, to).pipe(
+    return combineLatest([
+      this.getTrips(from, to),
+      this.officeUpdated$.pipe(startWith(undefined)),
+    ]).pipe(
+      map(([trips]) => trips),
       switchMap(trips => trips.length ? observableFrom(this.attachOffice(trips)) : of([] as Trip[])),
     );
   }
@@ -223,6 +236,9 @@ export class DataStore {
       }
 
       return update(ref(db), paths).then(() => {
+        if (officeDescription !== undefined || labels !== undefined) {
+          this.officeUpdated$.next();
+        }
         if (isPublic) {
           this.enqueueTripChangeNotification(updates.drivers || trip.drivers, trip.name, trip.start);
         }
