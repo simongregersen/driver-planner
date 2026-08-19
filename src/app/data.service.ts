@@ -94,6 +94,14 @@ export class DataStore {
       // list correctly ordered by actual start time without a separate sort.
       map(([inWindow, multiDay]) => Utility.mergeTripWindows(inWindow, multiDay)),
       tap(ts => ts.forEach(t => {
+        // RTDB has no representation for an empty array — it stores one exactly as it stores
+        // null, so a trip saved with no drivers or no vehicles comes back with that key missing
+        // entirely, contradicting Trip's own non-optional types for both. Restoring them here
+        // keeps that storage detail from leaking into every consumer: it was reaching
+        // sameMembers below as an undefined `b`, throwing on `.length` and failing the save of
+        // any edit to such a trip (adding a label to a trip with no vehicle, say).
+        t.drivers ??= [];
+        t.vehicles ??= [];
         t.start = moment(t.start as unknown as number);
         t.end = (t.end) ? moment(t.end as unknown as number) : null;
         t.modified = (t.modified) ? moment(t.modified as unknown as number) : undefined;
@@ -271,11 +279,13 @@ export class DataStore {
     return false;
   }
 
-  private sameMembers(a: string[], b: string[]): boolean {
-    if (a.length !== b.length) return false;
-    const sortedA = [...a].sort();
-    const sortedB = [...b].sort();
-    return sortedA.every((v, i) => v === sortedB[i]);
+  // Undefined-tolerant on both sides for the same reason sameAssignments below is: the reads
+  // now normalize these arrays back in, but a Trip reaching here from anywhere else can still be
+  // missing one that RTDB never stored.
+  private sameMembers(a: string[] | undefined, b: string[] | undefined): boolean {
+    const sortedA = [...(a ?? [])].sort();
+    const sortedB = [...(b ?? [])].sort();
+    return sortedA.length === sortedB.length && sortedA.every((v, i) => v === sortedB[i]);
   }
 
   private sameAssignments(a: Record<string, string> | undefined, b: Record<string, string> | undefined): boolean {
@@ -832,6 +842,9 @@ export class DataStore {
     const q = query(ref(db, `/tripsInTemplate/${template.$key}`), orderByChild('start'));
     return listVal<Trip>(q, {keyField: '$key'}).pipe(
       tap(ts => ts.forEach(t => {
+        // Same absent-empty-array normalization as getTrips — see its comment.
+        t.drivers ??= [];
+        t.vehicles ??= [];
         t.start = moment(t.start as unknown as number);
         t.end = (t.end) ? moment(t.end as unknown as number) : null;
       }))
