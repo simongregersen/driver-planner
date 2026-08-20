@@ -305,3 +305,42 @@ describe('Utility.multiDayStartValue', () => {
     expect(cleared).not.toBeUndefined();
   });
 });
+
+describe('Utility staffing warnings', () => {
+  // The empty cases are the reason these exist: 0 drivers and 0 vehicles balances arithmetically,
+  // so a pure count comparison reads a wholly unassigned trip as fine. In a day plan it is the
+  // opposite of fine.
+  it('warns on both columns when nothing at all is assigned', () => {
+    const unassigned = trip({drivers: [], vehicles: []});
+
+    expect(Utility.hasDriverStaffingWarning(unassigned)).toBe(true);
+    expect(Utility.hasVehicleStaffingWarning(unassigned)).toBe(true);
+  });
+
+  it('warns about the missing side when only one is assigned', () => {
+    const noVehicle = trip({drivers: ['d1'], vehicles: []});
+    expect(Utility.hasDriverStaffingWarning(noVehicle)).toBe(false);
+    expect(Utility.hasVehicleStaffingWarning(noVehicle)).toBe(true);
+
+    const noDriver = trip({drivers: [], vehicles: ['v1']});
+    expect(Utility.hasDriverStaffingWarning(noDriver)).toBe(true);
+    expect(Utility.hasVehicleStaffingWarning(noDriver)).toBe(false);
+  });
+
+  it('warns about whichever side is short when the counts are uneven', () => {
+    const shortOfDrivers = trip({drivers: ['d1'], vehicles: ['v1', 'v2']});
+    expect(Utility.hasDriverStaffingWarning(shortOfDrivers)).toBe(true);
+    expect(Utility.hasVehicleStaffingWarning(shortOfDrivers)).toBe(false);
+
+    const shortOfVehicles = trip({drivers: ['d1', 'd2'], vehicles: ['v1']});
+    expect(Utility.hasDriverStaffingWarning(shortOfVehicles)).toBe(false);
+    expect(Utility.hasVehicleStaffingWarning(shortOfVehicles)).toBe(true);
+  });
+
+  it('stays quiet when the counts match and neither is empty', () => {
+    const balanced = trip({drivers: ['d1', 'd2'], vehicles: ['v1', 'v2']});
+
+    expect(Utility.hasDriverStaffingWarning(balanced)).toBe(false);
+    expect(Utility.hasVehicleStaffingWarning(balanced)).toBe(false);
+  });
+});

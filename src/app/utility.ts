@@ -127,6 +127,23 @@ export class Utility {
     return {driverConflicts, vehicleConflicts};
   }
 
+  // The two staffing warnings a planning view shows on a trip's driver and vehicle columns.
+  //
+  // Each fires on two distinct situations, and it matters that both are covered: an *imbalance*
+  // (more vehicles than drivers, or the reverse — somebody or something is unaccounted for), and
+  // an *empty* column. Empty needs saying separately because 0 drivers and 0 vehicles is
+  // perfectly balanced arithmetically while being the least-ready state a trip can be in — the
+  // one a day plan most needs to draw the planner's eye to. Reading it as "nothing to warn
+  // about" is what let a wholly unassigned trip sit in a plan looking as settled as a fully
+  // staffed one.
+  static hasDriverStaffingWarning(trip: Trip): boolean {
+    return trip.drivers.length === 0 || trip.drivers.length < trip.vehicles.length;
+  }
+
+  static hasVehicleStaffingWarning(trip: Trip): boolean {
+    return trip.vehicles.length === 0 || trip.drivers.length > trip.vehicles.length;
+  }
+
   // "HH:mm" for a trip with no end, "HH:mm–HH:mm" otherwise — shared by TripsComponent's chip
   // tooltip and TripFormComponent's inline warning so a conflicting trip is described identically
   // in both places.

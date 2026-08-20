@@ -227,11 +227,11 @@
             </div>
           </td>
           <td data-label="Chauffører" [class.cell-warning]="hasDriverCountMismatch(trip)"
-              [matTooltip]="hasDriverCountMismatch(trip) ? countMismatchTooltip() : ''">
+              [matTooltip]="driverWarningTooltip(trip)">
             <ng-container [ngTemplateOutlet]="driverChips"></ng-container>
           </td>
           <td data-label="Køretøjer" [class.cell-warning]="hasVehicleCountMismatch(trip)"
-              [matTooltip]="hasVehicleCountMismatch(trip) ? countMismatchTooltip() : ''">
+              [matTooltip]="vehicleWarningTooltip(trip)">
             <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
           </td>
           @if (showFinishToggle() || showReportButton() || showReportsColumn()) {

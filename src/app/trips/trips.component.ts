@@ -155,15 +155,28 @@ export class TripsComponent implements OnInit {
   }
 
   hasDriverCountMismatch(trip: Trip): boolean {
-    return this.showWarnings() && (!trip.drivers || trip.drivers.length < (trip.vehicles?.length ?? 0));
+    return this.showWarnings() && Utility.hasDriverStaffingWarning(trip);
   }
 
   hasVehicleCountMismatch(trip: Trip): boolean {
-    return this.showWarnings() && (!trip.vehicles || (trip.drivers?.length ?? 0) > trip.vehicles.length);
+    return this.showWarnings() && Utility.hasVehicleStaffingWarning(trip);
   }
 
-  countMismatchTooltip(): string {
-    return 'Antallet af chauffører og køretøjer stemmer ikke overens.';
+  // Empty and imbalanced are both warnings but they are not the same problem, and the tooltip is
+  // the only thing that says which. "The numbers don't match" is actively wrong on a trip with
+  // nobody and nothing assigned — the numbers match perfectly, at zero.
+  driverWarningTooltip(trip: Trip): string {
+    if (!this.hasDriverCountMismatch(trip)) return '';
+    return trip.drivers.length === 0
+      ? 'Der er ikke tildelt nogen chauffør til turen.'
+      : 'Antallet af chauffører og køretøjer stemmer ikke overens.';
+  }
+
+  vehicleWarningTooltip(trip: Trip): string {
+    if (!this.hasVehicleCountMismatch(trip)) return '';
+    return trip.vehicles.length === 0
+      ? 'Der er ikke tildelt noget køretøj til turen.'
+      : 'Antallet af chauffører og køretøjer stemmer ikke overens.';
   }
 
   driverConflicts(trip: Trip, driverKey: string): Trip[] {
