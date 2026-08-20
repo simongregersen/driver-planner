@@ -26,6 +26,7 @@ import {DateUtility} from '../date-utility';
 import {NoteFormComponent} from '../note-form/note-form.component';
 import {SelectOption} from '../select-option';
 import {TripsComponent} from '../trips/trips.component';
+import {WeekNumbersDirective} from '../week-numbers/week-numbers.directive';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {CONFIRM_DIALOG_CONFIG, DIALOG_CONFIG} from '../dialog-config';
 import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
@@ -45,7 +46,7 @@ import {WriteFeedbackService} from '../write-feedback.service';
     FormsModule, AsyncPipe, DatePipe,
     MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule, MatIconModule,
     MatInputModule, MatMenuModule, MatProgressSpinnerModule, MatSlideToggleModule, MatTooltipModule,
-    TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
+    TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent, WeekNumbersDirective,
   ],
   providers: [DatePipe, TripFilterStateService, TripEditingService],
   changeDetection: ChangeDetectionStrategy.OnPush,

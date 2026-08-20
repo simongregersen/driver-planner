@@ -27,7 +27,7 @@
                     [selected]="selectedRange"
                     (selectedChange)="onDateChange($event)"
                     [minDate]="minDate"
-                    [dateClass]="dateClass">
+                    [appWeekNumbers]="dateClass">
       </mat-calendar>
       <div>
         <h5 class="section-title">Vis</h5>
@@ -75,7 +75,7 @@
           <input matEndDate readonly placeholder="Til" [value]="to()" (dateChange)="setTo($event.value)" (click)="rangePickerMobile.open()">
         </mat-date-range-input>
         <mat-datepicker-toggle matIconSuffix [for]="rangePickerMobile"></mat-datepicker-toggle>
-        <mat-date-range-picker #rangePickerMobile [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
+        <mat-date-range-picker #rangePickerMobile appWeekNumbers [touchUi]="breakpoints.isMobile()"></mat-date-range-picker>
       </mat-form-field>
     </div>
     <div bar-expanded class="mobile-period-bar-expanded">

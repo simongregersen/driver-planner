@@ -1,0 +1,142 @@
+/* ISO week numbers in a Material calendar. Applied only where WeekNumbersDirective puts the
+   `week-numbers` class (Dagsplaner and Periodeplan) — every rule here is scoped to it, so this
+   file is inert everywhere else. See week-numbers.directive.ts for why the numbers are drawn as
+   pseudo-elements rather than added to the grid as a real column.
+
+   Global rather than component-scoped because a popup calendar renders in a CDK overlay, outside
+   the DOM of whichever component opened it. Registered in angular.json's styles. */
+
+.week-numbers {
+  /* Width of the gutter the numbers live in. The month grid is inset by this much, so the
+     calendar keeps its overall width and its cells simply get a little narrower. */
+  --week-gutter: 30px;
+}
+
+.week-numbers mat-month-view {
+  display: block;
+  padding-inline-start: var(--week-gutter);
+}
+
+/* One number per row, on the container of the row's first *rendered* cell. Material numbers cells
+   from the first day it actually draws, so in a month starting midweek that is the 1st rather
+   than a Monday — which is exactly the cell whose ISO week labels the row.
+
+   Deliberately hung on the <td> and reached through :has(), rather than directly on the day
+   <button> that carries the week class: Material owns both ::before and ::after on
+   .mat-calendar-body-cell, using them to paint the range-selection band, so a number placed there
+   is overwritten by a stray band the moment its row falls inside a selected range. The <td> has
+   no pseudo-elements of Material's own — and being outside the button, the number is not part of
+   anything clickable. It is already position: relative, so it is the containing block here, which
+   makes the percentages below resolve to whole columns at any calendar width. */
+.week-numbers mat-month-view td[data-mat-col='0']::before {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: var(--week-gutter);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The cell container zeroes its line-height to do its aspect-ratio trick; the number needs a
+     real one back. */
+  line-height: 1;
+  font-size: 11px;
+  color: var(--mat-sys-on-surface-variant);
+  pointer-events: none;
+}
+
+/* Shift back to the gutter from whichever column the row's first cell sits in (1 = Monday). */
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-col-1)::before {
+  inset-inline-start: calc(var(--week-gutter) * -1);
+}
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-col-2)::before {
+  inset-inline-start: calc(-100% - var(--week-gutter));
+}
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-col-3)::before {
+  inset-inline-start: calc(-200% - var(--week-gutter));
+}
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-col-4)::before {
+  inset-inline-start: calc(-300% - var(--week-gutter));
+}
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-col-5)::before {
+  inset-inline-start: calc(-400% - var(--week-gutter));
+}
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-col-6)::before {
+  inset-inline-start: calc(-500% - var(--week-gutter));
+}
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-col-7)::before {
+  inset-inline-start: calc(-600% - var(--week-gutter));
+}
+
+/* The gutter's own heading. Scoped tightly on purpose: the year and multi-year views reuse
+   .mat-calendar-table-header for a divider row, and so does the month view's own second header
+   row, so a looser `th:first-child` would print "Uge" three times over — twice of them outside
+   any gutter, since only the month view is inset. */
+.week-numbers mat-month-view .mat-calendar-table-header tr:first-child th:first-child {
+  position: relative;
+}
+
+.week-numbers mat-month-view .mat-calendar-table-header tr:first-child th:first-child::before {
+  content: 'Uge';
+  position: absolute;
+  inset-inline-start: calc(var(--week-gutter) * -1);
+  width: var(--week-gutter);
+  text-align: center;
+  font-size: 11px;
+}
+
+/* The visible numbers. Generated 1..53 because CSS cannot read the week off the class name; the
+   rules above give the pseudo-element everything except its content, so a cell that isn't a row
+   leader never matches here and draws nothing. */
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-1)::before { content: '1'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-2)::before { content: '2'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-3)::before { content: '3'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-4)::before { content: '4'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-5)::before { content: '5'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-6)::before { content: '6'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-7)::before { content: '7'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-8)::before { content: '8'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-9)::before { content: '9'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-10)::before { content: '10'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-11)::before { content: '11'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-12)::before { content: '12'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-13)::before { content: '13'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-14)::before { content: '14'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-15)::before { content: '15'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-16)::before { content: '16'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-17)::before { content: '17'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-18)::before { content: '18'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-19)::before { content: '19'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-20)::before { content: '20'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-21)::before { content: '21'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-22)::before { content: '22'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-23)::before { content: '23'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-24)::before { content: '24'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-25)::before { content: '25'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-26)::before { content: '26'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-27)::before { content: '27'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-28)::before { content: '28'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-29)::before { content: '29'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-30)::before { content: '30'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-31)::before { content: '31'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-32)::before { content: '32'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-33)::before { content: '33'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-34)::before { content: '34'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-35)::before { content: '35'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-36)::before { content: '36'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-37)::before { content: '37'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-38)::before { content: '38'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-39)::before { content: '39'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-40)::before { content: '40'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-41)::before { content: '41'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-42)::before { content: '42'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-43)::before { content: '43'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-44)::before { content: '44'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-45)::before { content: '45'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-46)::before { content: '46'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-47)::before { content: '47'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-48)::before { content: '48'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-49)::before { content: '49'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-50)::before { content: '50'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-51)::before { content: '51'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-52)::before { content: '52'; }
+.week-numbers mat-month-view td[data-mat-col='0']:has(> .week-53)::before { content: '53'; }

@@ -14,6 +14,7 @@ import {DataStore} from '../data.service';
 import {Trip} from '../trip';
 import {Utility} from '../utility';
 import {TripsComponent} from '../trips/trips.component';
+import {WeekNumbersDirective} from '../week-numbers/week-numbers.directive';
 import {ChipFilterComponent} from '../chip-filter/chip-filter.component';
 import {CollapsibleBottomBarComponent} from '../collapsible-bottom-bar/collapsible-bottom-bar.component';
 import {BreakpointService} from '../breakpoint.service';
@@ -29,7 +30,7 @@ import {TripEditingService} from '../trip-editing.service';
   imports: [
     DatePipe,
     MatButtonModule, MatButtonToggleModule, MatDatepickerModule, MatFormFieldModule, MatProgressSpinnerModule,
-    TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent,
+    TripsComponent, ChipFilterComponent, CollapsibleBottomBarComponent, WeekNumbersDirective,
   ],
   providers: [DatePipe, TripFilterStateService, TripEditingService],
   changeDetection: ChangeDetectionStrategy.OnPush,
