@@ -251,6 +251,15 @@ mat-chip-set {
   color: var(--mat-sys-primary);
 }
 
+/* The unread warning (Dagsplaner). Same amber "OBS" cue as .chip-warning above and
+   .cell-warning/.row-highlight in styles.css, because it is the same kind of signal: something on
+   this trip needs the planner's attention. Like .reports-indicator it renders only when it has
+   something to say, so there is no "off" state to contrast against — but unlike it, this one is
+   meant to be cleared, which is what the click handler is for. */
+.read-warning mat-icon {
+  color: #f5a623;
+}
+
 /* .cell-trip-actions itself stays a plain table cell (no display override) — giving it
    display: flex directly used to strip out its inherited vertical-align: top (a table-cell-only
    property that a flex/grid display value no longer applies to), which let it drift out of
@@ -263,6 +272,44 @@ mat-chip-set {
   flex-direction: row;
   align-items: center;
   gap: 4px;
+}
+
+/* A row's height comes from its text: one body-large line box (24px) plus the table's 4px
+   vertical cell padding. The global .data-table icon-button size (styles.css) is 26px, two more
+   than that line box — so the actions cell, and with it the whole row, grew by 2px the moment any
+   of these buttons appeared and shrank again when it went away. That was survivable while they
+   were all effectively static, but the unread warning comes and goes as drivers read their
+   changes, which turned a latent 2px into rows visibly resizing while you look at them.
+     Capping them at the line box means this column is never the tallest thing in the row, so
+   nothing can move. Only the visible circle shrinks: Material's invisible 48px touch target is a
+   separately-sized pseudo-element and is unaffected, as is the 16px glyph. */
+.trip-actions-inner .mat-mdc-icon-button {
+  --mat-icon-button-state-layer-size: 24px;
+}
+
+/* The actions column is sized here, on the *header* cell, and it has to be: this table sets
+   table-layout: fixed (see .data-table at the top of this file), which makes the first row's
+   widths authoritative and the body cells' content irrelevant to them. The <th> is empty, so
+   nothing about the buttons below can widen the column — width set here is the only lever, and
+   min-width or width on the <td> does nothing at all.
+     Left at the shared col-w-5 utility the column was 5% — about 38px on a tablet — while its
+   contents need roughly twice that, so the buttons spilled out of the table and produced a
+   horizontal scrollbar on every screen between the mobile card breakpoint and about 1400px.
+   Measured, not guessed: at 768px the table came out 21px wider than the page.
+     The arithmetic, if the contents ever change: two 24px icon buttons plus the 4px flex gap is
+   52px, plus this cell's own 8px/14px padding is 74px, and the <th> adds 8px either side of its
+   own — so 64px here leaves a little room to spare. A third button would need another 28px.
+     The 14px right padding is two more than .data-table .cell-actions gives every other table.
+   Material's invisible touch target is a fixed 48px wide, centred on the button and absolutely
+   positioned, so it adds no layout width but does extend the scrollable overflow area by
+   (48 - button) / 2 — 12px at the 24px buttons above, where the global 12px padding would leave
+   exactly none. Keep `padding-right >= (48 - state-layer-size) / 2 + slack`. */
+.data-table th.col-trip-actions {
+  width: 64px;
+}
+
+.data-table .cell-trip-actions {
+  padding-right: 14px;
 }
 
 /* Marking a trip finished is purely a local/on-device thing (see FinishedTripsService) — tints
@@ -332,7 +379,8 @@ mat-chip-set {
 
   .trip-card-actions .report-toggle,
   .trip-card-actions .finish-toggle,
-  .trip-card-actions .reports-indicator {
+  .trip-card-actions .reports-indicator,
+  .trip-card-actions .read-warning {
     --mat-icon-button-state-layer-size: 44px;
     --mat-icon-button-icon-size: 24px;
   }
@@ -346,7 +394,8 @@ mat-chip-set {
      actually centers it. */
   .trip-card-actions .report-toggle mat-icon,
   .trip-card-actions .finish-toggle mat-icon,
-  .trip-card-actions .reports-indicator mat-icon {
+  .trip-card-actions .reports-indicator mat-icon,
+  .trip-card-actions .read-warning mat-icon {
     font-size: 20px;
     width: 20px;
     height: 20px;
@@ -408,5 +457,11 @@ mat-chip-set {
     bottom: 2px;
     font-size: 0.75em;
     color: var(--mat-sys-outline);
+    /* Being an overlay is the point (see above), but an overlay that swallows taps is not: this
+       box spans the full width of the card and its top half sits over the bottom half of the
+       action buttons, which are painted before it. Measured on a phone-width card, that left the
+       lower 21px of each 44px button dead — the icons looked fine and simply did not respond
+       near the bottom. Nothing here is interactive, so it should never be a hit-test target. */
+    pointer-events: none;
   }
 }

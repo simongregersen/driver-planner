@@ -118,11 +118,84 @@ async function tripOfficeRules() {
     denied(await req('tripOffice/t2', {as: 'adminU', body: {start: 5000, officeDescription: 'x', labels: []}})));
 }
 
+// The read receipts behind Dagsplaner's unread warning. Two things are genuinely load-bearing
+// here and neither is visible from the client code: that a driver can never re-stamp a receipt
+// they already wrote, and that a trip which was published rather than *changed* accepts no
+// receipt at all — the feature's scope, enforced by the database rather than by the UI.
+async function tripReadRules() {
+  console.log('\nTrip read receipts:');
+  const SV = {'.sv': 'timestamp'};
+  // modified is what marks a trip as "changed after its day was already public".
+  await req('trips/t5', {as: 'owner', body: {start: 5000, name: 'Tur', drivers: ['d1'], modified: 7000}});
+  // No modified: planned before publication, so there was never a change to miss.
+  await req('trips/t6', {as: 'owner', body: {start: 5000, name: 'Uændret tur', drivers: ['d1']}});
+
+  check('a driver can record having read the current version',
+    allowed(await req('trips/t5/reads/d1', {as: 'driverU', body: {at: SV, version: 7000}})));
+
+  check('a driver cannot record a version the trip does not have',
+    denied(await req('trips/t5/reads/d1', {as: 'driverU', body: {at: SV, version: 9999}})));
+
+  // at is read back to the office as "Læst kl. …", so a client-supplied clock would let a driver
+  // choose what the office sees.
+  check('a client-chosen timestamp is rejected in favour of server time',
+    denied(await req('trips/t5/reads/d2', {as: 'otherU', body: {at: 1234, version: 7000}})));
+
+  check('a driver cannot write another driver s receipt',
+    denied(await req('trips/t5/reads/d2', {as: 'driverU', body: {at: SV, version: 7000}})));
+
+  check('unknown fields on a receipt are rejected',
+    denied(await req('trips/t5/reads/d1', {as: 'driverU', body: {at: SV, version: 7000, note: 'x'}})));
+
+  check('a receipt under a trip that does not exist is rejected',
+    denied(await req('trips/nope/reads/d1', {as: 'driverU', body: {at: SV, version: 7000}})));
+
+  // The scope rule. A driver cannot open an unpublished day at all, so publication is itself the
+  // first read opportunity and there is nothing to acknowledge — asserted here because the client
+  // relies on it rather than re-checking.
+  check('a trip that was never changed after publication accepts no receipt',
+    denied(await req('trips/t6/reads/d1', {as: 'driverU', body: {at: SV, version: 0}})));
+
+  // First-read-wins. Without the strict `<` in the write rule, re-opening the app tomorrow would
+  // silently move "Læst kl. 08:12" forward to whenever the driver last had the row on screen.
+  const firstAt = (await req('trips/t5/reads/d1/at', {method: 'GET', as: 'adminU'})).json;
+  check('re-recording the same version is rejected',
+    denied(await req('trips/t5/reads/d1', {as: 'driverU', body: {at: SV, version: 7000}})));
+  check('the original read timestamp is left untouched',
+    (await req('trips/t5/reads/d1/at', {method: 'GET', as: 'adminU'})).json === firstAt);
+
+  // The accepted disclosure, pinned as a contract rather than left as an accident: receipts live
+  // on the trip, /trips is readable by every driver, and read access cascades.
+  check('a driver can read a colleague s receipt',
+    allowed(await req('trips/t5/reads/d1', {method: 'GET', as: 'otherU'})));
+
+  // dismissed is admin-only, and has to be a .validate to be so — the admin's container-level
+  // .write on /trips cascades down here and cannot be revoked by a stricter rule beneath it.
+  check('a driver cannot mark their own receipt as office-dismissed',
+    denied(await req('trips/t5/reads/d2', {as: 'otherU', body: {at: SV, version: 7000, dismissed: true}})));
+
+  check('an admin can write a dismissal receipt for a driver who has not read it',
+    allowed(await req('trips/t5/reads/d2', {as: 'adminU', body: {at: SV, version: 7000, dismissed: true}})));
+
+  // The admin's cascade bypasses the drivers' monotonic rule, which is what lets a dismissal
+  // overwrite — and exactly why dismissTripReadWarning writes only for outstanding drivers.
+  check('an admin can overwrite an existing receipt',
+    allowed(await req('trips/t5/reads/d1', {as: 'adminU', body: {at: SV, version: 7000, dismissed: true}})));
+
+  // A later edit re-stamps modified, stranding every receipt — genuine and dismissed alike — so
+  // the warning comes back with no separate flag to reset.
+  await req('trips/t5/modified', {as: 'adminU', body: 8000});
+  check('a driver can record again once the trip has been changed afresh',
+    allowed(await req('trips/t5/reads/d1', {as: 'driverU', body: {at: SV, version: 8000}})));
+}
+
 async function tripWriteContract() {
   console.log("\nTrip writes — DataStore's multi-path update contract:");
   await req('trips/t4', {as: 'owner', body: {start: 5000, name: 'Bytur', drivers: ['d1'], vehicles: []}});
   await req('tripOffice/t4', {as: 'owner', body: {officeDescription: 'gammel', labels: ['a']}});
   await req('trips/t4/reports/d1', {as: 'driverU', body: VALID_REPORT});
+  await req('trips/t4/modified', {as: 'owner', body: 7000});
+  await req('trips/t4/reads/d1', {as: 'driverU', body: {at: {'.sv': 'timestamp'}, version: 7000}});
 
   // updateTrip writes per-field paths rather than replacing /trips/$key wholesale. Replacing the
   // node would delete `reports`, silently destroying work drivers had already filed.
@@ -134,6 +207,7 @@ async function tripWriteContract() {
 
   const afterEdit = await req('trips/t4', {method: 'GET', as: 'adminU'});
   check('editing a trip preserves the driver-written report', !!afterEdit.json?.reports?.d1, JSON.stringify(afterEdit.json));
+  check('editing a trip preserves the driver-written read receipt', !!afterEdit.json?.reads?.d1, JSON.stringify(afterEdit.json));
   check('the edit applied', afterEdit.json?.name === 'Bytur (rettet)');
 
   // Moving a trip to another day writes only the trip. Nothing in the office record depends on
@@ -149,6 +223,10 @@ async function tripWriteContract() {
   await req('', {method: 'PATCH', as: 'adminU', body: {'/trips/t4': null, '/tripOffice/t4': null}});
   check('deleting a trip removes the trip', (await req('trips/t4', {method: 'GET', as: 'adminU'})).json === null);
   check('deleting a trip removes its office half', (await req('tripOffice/t4', {method: 'GET', as: 'adminU'})).json === null);
+  // No companion delete path exists for receipts, and none is needed — that is the point of
+  // keeping them on the trip rather than in a side table the retention cleanup could forget.
+  check('deleting a trip takes its read receipts with it',
+    (await req('trips/t4/reads', {method: 'GET', as: 'adminU'})).json === null);
 }
 
 run(async () => {
@@ -156,5 +234,6 @@ run(async () => {
   await tripReportRules();
   await clockRecordRules();
   await tripOfficeRules();
+  await tripReadRules();
   await tripWriteContract();
 });

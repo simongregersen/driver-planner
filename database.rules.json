@@ -84,6 +84,62 @@
             "note": {".validate": "newData.isString() && newData.val().length <= 2000"},
             "$other": {".validate": false}
           }
+        },
+
+        // "This driver has seen this version of the trip" — the receipt behind the unread warning
+        // in Dagsplaner. Written by that driver's own app when the trip row has actually been on
+        // their screen (see SeenWhenVisibleDirective), never by a button.
+        //
+        // Deliberately ON the trip rather than in an admin-only side table like tripOffice below.
+        // That node exists because office notes must be *unreadable* by drivers; a read receipt
+        // has no such requirement, and keeping it here is what makes the office view correct for
+        // free: the plan pages already hold a live windowed listener on /trips, so a receipt
+        // reaches every open admin session the instant it lands — no second query, no per-trip
+        // get(), no listener per unread trip. It is also deleted with the trip, so removeTrip,
+        // removeTrips and the retention cleanup need no companion path and cannot leave orphans.
+        //
+        // The price is disclosure: /trips grants .read to every driver and read access cascades,
+        // so a driver can see when a colleague read a trip. Accepted — they already see who else
+        // is assigned. Nothing genuinely private may be added under here.
+        "reads": {
+          "$driverKey": {
+            // The second driver-writable path under /trips, same shape as reports above. The
+            // strict `<` is what makes a receipt first-read-wins and monotone: a driver may
+            // record a version they haven't recorded yet, and can never overwrite, backdate or
+            // re-stamp one they already have — so `at` is genuinely when they *first* saw this
+            // version, not when they last had the app open.
+            //
+            // This constrains drivers only. An admin's .write on the /trips container cascades
+            // down here as it does everywhere else (a rule granted higher up cannot be revoked
+            // lower down), which is what lets dismissTripReadWarning overwrite and what lets an
+            // admin repair the subtree. That is also why dismissed below has to be a .validate.
+            ".write": "root.child('users').child(auth.uid).child('role').val() === 'driver' && root.child('users').child(auth.uid).child('driverId').val() === $driverKey && (!data.exists() || data.child('version').val() < newData.child('version').val())",
+            // !newData.exists(): same delete carve-out as reports above.
+            ".validate": "!newData.exists() || (root.child('trips').child($tripKey).exists() && newData.hasChildren(['at', 'version']))",
+            // Server time, not the phone's clock. This is read back to the office as "Læst kl.
+            // …", so it is the one field the writer would otherwise fully control. Comparing it
+            // against `modified` — written from the *admin's* clock — would be a skew bug, which
+            // is why "has this been read" is an equality test on version and never on time.
+            "at": {".validate": "newData.val() === now"},
+            // Pinned to the trip's *current* version, so nobody can record having read a change
+            // that hasn't happened yet. This also enforces the feature's scope server-side: a
+            // trip with no `modified` has nothing to compare against, so no receipt can be
+            // written for it at all. That is correct rather than incidental — `modified` is
+            // stamped only when a change lands on an already-public day (see DataStore.addTrip),
+            // and a day nobody could open yet cannot have been missed. See Utility.tripVersion.
+            "version": {".validate": "newData.val() === root.child('trips').child($tripKey).child('modified').val()"},
+            // Marks a receipt the office wrote to clear a warning it dealt with by other means.
+            // A .validate rather than part of the .write above for the same reason as
+            // fuelReports/excludeFromStatistics further down: the admin's container-level .write
+            // cascades here and cannot be revoked, so only a .validate can actually stop a driver
+            // from setting this one field. It runs only for a write that touches this exact
+            // child, so an ordinary driver receipt — which never includes the key — is unaffected.
+            "dismissed": {".validate": "newData.val() === true && root.child('users').child(auth.uid).child('role').val() === 'admin'"},
+            // Note what cannot be checked here: that $driverKey is actually one of the trip's
+            // drivers. `drivers` is stored as an array and rules cannot iterate one. Harmless —
+            // every reader iterates trip.drivers, so a stray receipt is simply never looked at.
+            "$other": {".validate": false}
+          }
         }
       }
     },

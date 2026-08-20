@@ -6,7 +6,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {Trip} from '../trip';
+import {Trip, TripRead} from '../trip';
 import {DataStore} from '../data.service';
 import {Driver} from '../driver';
 import {Vehicle} from '../vehicle';
@@ -18,7 +18,11 @@ import moment, {Moment} from 'moment';
 import {RichTextComponent} from '../rich-text/rich-text.component';
 import {TripReportFormComponent} from '../trip-report-form/trip-report-form.component';
 import {TripReportsDialogComponent} from '../trip-reports-dialog/trip-reports-dialog.component';
-import {SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confirm-dialog.component';
+import {CONFIRM_DIALOG_CONFIG, SMALL_DIALOG_CONFIG} from '../dialog-config';
+import {WriteFeedbackService} from '../write-feedback.service';
+import {ReadReceiptsService} from '../read-receipts/read-receipts.service';
+import {SeenWhenVisibleDirective} from '../read-receipts/seen-when-visible.directive';
 
 @Component({
   standalone: true,
@@ -28,7 +32,7 @@ import {SMALL_DIALOG_CONFIG} from '../dialog-config';
   imports: [
     AsyncPipe, DatePipe, NgTemplateOutlet,
     MatButtonModule, MatChipsModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
-    RichTextComponent,
+    RichTextComponent, SeenWhenVisibleDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -62,6 +66,18 @@ export class TripsComponent implements OnInit {
    * report — opening a list of every driver's report for that trip (TripReportsDialogComponent),
    * editable from there. */
   showReportsColumn = input(false);
+  /** Dagsplaner, admin-facing: a warning on any trip whose latest change at least one assigned
+   * driver has not seen yet (see Utility.hasUnreadWarning). Nothing is shown once everyone has —
+   * this exists to be driven to zero, not to be a permanent column.
+   *   Bound by the caller to the *day's* published state rather than switched on wholesale: a
+   * driver cannot open an unpublished day at all, so an unread warning there would only ever mean
+   * "not published yet", which the Synlig toggle already says. */
+  showReadReceipts = input(false);
+  /** Min dag, driver-facing: turns a row that has genuinely been on the signed-in driver's screen
+   * (currentDriverKey, ~1s, app in the foreground) into a read receipt, and shows them the "Set …"
+   * it recorded. Deliberately not an acknowledge button — a button is a thing people learn to tap
+   * without reading. */
+  markReadWhenSeen = input(false);
   /** The single day this list is being shown under, if any (a day-plans/period-plans day-block,
    * my-trips' selected day, ...) — lets a multi-day trip's start time be marked with an asterisk
    * and a fuller tooltip on the days it didn't actually start on. Templates/other callers with
@@ -94,6 +110,8 @@ export class TripsComponent implements OnInit {
   readonly dataStore = inject(DataStore);
   private readonly finishedTrips = inject(FinishedTripsService);
   private readonly dialog = inject(MatDialog);
+  private readonly writeFeedback = inject(WriteFeedbackService);
+  private readonly readReceipts = inject(ReadReceiptsService);
 
   viewModel$!: Observable<{drivers: Driver[]; vehicles: Vehicle[]}>;
 
@@ -199,8 +217,109 @@ export class TripsComponent implements OnInit {
     return this.highlightModified() && !!trip.modified && trip.modified.isAfter(moment().subtract(24, 'hours'));
   }
 
+  /** "Ændret …", plus "· Set …" once the signed-in driver's own reading of it has been recorded.
+   *
+   * The second half is the disclosure half: the office can see when a driver read a change, so the
+   * driver is shown the same thing rather than being tracked silently. It deliberately ignores a
+   * receipt the office wrote itself to clear a warning (TripRead.dismissed) — telling a driver
+   * they saw something they never opened would be worse than saying nothing. */
   modifiedLabel(trip: Trip): string {
-    return trip.modified ? `Ændret ${trip.modified.format('[d.] D. MMMM [kl.] HH:mm')}` : '';
+    if (!trip.modified) return '';
+    const changed = `Ændret ${trip.modified.format('[d.] D. MMMM [kl.] HH:mm')}`;
+    const own = this.ownRead(trip);
+    return own ? `${changed} · Set ${own.at.format('[kl.] HH:mm')}` : changed;
+  }
+
+  /** Shown alongside the "Ændret …" highlight, but also on its own once that 24-hour window has
+   * passed: a driver opening a change three days late should still be told it was recorded. */
+  showsModifiedFooter(trip: Trip): boolean {
+    return this.isRecentlyModified(trip) || !!this.ownRead(trip);
+  }
+
+  // --- Read receipts (see TripRead in trip.ts) ---------------------------------------------
+
+  /** The signed-in driver's own genuine receipt for this trip's current version, if any. */
+  private ownRead(trip: Trip): TripRead | null {
+    const driverKey = this.currentDriverKey();
+    if (!driverKey || !Utility.hasReadTrip(trip, driverKey)) return null;
+    const read = trip.reads?.[driverKey];
+    return read && !read.dismissed ? read : null;
+  }
+
+  /** What SeenWhenVisibleDirective watches for, or null to leave the row unobserved.
+   *
+   * Carries the version as well as the trip, so that an edit landing while the row is already
+   * sitting still on screen re-arms the directive — no scroll happens, so nothing else would. */
+  readToken(trip: Trip): string | null {
+    const version = Utility.tripVersion(trip);
+    const driverKey = this.currentDriverKey();
+    if (!this.markReadWhenSeen() || version === null || !driverKey) return null;
+    if (!trip.drivers.includes(driverKey)) return null;
+    return Utility.hasReadTrip(trip, driverKey) ? null : `${trip.$key}:${version}`;
+  }
+
+  onSeen(trip: Trip): void {
+    const version = Utility.tripVersion(trip);
+    const driverKey = this.currentDriverKey();
+    if (version === null || !driverKey) return;
+    this.readReceipts.record(trip.$key, driverKey, version);
+  }
+
+  unreadDrivers(trip: Trip, drivers: Driver[] | null): Driver[] {
+    return this.showReadReceipts() ? Utility.unreadDrivers(trip, drivers ?? []) : [];
+  }
+
+  hasUnreadWarning(trip: Trip, drivers: Driver[] | null): boolean {
+    return this.showReadReceipts() && Utility.hasUnreadWarning(trip, drivers ?? []);
+  }
+
+  /** The text behind both the warning's tooltip and its confirmation dialog. Naming who *has*
+   * read matters as much as who hasn't: on a trip with three drivers it is the difference between
+   * "nobody knows" and "one person left to chase". */
+  readReceiptSummary(trip: Trip, drivers: Driver[] | null): string {
+    const unread = this.unreadDrivers(trip, drivers);
+    if (!unread.length) return '';
+    const unreadNames = unread.map(d => this.driverLabel(d, drivers)).join(', ');
+    const readNames = trip.drivers
+      .filter(key => !unread.some(d => d.$key === key))
+      .map(key => {
+        const at = trip.reads?.[key]?.at.format('[d.] D. MMMM [kl.] HH:mm');
+        return `${this.getDriver(drivers, key)?.displayName ?? 'Ukendt'} ${at}`;
+      });
+    const readPart = readNames.length ? `Set af ${readNames.join(', ')}. ` : '';
+    return `${readPart}Ikke set af ${unreadNames}.`;
+  }
+
+  /** Says *why* a driver can't have read it where that's knowable, so the office isn't left
+   * wondering whether to keep waiting: neither of these two will ever produce a receipt. */
+  private driverLabel(driver: Driver, drivers: Driver[] | null): string {
+    const name = this.getDriver(drivers, driver.$key)?.displayName || 'Ukendt chauffør';
+    if (driver.deleted) return `${name} (slettet)`;
+    return driver.uid ? name : `${name} (intet login)`;
+  }
+
+  /** Clears the warning by recording an office receipt for whoever is still outstanding — the
+   * admin has dealt with it some other way, typically a phone call. Not a permanent mute: the
+   * next real edit re-stamps the trip and strands these receipts along with the genuine ones. */
+  dismissReadWarning(trip: Trip, drivers: Driver[] | null, event: Event): void {
+    // The row itself is click-to-edit, same reason openReports does this.
+    event.stopPropagation();
+    const version = Utility.tripVersion(trip);
+    const unread = this.unreadDrivers(trip, drivers);
+    if (version === null || !unread.length) return;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...CONFIRM_DIALOG_CONFIG,
+      data: {
+        message: `${this.readReceiptSummary(trip, drivers)}\n\nVil du fjerne advarslen?`,
+        confirmLabel: 'Fjern advarsel',
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      // Only the outstanding drivers: an admin write cascades past the drivers' own monotonic
+      // rule, so including someone who has genuinely read this would overwrite when they did.
+      void this.writeFeedback.run(this.dataStore.dismissTripReadWarning(trip.$key, unread.map(d => d.$key), version));
+    });
   }
 
   startsOutsideReference(trip: Trip): boolean {

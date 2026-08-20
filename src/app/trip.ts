@@ -25,6 +25,26 @@ export interface TripReport {
   note: string;
 }
 
+/** "This driver has seen this version of the trip" — the receipt behind the unread warning in
+ * Dagsplaner. Written by that driver's own app when the trip row has actually been on their
+ * screen (see SeenWhenVisibleDirective), never by a button they could learn to tap unread.
+ *
+ * `version` is the trip's `modified` value at the moment it was seen, and a receipt counts only
+ * while the two still match — so an edit invalidates every receipt at once simply by re-stamping
+ * `modified`, with nothing to reset. Trips with no `modified` carry no receipts at all: they were
+ * published rather than changed, and publication is itself the first chance anyone had to read
+ * them. See DataStore.markTripRead and Utility.tripVersion.
+ *
+ * `dismissed` marks a receipt the *office* wrote to clear a warning it had dealt with by other
+ * means (a phone call, a driver with no login). The warning logic treats it exactly like a real
+ * one — that's the point of it — but Min dag must not, or it would tell a driver they had seen
+ * something they never opened. See DataStore.dismissTripReadWarning. */
+export interface TripRead {
+  at: Moment;
+  version: number;
+  dismissed: boolean;
+}
+
 /** The admin-only half of a trip, stored at /tripOffice/$tripKey rather than on the trip itself
  * — /trips is readable by every driver and RTDB read access cascades down, so a field kept there
  * is readable by them no matter what the UI does with it.
@@ -75,6 +95,9 @@ export interface Trip extends AngularFireObject {
   /** Keyed by driver key — at most one report per driver per trip (see DataStore.setTripReport).
    * Optional at the trip level too: far from every trip needs one at all. */
   reports?: Record<string, TripReport>;
+  /** Keyed by driver key — at most one receipt per driver per trip. Absent for every trip that
+   * has never been changed after its day went public, which is most of them. See TripRead. */
+  reads?: Record<string, TripRead>;
 }
 
 export interface NewTrip {
@@ -108,6 +131,12 @@ export interface NewTrip {
 // Reading into TripRecord and converting through toTrip below puts every field in one place, and
 // makes a newly added field on Trip a compile error until this conversion supplies it.
 
+export interface TripReadRecord {
+  at?: number;
+  version?: number;
+  dismissed?: boolean;
+}
+
 export interface TripReportRecord {
   start?: number | null;
   startFromCustomer?: boolean;
@@ -133,6 +162,7 @@ export interface TripRecord extends AngularFireObject {
   modified?: number;
   multiDayStart?: number;
   reports?: Record<string, TripReportRecord>;
+  reads?: Record<string, TripReadRecord>;
 }
 
 export function toTrip(record: TripRecord): Trip {
@@ -154,6 +184,22 @@ export function toTrip(record: TripRecord): Trip {
     reports: record.reports
       ? Object.fromEntries(Object.entries(record.reports).map(([driverKey, r]) => [driverKey, toTripReport(r)]))
       : undefined,
+    reads: record.reads
+      ? Object.fromEntries(Object.entries(record.reads).map(([driverKey, r]) => [driverKey, toTripRead(r)]))
+      : undefined,
+  };
+}
+
+// `at` and `version` are always written together by DataStore.markTripRead/dismissTripReadWarning
+// and both are required by the security rules, so the fallbacks below only ever apply to a record
+// written by something other than this app. `version: 0` is deliberately a value no trip can
+// match — a trip with no `modified` accepts no receipts at all — so a malformed record reads as
+// "not seen" rather than as a receipt for whatever the trip happens to say now.
+function toTripRead(record: TripReadRecord): TripRead {
+  return {
+    at: moment(record.at ?? 0),
+    version: record.version ?? 0,
+    dismissed: record.dismissed ?? false,
   };
 }
 

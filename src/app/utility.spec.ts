@@ -344,3 +344,131 @@ describe('Utility staffing warnings', () => {
     expect(Utility.hasVehicleStaffingWarning(balanced)).toBe(false);
   });
 });
+
+describe('Utility read receipts', () => {
+  const V = 1700000000000;
+
+  function read(version: number, dismissed = false) {
+    return {at: moment(version + 60_000), version, dismissed};
+  }
+
+  // A trip carrying `modified` — i.e. one changed after its day was already public, which is the
+  // only kind that can have been missed.
+  function tracked(overrides: Partial<Trip> = {}): Trip {
+    return trip({modified: moment(V), drivers: ['d1'], ...overrides});
+  }
+
+  describe('tripVersion', () => {
+    it('is the modified timestamp for a trip changed after publication', () => {
+      expect(Utility.tripVersion(tracked())).toBe(V);
+    });
+
+    // The gate the whole feature hangs off: a trip planned before its day went public was never
+    // "changed", so there is nothing for anyone to have missed and nothing to track.
+    it('is null for a trip that was never changed after publication', () => {
+      expect(Utility.tripVersion(trip())).toBeNull();
+    });
+  });
+
+  describe('hasReadTrip', () => {
+    it('counts a receipt for the current version', () => {
+      expect(Utility.hasReadTrip(tracked({reads: {d1: read(V)}}), 'd1')).toBe(true);
+    });
+
+    it('does not count a receipt for an older version', () => {
+      expect(Utility.hasReadTrip(tracked({reads: {d1: read(V - 1000)}}), 'd1')).toBe(false);
+    });
+
+    it('does not count a missing receipt', () => {
+      expect(Utility.hasReadTrip(tracked({reads: {d2: read(V)}}), 'd1')).toBe(false);
+    });
+
+    // The office writing a receipt to close a case it handled by phone silences the warning just
+    // as a real read does — only the driver-facing label tells the two apart.
+    it('counts an office-written receipt exactly like the driver s own', () => {
+      expect(Utility.hasReadTrip(tracked({reads: {d1: read(V, true)}}), 'd1')).toBe(true);
+    });
+  });
+
+  describe('unreadDrivers', () => {
+    it('is empty once every assigned driver has a current receipt', () => {
+      const t = tracked({drivers: ['d1', 'd2'], reads: {d1: read(V), d2: read(V)}});
+
+      expect(Utility.unreadDrivers(t, [driver('d1'), driver('d2')])).toEqual([]);
+    });
+
+    it('names only the drivers still outstanding', () => {
+      const t = tracked({drivers: ['d1', 'd2'], reads: {d1: read(V)}});
+
+      expect(Utility.unreadDrivers(t, [driver('d1'), driver('d2')]).map(d => d.$key)).toEqual(['d2']);
+    });
+
+    it('treats a receipt for an older version as unread', () => {
+      const t = tracked({reads: {d1: read(V - 1000)}});
+
+      expect(Utility.unreadDrivers(t, [driver('d1')]).map(d => d.$key)).toEqual(['d1']);
+    });
+
+    // These two pin a deliberate decision rather than an oversight. Neither driver can ever
+    // produce a receipt — one has no login, the other is logged out on sight — so excluding them
+    // is the obvious way to stop the warning being permanent. They are counted anyway: an
+    // unreachable driver is exactly when the office needs reminding to phone them, and the
+    // dismissal button is what stops a permanent warning being a problem.
+    it('still counts a driver who has no login to read it in', () => {
+      const noLogin = {...driver('d1'), uid: undefined};
+
+      expect(Utility.unreadDrivers(tracked(), [noLogin]).map(d => d.$key)).toEqual(['d1']);
+    });
+
+    it('still counts a soft-deleted driver who is left assigned', () => {
+      const gone = {...driver('d1'), deleted: true};
+
+      expect(Utility.unreadDrivers(tracked(), [gone]).map(d => d.$key)).toEqual(['d1']);
+    });
+
+    it('is empty for a trip that is not tracked at all', () => {
+      expect(Utility.unreadDrivers(trip({drivers: ['d1']}), [driver('d1')])).toEqual([]);
+    });
+  });
+
+  describe('hasUnreadWarning', () => {
+    it('warns while somebody has not read the change', () => {
+      expect(Utility.hasUnreadWarning(tracked(), [driver('d1')])).toBe(true);
+    });
+
+    it('stays quiet once everyone has read it', () => {
+      const t = tracked({reads: {d1: read(V)}});
+
+      expect(Utility.hasUnreadWarning(t, [driver('d1')])).toBe(false);
+    });
+
+    // Deliberately independent of when the trip runs, matching the driver's own "Ændret …"
+    // highlight, which keys off when the change was made rather than off the trip's date. An
+    // earlier version suppressed this once the trip was past, which hid the very cases most worth
+    // seeing: a change nobody read before the trip went ahead.
+    it('still warns after the trip s own date has passed', () => {
+      const yesterday = trip({
+        start: moment('2020-01-01 10:00', 'YYYY-MM-DD HH:mm'),
+        end: moment('2020-01-01 12:00', 'YYYY-MM-DD HH:mm'),
+        drivers: ['d1'],
+        modified: moment(V),
+      });
+
+      expect(Utility.hasUnreadWarning(yesterday, [driver('d1')])).toBe(true);
+    });
+
+    it('stays quiet for a trip that was never changed after publication', () => {
+      expect(Utility.hasUnreadWarning(trip({drivers: ['d1']}), [driver('d1')])).toBe(false);
+    });
+
+    // Dismissal is not a permanent mute: the receipts it writes carry the version they closed, so
+    // the next real edit re-stamps `modified` and strands them exactly like genuine ones.
+    it('warns again once a later edit stales the dismissal receipts', () => {
+      const dismissed = tracked({reads: {d1: read(V, true)}});
+      expect(Utility.hasUnreadWarning(dismissed, [driver('d1')])).toBe(false);
+
+      const editedAgain = {...dismissed, modified: moment(V + 5000)};
+      expect(Utility.hasUnreadWarning(editedAgain, [driver('d1')])).toBe(true);
+    });
+  });
+});

@@ -10,8 +10,8 @@
         <th>Tur</th>
         <th class="col-w-15">Chauffører</th>
         <th class="col-w-15">Køretøjer</th>
-        @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
-          <th class="col-w-5 no-print"></th>
+        @if (showFinishToggle() || showReportButton() || showReportsColumn() || showReadReceipts()) {
+          <th class="col-trip-actions no-print"></th>
         }
       </tr>
       </thead>
@@ -139,11 +139,24 @@
           }
         </ng-template>
 
+        <ng-template #readWarning let-drivers="drivers">
+          @if (hasUnreadWarning(trip, drivers)) {
+            <button matIconButton type="button" class="read-warning no-print"
+                    aria-label="Ikke set af alle chauffører"
+                    [matTooltip]="readReceiptSummary(trip, drivers)"
+                    (click)="dismissReadWarning(trip, drivers, $event)">
+              <mat-icon>warning</mat-icon>
+            </button>
+          }
+        </ng-template>
+
         <tr class="hoverable"
+            [appSeenWhenVisible]="readToken(trip)"
+            (seen)="onSeen(trip)"
             [class.row-highlight]="isRecentlyModified(trip)"
             [class.trip-finished]="isFinished(trip)"
             [class.pointer]="!readonly()"
-            [matTooltip]="isRecentlyModified(trip) ? modifiedLabel(trip) : ''"
+            [matTooltip]="showsModifiedFooter(trip) ? modifiedLabel(trip) : ''"
             matTooltipTouchGestures="off"
             (click)="onRowClick(trip)">
           <td data-label="Start">
@@ -196,7 +209,7 @@
                   <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
                 }
               </div>
-              @if (!hideDescriptionOnScreen() || showFinishToggle() || showReportButton() || showReportsColumn()) {
+              @if (!hideDescriptionOnScreen() || showFinishToggle() || showReportButton() || showReportsColumn() || showReadReceipts()) {
                 <div class="mobile-line newline muted trip-footer">
                   @if (!hideDescriptionOnScreen()) {
                     <span><app-rich-text [text]="trip.description"></app-rich-text></span>
@@ -209,11 +222,12 @@
                        at the bottom, never the top — if it doesn't (a long one). Unlike a
                        reserved-padding corner, this only costs width on the line(s) it actually
                        shares, not every line of a long description. -->
-                  @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
+                  @if (showFinishToggle() || showReportButton() || showReportsColumn() || showReadReceipts()) {
                     <div class="trip-card-actions">
                       <ng-container [ngTemplateOutlet]="reportButton"></ng-container>
                       <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
                       <ng-container [ngTemplateOutlet]="reportsIndicator"></ng-container>
+                      <ng-container [ngTemplateOutlet]="readWarning" [ngTemplateOutletContext]="{drivers}"></ng-container>
                     </div>
                   }
                 </div>
@@ -221,7 +235,7 @@
               <!-- Mobile-only (desktop instead gets the row's own hover tooltip, see the <tr> above)
                    — last child of the card, cleared below .trip-card-actions (see .css) so it sits
                    flush with the card's bottom edge rather than overlapping the buttons above it. -->
-              @if (isRecentlyModified(trip)) {
+              @if (showsModifiedFooter(trip)) {
                 <div class="modified-footer no-print">{{ modifiedLabel(trip) }}</div>
               }
             </div>
@@ -234,12 +248,13 @@
               [matTooltip]="vehicleWarningTooltip(trip)">
             <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
           </td>
-          @if (showFinishToggle() || showReportButton() || showReportsColumn()) {
+          @if (showFinishToggle() || showReportButton() || showReportsColumn() || showReadReceipts()) {
             <td class="no-print cell-actions cell-trip-actions">
               <div class="trip-actions-inner">
                 <ng-container [ngTemplateOutlet]="reportButton"></ng-container>
                 <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
                 <ng-container [ngTemplateOutlet]="reportsIndicator"></ng-container>
+                <ng-container [ngTemplateOutlet]="readWarning" [ngTemplateOutletContext]="{drivers}"></ng-container>
               </div>
             </td>
           }

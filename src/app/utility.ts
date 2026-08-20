@@ -144,6 +144,58 @@ export class Utility {
     return trip.vehicles.length === 0 || trip.drivers.length > trip.vehicles.length;
   }
 
+  // --- Read receipts (see TripRead in trip.ts) ---------------------------------------------
+  //
+  // The version a receipt has to match to count, or null for a trip that isn't tracked at all.
+  //
+  // `modified` is stamped only when a change lands on a day that is *already* public (see
+  // DataStore.addTrip/updateTrip), which is exactly the set of changes a driver can have missed:
+  // a driver cannot open an unpublished day at all, so publication is itself the first read
+  // opportunity and everything visible at that moment is new by definition. A trip planned before
+  // its day went public therefore has nothing to acknowledge, and null here is what makes every
+  // caller below — and every template binding — short-circuit on it for free.
+  static tripVersion(trip: Trip): number | null {
+    return trip.modified ? trip.modified.valueOf() : null;
+  }
+
+  // Deliberately blind to `dismissed`: for the purpose of the warning, a receipt the office wrote
+  // to close a case it handled by phone counts exactly as much as one the driver's own app wrote.
+  // Only the driver-facing "Set …" label distinguishes them.
+  static hasReadTrip(trip: Trip, driverKey: string): boolean {
+    const version = Utility.tripVersion(trip);
+    return version !== null && trip.reads?.[driverKey]?.version === version;
+  }
+
+  // Every assigned driver still lacking a receipt — no exceptions, and that is the deliberate
+  // part. Two kinds of assigned driver can never produce one themselves: a driver with no `uid`
+  // (no login was ever created for them) and a soft-deleted one (deleting a driver never
+  // unassigns them from their trips, and MyTripsComponent force-logs-out a deleted driver).
+  // Filtering those out would be the obvious way to stop the warning being permanent — but a
+  // driver who cannot be reached in the app is precisely the case where the office most needs
+  // reminding to phone them. Dismissal is what makes keeping them safe: the warning is a to-do,
+  // not an accusation, and the admin closes it once the message has gone out another way.
+  //
+  // `drivers` is needed only to resolve display names; an assigned key with no matching driver
+  // record still counts as unread, since a missing roster entry is not evidence of having read.
+  static unreadDrivers(trip: Trip, drivers: Driver[]): Driver[] {
+    if (Utility.tripVersion(trip) === null) return [];
+    const byKey = new Map(drivers.map(d => [d.$key, d]));
+    return trip.drivers
+      .filter(key => !Utility.hasReadTrip(trip, key))
+      .map(key => byKey.get(key) ?? ({$key: key, displayName: '', name: '', birthday: null, deleted: false} as Driver));
+  }
+
+  // Deliberately says nothing about *when* the trip is. An earlier version suppressed the warning
+  // once the trip's own date had passed, on the reasoning that the change could no longer be acted
+  // on — but that mismatched the driver's own "Ændret …" highlight, which keys off when the change
+  // was made and not on when the trip runs. It also quietly erased the cases most worth seeing:
+  // a change nobody read before the trip went ahead is precisely the one the office wants to know
+  // about afterwards. Warnings on old days are cleared with the dismiss button like any other.
+  static hasUnreadWarning(trip: Trip, drivers: Driver[]): boolean {
+    if (Utility.tripVersion(trip) === null) return false;
+    return Utility.unreadDrivers(trip, drivers).length > 0;
+  }
+
   // "HH:mm" for a trip with no end, "HH:mm–HH:mm" otherwise — shared by TripsComponent's chip
   // tooltip and TripFormComponent's inline warning so a conflicting trip is described identically
   // in both places.

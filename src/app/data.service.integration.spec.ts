@@ -23,6 +23,7 @@ import {firstValueFrom} from 'rxjs';
 import {DataStore} from './data.service';
 import {Template} from './template';
 import {Trip} from './trip';
+import {Utility} from './utility';
 import {auth, db} from './firebase';
 
 // No mocking anywhere in here, deliberately. src/app/firebase.ts connects to the emulators by
@@ -445,6 +446,117 @@ describe('DataStore against the emulator', () => {
       // Nothing a driver can see changed, so no new stamp and no push.
       expect((await rawAt(`trips/${trip.$key}`))?.['modified']).toBe(before);
       expect(await rawAt('notificationQueue')).toBeNull();
+    }, 30000);
+  });
+
+  // This spec signs in as an admin, so these writes take the admin's cascading .write on /trips
+  // rather than the drivers' own carve-out — which means first-read-wins (a driver-only rule) is
+  // proved in database-rules.spec.mjs, not here. What this file is for is the seam those specs
+  // can't see: that a receipt DataStore composes survives the round trip and comes back through
+  // toTrip as something the UI can actually use.
+  describe('read receipts', () => {
+    // Both helpers wait for the *observable* to agree, not just for the write to land. DataStore
+    // answers "is this day public?" from one shared, replayed listener on /public (see
+    // publicDates$), and addTrip consults it synchronously through isDayPublicNow — so a seed
+    // issued immediately after a publication change, or immediately after beforeEach wiped the
+    // node, can still be answered from the previous value. That decides whether the trip gets a
+    // `modified` stamp at all, which is the entire precondition for these tests.
+    async function withDayPublic(isPublic: boolean): Promise<void> {
+      await store.setDayPublic(DAY, isPublic);
+      await eventually(async () => {
+        expect(await firstValueFrom(store.getDayPublic(DAY))).toBe(isPublic);
+      });
+    }
+
+    async function publishedTrip(drivers: string[] = ['d1']): Promise<Trip> {
+      await withDayPublic(true);
+      return seedTrip({drivers});
+    }
+
+    async function unpublishedTrip(drivers: string[] = ['d1']): Promise<Trip> {
+      await withDayPublic(false);
+      return seedTrip({drivers});
+    }
+
+    it('round-trips a receipt back through the read pipeline', async () => {
+      const trip = await publishedTrip();
+      const version = trip.modified!.valueOf();
+
+      await store.markTripRead(trip.$key, 'd1', version);
+
+      const read = (await onlyTrip()).reads?.['d1'];
+      expect(read?.version).toBe(version);
+      expect(moment.isMoment(read?.at)).toBe(true);
+      // Written by the server, so it lands near now rather than at the epoch a missing value
+      // would map to.
+      expect(read!.at.valueOf()).toBeGreaterThan(moment().subtract(1, 'minute').valueOf());
+      expect(read?.dismissed).toBe(false);
+      expect(Utility.hasReadTrip(await onlyTrip(), 'd1')).toBe(true);
+    }, 30000);
+
+    // The scope rule, enforced by the database rather than by the UI: a trip planned before its
+    // day went public was never *changed*, so there is nothing anyone could have missed.
+    it('refuses a receipt on a trip that was never changed after publication', async () => {
+      const trip = await unpublishedTrip();
+      expect(trip.modified).toBeUndefined();
+
+      await expect(store.markTripRead(trip.$key, 'd1', 0)).rejects.toThrow();
+    }, 30000);
+
+    it('refuses a receipt for a version the trip does not have', async () => {
+      const trip = await publishedTrip();
+
+      await expect(store.markTripRead(trip.$key, 'd1', trip.modified!.valueOf() + 1)).rejects.toThrow();
+    }, 30000);
+
+    it('dismisses only the drivers named, leaving a real receipt untouched', async () => {
+      const trip = await publishedTrip(['d1', 'd2']);
+      const version = trip.modified!.valueOf();
+      await store.markTripRead(trip.$key, 'd1', version);
+      const genuineAt = (await rawAt(`trips/${trip.$key}/reads/d1`))?.['at'];
+
+      await store.dismissTripReadWarning(trip.$key, ['d2'], version);
+
+      const reads = (await onlyTrip()).reads!;
+      expect(reads['d2'].dismissed).toBe(true);
+      // The admin write cascades past the drivers' monotonic rule, so passing a driver who has
+      // genuinely read the trip would silently overwrite when they read it. dismissTripReadWarning
+      // is only ever handed the outstanding ones, and this is what holds that to it.
+      expect(reads['d1'].dismissed).toBe(false);
+      expect((await rawAt(`trips/${trip.$key}/reads/d1`))?.['at']).toBe(genuineAt);
+    }, 30000);
+
+    it('keeps receipts across an edit but strands them on the old version', async () => {
+      const trip = await publishedTrip();
+      const version = trip.modified!.valueOf();
+      await store.markTripRead(trip.$key, 'd1', version);
+      await store.dismissTripReadWarning(trip.$key, ['d2'], version);
+
+      await store.updateTrip(await onlyTrip(), {
+        start: at('08:00'), end: at('10:00'), name: 'Tur (rettet)',
+        drivers: ['d1'], vehicles: [], vehicleAssignments: {},
+      });
+
+      // updateTrip writes per-field paths precisely so it cannot clobber driver-written subtrees.
+      const edited = await onlyTrip();
+      expect(edited.reads?.['d1']).toBeDefined();
+      expect(edited.reads?.['d2']).toBeDefined();
+      // Both kinds go stale together on the new version, which is what brings the warning back
+      // without any separate flag to reset.
+      expect(edited.modified!.valueOf()).toBeGreaterThan(version);
+      expect(Utility.hasReadTrip(edited, 'd1')).toBe(false);
+      expect(Utility.hasReadTrip(edited, 'd2')).toBe(false);
+    }, 30000);
+
+    // No companion delete path exists, and none is needed — the reason the receipts live on the
+    // trip rather than in a side table the retention cleanup could forget.
+    it('deletes receipts along with the trip', async () => {
+      const trip = await publishedTrip();
+      await store.markTripRead(trip.$key, 'd1', trip.modified!.valueOf());
+
+      await store.removeTrip(trip);
+
+      expect(await rawAt(`trips/${trip.$key}`)).toBeNull();
     }, 30000);
   });
 

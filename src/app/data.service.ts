@@ -1,5 +1,5 @@
 import {Injectable, inject} from '@angular/core';
-import {child, endAt, endBefore, get, limitToLast, orderByChild, orderByKey, push, query, Query, ref, remove, startAt, update} from 'firebase/database';
+import {child, endAt, endBefore, get, limitToLast, orderByChild, orderByKey, push, query, Query, ref, remove, serverTimestamp, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, Trip, TripOffice, TripRecord, TripReport, toTrip} from './trip';
 import {ClockRecord, StoredClockRecord, toClockRecord} from './clock-record';
@@ -302,6 +302,48 @@ export class DataStore {
   // driver can remove their own report without needing admin-level access to the trip as a whole.
   deleteTripReport(tripKey: string, driverKey: string) {
     return remove(child(this.tripsRef, `${tripKey}/reports/${driverKey}`));
+  }
+
+  // Records that `driverKey` has seen version `version` of this trip — the receipt behind
+  // Dagsplaner's unread warning. Written at this exact path rather than through updateTrip for
+  // the same reason setTripReport is: /trips/$tripKey/reads/$driverKey is its own driver-writable
+  // carve-out, so a driver can write it without admin-level access to the trip as a whole.
+  //
+  // serverTimestamp() rather than Date.now() because the rules insist on it: `at` is read back to
+  // the office as "Set kl. …", making it the one field the writer would otherwise fully control.
+  // It is also the only clock both sides agree on — `modified` comes from the *admin's* client,
+  // which is exactly why "has this been read" is an equality test on version and never on time.
+  //
+  // First-read-wins is enforced by the rules, not here: a second attempt at a version already
+  // recorded is rejected server-side, so re-opening the app tomorrow cannot move `at` forward.
+  // Callers go through ReadReceiptsService, which expects that rejection and swallows it.
+  markTripRead(tripKey: string, driverKey: string, version: number): Promise<void> {
+    return update(child(this.tripsRef, `${tripKey}/reads/${driverKey}`), {
+      at: serverTimestamp(),
+      version,
+    });
+  }
+
+  // Clears the unread warning by recording an office-side receipt for each driver still
+  // outstanding — `dismissed` marks them as ours so Min dag never tells a driver they saw
+  // something they didn't (see TripRead), while the warning itself treats them exactly like real
+  // receipts, which is the point.
+  //
+  // Only the outstanding drivers, never all of them: an admin's write cascades past the drivers'
+  // own monotonic rule, so including someone who has genuinely read the trip would overwrite
+  // their real timestamp with this one. The caller derives the list from Utility.unreadDrivers.
+  //
+  // One multi-path update rather than a write per driver, so a dismissal is atomic however many
+  // are outstanding. Nothing here needs undoing later: a subsequent edit re-stamps `modified` and
+  // strands these receipts exactly as it strands genuine ones, which is what brings the warning
+  // back without a separate flag to reset.
+  dismissTripReadWarning(tripKey: string, driverKeys: string[], version: number): Promise<void> {
+    if (!driverKeys.length) return Promise.resolve();
+    const updates: Record<string, unknown> = {};
+    driverKeys.forEach(key => {
+      updates[`${tripKey}/reads/${key}`] = {at: serverTimestamp(), version, dismissed: true};
+    });
+    return update(this.tripsRef, updates);
   }
 
   // The value getTrips' multiDayStart-indexed query above filters on — present (as the trip's

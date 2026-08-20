@@ -56,6 +56,33 @@ describe('toTrip', () => {
     expect(trip.modified?.valueOf()).toBe(1700007200000);
   });
 
+  it('maps read receipts, defaulting dismissed to false', () => {
+    const trip = toTrip({$key: 'k1', reads: {d1: {at: 1700000060000, version: 1700000000000}}} as TripRecord);
+
+    // `dismissed` is absent on every receipt a driver writes — RTDB stores `false` but the
+    // client never sends the key at all — so the default here is the ordinary case, not the
+    // malformed one. It has to be `false` and not undefined: Min dag branches on it to decide
+    // whether to tell the driver they saw this.
+    expect(trip.reads?.['d1'].dismissed).toBe(false);
+    expect(trip.reads?.['d1'].version).toBe(1700000000000);
+    expect(moment.isMoment(trip.reads?.['d1'].at)).toBe(true);
+  });
+
+  it('keeps an office-written receipt marked as dismissed', () => {
+    const trip = toTrip({$key: 'k1', reads: {d1: {at: 1, version: 2, dismissed: true}}} as TripRecord);
+
+    expect(trip.reads?.['d1'].dismissed).toBe(true);
+  });
+
+  it('reads a receipt with no version as matching nothing', () => {
+    // 0 is unmatchable by construction — a trip with no `modified` accepts no receipts at all —
+    // so a malformed record reads as "not seen" rather than as a receipt for whatever version
+    // the trip happens to carry now.
+    const trip = toTrip({$key: 'k1', reads: {d1: {}}} as TripRecord);
+
+    expect(trip.reads?.['d1'].version).toBe(0);
+  });
+
   it('leaves modified undefined rather than epoch when the trip was never edited', () => {
     // Distinct from start/end: `modified` genuinely is absent on most trips, and the UI's
     // "recently modified" highlight keys off its presence.
@@ -218,7 +245,8 @@ describe('every mapper', () => {
   /** Fields the domain types declare with `?`, so undefined is the correct answer for them. */
   const OPTIONAL_BY_DESIGN = [
     'description', 'officeDescription', 'labels', 'vehicleAssignments', 'modified',
-    'multiDayStart', 'reports', 'note', 'dognbetaling', 'uid', 'email', 'excludeFromStatistics',
+    'multiDayStart', 'reports', 'reads', 'note', 'dognbetaling', 'uid', 'email',
+    'excludeFromStatistics',
   ];
 
   // A guard against the failure mode that produced the original bug: a field added to a domain
