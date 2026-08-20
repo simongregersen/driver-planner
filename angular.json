@@ -107,7 +107,10 @@
           "options": {
             "tsConfig": "tsconfig.spec.json",
             "buildTarget": "::development",
-            "providersFile": "src/test-providers.ts"
+            "providersFile": "src/test-providers.ts",
+            "exclude": [
+              "**/*.integration.spec.ts"
+            ]
           }
         },
         "lint": {

@@ -20,48 +20,7 @@
 // removeTrip), so this doubles as a contract test for the data layer's multi-path writes — in
 // particular that editing a trip cannot clobber the driver-written `reports` subtree.
 
-const BASE = process.env.DATABASE_EMULATOR_URL ?? 'http://127.0.0.1:9555';
-const NS = 'driver-planner';
-
-/** The emulator accepts unsigned JWTs, which is how a specific signed-in user is simulated. */
-function jwt(uid) {
-  const b64 = o => Buffer.from(JSON.stringify(o)).toString('base64url');
-  const now = Math.floor(Date.now() / 1000);
-  return `${b64({alg: 'none', typ: 'JWT'})}.${b64({
-    iss: `https://securetoken.google.com/${NS}`, aud: NS, auth_time: now,
-    user_id: uid, sub: uid, iat: now, exp: now + 3600,
-    firebase: {identities: {}, sign_in_provider: 'custom'},
-  })}.`;
-}
-
-async function req(path, {method = 'PUT', body, as, qs = {}} = {}) {
-  const url = new URL(`${BASE}/${path}.json`);
-  url.searchParams.set('ns', NS);
-  for (const [k, v] of Object.entries(qs)) url.searchParams.set(k, v);
-  const headers = {'Content-Type': 'application/json'};
-  // `Bearer owner` bypasses rules entirely — used only to seed fixtures.
-  if (as === 'owner') headers.Authorization = 'Bearer owner';
-  else if (as) url.searchParams.set('auth', jwt(as));
-  const res = await fetch(url, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)});
-  const text = await res.text();
-  let json = null;
-  try { json = JSON.parse(text); } catch { /* a rules rejection returns a non-JSON body */ }
-  return {status: res.status, text, json};
-}
-
-let passed = 0;
-const failures = [];
-function check(label, ok, detail = '') {
-  if (ok) {
-    passed++;
-    console.log(`  ✓ ${label}`);
-  } else {
-    failures.push(`${label}${detail ? ` — ${detail}` : ''}`);
-    console.log(`  ✗ ${label}${detail ? ` — ${detail}` : ''}`);
-  }
-}
-const allowed = r => r.status < 300;
-const denied = r => r.status >= 400;
+import {allowed, check, denied, req, run} from './harness.mjs';
 
 const VALID_REPORT = {
   start: 1000, startFromCustomer: true, end: 2000, endFromCustomer: true,
@@ -192,22 +151,10 @@ async function tripWriteContract() {
   check('deleting a trip removes its office half', (await req('tripOffice/t4', {method: 'GET', as: 'adminU'})).json === null);
 }
 
-async function main() {
+run(async () => {
   await seed();
   await tripReportRules();
   await clockRecordRules();
   await tripOfficeRules();
   await tripWriteContract();
-
-  console.log(`\n${passed} passed, ${failures.length} failed`);
-  if (failures.length) {
-    console.error('\nFailures:');
-    for (const f of failures) console.error(`  - ${f}`);
-    process.exit(1);
-  }
-}
-
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
 });

@@ -1,10 +1,28 @@
 {
-  "_comment": "Emulator config for the database-rules integration tests (npm run test:rules). Separate from firebase.json so the ports can't collide with a dev emulator started from `npm run emulators`, and so no hosting/UI emulator is spun up for a test run that only needs the database.",
-  "database": [{"instance": "driver-planner", "rules": "database.rules.json"}],
+  "_comment": "Emulator config for the integration tests (npm run test:integration). The database and auth ports deliberately match firebase.json's, because src/app/firebase.ts hardcodes them when environment.useEmulators is set — which is what lets the DataStore integration spec exercise the app's own Firebase entry point instead of a mocked stand-in. If a dev emulator from `npm run emulators` is already holding those ports, emulators:exec refuses to start and the test run aborts, which is the safe outcome: these tests wipe the data they seed. Kept separate from firebase.json so no hosting or UI emulator is started for a run needing neither.",
+  "database": [
+    {
+      "instance": "driver-planner",
+      "rules": "database.rules.json"
+    }
+  ],
   "emulators": {
-    "database": {"host": "127.0.0.1", "port": 9555},
-    "ui": {"enabled": false},
-    "hub": {"port": 4455},
-    "logging": {"port": 4556}
+    "auth": {
+      "host": "localhost",
+      "port": 9099
+    },
+    "database": {
+      "host": "localhost",
+      "port": 9000
+    },
+    "ui": {
+      "enabled": false
+    },
+    "hub": {
+      "port": 4455
+    },
+    "logging": {
+      "port": 4556
+    }
   }
 }

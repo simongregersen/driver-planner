@@ -1,19 +1,19 @@
 import {Injectable, inject} from '@angular/core';
 import {child, endAt, endBefore, get, limitToLast, orderByChild, orderByKey, push, query, Query, ref, remove, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
-import {NewTrip, Trip, TripOffice, TripReport} from './trip';
-import {ClockRecord} from './clock-record';
-import {FuelReport, NewFuelReport} from './fuel-report';
-import {NewTankRefill, TankRefill} from './tank-refill';
-import {Driver, NewDriver} from './driver';
+import {NewTrip, Trip, TripOffice, TripRecord, TripReport, toTrip} from './trip';
+import {ClockRecord, StoredClockRecord, toClockRecord} from './clock-record';
+import {FuelReport, FuelReportRecord, NewFuelReport, toFuelReport} from './fuel-report';
+import {NewTankRefill, TankRefill, TankRefillRecord, toTankRefill} from './tank-refill';
+import {Driver, DriverRecord, NewDriver, toDriver} from './driver';
 import {AppUser} from './user';
 import {combineLatest, firstValueFrom, from as observableFrom, Observable, of, Subject} from 'rxjs';
-import {first, map, shareReplay, startWith, switchMap, tap, timeout} from 'rxjs/operators';
-import {NewVehicle, Vehicle} from './vehicle';
+import {first, map, shareReplay, startWith, switchMap, timeout} from 'rxjs/operators';
+import {NewVehicle, toVehicle, Vehicle, VehicleRecord} from './vehicle';
 import {DateUtility} from './date-utility';
 import {Utility} from './utility';
 import {Template} from './template';
-import {NewNote, Note} from './note';
+import {NewNote, Note, NoteRecord, toNote} from './note';
 import {db} from './firebase';
 import {Moment} from 'moment';
 import moment from 'moment';
@@ -75,12 +75,12 @@ export class DataStore {
     const toDate = (to) ? this.dateUtility.toMoment(to)! : moment(fromDate);
     toDate.add(1, 'days');
 
-    const inWindow$ = listVal<Trip>(
+    const inWindow$ = listVal<TripRecord>(
       query(this.tripsRef, orderByChild('start'), startAt(fromDate.valueOf()), endAt(toDate.valueOf() - 1)),
       {keyField: '$key'}
     );
     const multiDayLookback = fromDate.clone().subtract(MULTI_DAY_LOOKBACK_DAYS, 'days');
-    const multiDay$ = listVal<Trip>(
+    const multiDay$ = listVal<TripRecord>(
       query(this.tripsRef, orderByChild('multiDayStart'), startAt(multiDayLookback.valueOf()), endAt(toDate.valueOf() - 1)),
       {keyField: '$key'}
     );
@@ -92,27 +92,11 @@ export class DataStore {
       // ordered by start (its query is ordered by multiDayStart, which is exactly that), so
       // putting those first, ahead of inWindow$'s own start-ordered results, keeps the combined
       // list correctly ordered by actual start time without a separate sort.
+      //   Merged as raw records rather than after conversion — mergeTripWindows only ever looks
+      // at $key — so toTrip runs once per trip instead of once per query hit, with the duplicate
+      // a multi-day trip makes across both windows dropped before it is paid for.
       map(([inWindow, multiDay]) => Utility.mergeTripWindows(inWindow, multiDay)),
-      tap(ts => ts.forEach(t => {
-        // RTDB has no representation for an empty array — it stores one exactly as it stores
-        // null, so a trip saved with no drivers or no vehicles comes back with that key missing
-        // entirely, contradicting Trip's own non-optional types for both. Restoring them here
-        // keeps that storage detail from leaking into every consumer: it was reaching
-        // sameMembers below as an undefined `b`, throwing on `.length` and failing the save of
-        // any edit to such a trip (adding a label to a trip with no vehicle, say).
-        t.drivers ??= [];
-        t.vehicles ??= [];
-        t.start = moment(t.start as unknown as number);
-        t.end = (t.end) ? moment(t.end as unknown as number) : null;
-        t.modified = (t.modified) ? moment(t.modified as unknown as number) : undefined;
-        if (t.reports) {
-          Object.values(t.reports).forEach(r => {
-            r.start = (r.start) ? moment(r.start as unknown as number) : null;
-            r.end = (r.end) ? moment(r.end as unknown as number) : null;
-          });
-        }
-      })),
-      map(ts => ts.filter(t => Utility.tripOverlaps(t, fromDate, toDate)))
+      map(rs => rs.map(toTrip).filter(t => Utility.tripOverlaps(t, fromDate, toDate)))
     );
   }
 
@@ -279,9 +263,10 @@ export class DataStore {
     return false;
   }
 
-  // Undefined-tolerant on both sides for the same reason sameAssignments below is: the reads
-  // now normalize these arrays back in, but a Trip reaching here from anywhere else can still be
-  // missing one that RTDB never stored.
+  // Undefined-tolerant on both sides for the same reason sameAssignments below is. toTrip now
+  // guarantees these arrays on anything read through this service, so this is defence in depth
+  // rather than the fix — but it is what turns the failure mode of a Trip arriving from some
+  // future path without them from a thrown TypeError mid-save into a correct comparison.
   private sameMembers(a: string[] | undefined, b: string[] | undefined): boolean {
     const sortedA = [...(a ?? [])].sort();
     const sortedB = [...(b ?? [])].sort();
@@ -357,12 +342,7 @@ export class DataStore {
     const q = to
       ? query(driverRef, orderByChild('clockIn'), startAt(fromDate.valueOf()), endAt(this.dateUtility.toMoment(to)!.add(1, 'days').valueOf() - 1))
       : query(driverRef, orderByChild('clockIn'), startAt(fromDate.valueOf()));
-    return listVal<ClockRecord>(q, {keyField: '$key'}).pipe(
-      tap(rs => rs.forEach(r => {
-        r.clockIn = moment(r.clockIn as unknown as number);
-        r.clockOut = (r.clockOut) ? moment(r.clockOut as unknown as number) : null;
-      }))
-    );
+    return listVal<StoredClockRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.map(toClockRecord)));
   }
 
   addClockRecord(driverKey: string, clockIn: Moment, note?: string | null, clockOut?: Moment | null, dognbetaling?: boolean) {
@@ -405,9 +385,7 @@ export class DataStore {
     const snapshot = await get(q);
     const reports: FuelReport[] = [];
     snapshot.forEach(child => {
-      const report = {...(child.val() as Record<string, unknown>), $key: child.key} as FuelReport;
-      report.date = moment(report.date as unknown as number);
-      reports.push(report);
+      reports.push(toFuelReport({...(child.val() as FuelReportRecord), $key: child.key!}));
     });
     return reports;
   }
@@ -476,9 +454,7 @@ export class DataStore {
     const snapshot = await get(q);
     const refills: TankRefill[] = [];
     snapshot.forEach(child => {
-      const refill = {...(child.val() as Record<string, unknown>), $key: child.key} as TankRefill;
-      refill.date = moment(refill.date as unknown as number);
-      refills.push(refill);
+      refills.push(toTankRefill({...(child.val() as TankRefillRecord), $key: child.key!}));
     });
     return refills;
   }
@@ -697,11 +673,8 @@ export class DataStore {
   }
 
   getAllDrivers(): Observable<Driver[]> {
-    return listVal<Driver>(this.driversRef, {keyField: '$key'}).pipe(
-      map(Utility.sortByDisplayName),
-      tap(ds => ds.forEach(d => {
-        if (d.birthday) d.birthday = moment(d.birthday as unknown as number);
-      })),
+    return listVal<DriverRecord>(this.driversRef, {keyField: '$key'}).pipe(
+      map(rs => Utility.sortByDisplayName(rs.map(toDriver))),
       // Called independently from many components (page-level chip filters, nested
       // TripsComponent, form pickers, ...) with no multicasting otherwise — this keeps a single
       // live /drivers listener shared across all of them instead of one per caller.
@@ -732,17 +705,19 @@ export class DataStore {
     return update(child(this.driversRef, driver.$key), payload);
   }
 
-  getDriver(key: string): Observable<Driver> {
-    return objectVal<Driver>(child(this.driversRef, key), {keyField: '$key'});
+  // Null for a key with no record — objectVal emits the absence rather than erroring, and a
+  // driver whose record has since been removed is a real case (see UserService.driverProfile$,
+  // whose uid → driverId mapping can outlive the driver). Previously typed as a bare Driver,
+  // which also meant birthday was left as the raw number it is stored as; toDriver settles both.
+  getDriver(key: string): Observable<Driver | null> {
+    return objectVal<DriverRecord | null>(child(this.driversRef, key), {keyField: '$key'}).pipe(
+      map(record => record ? toDriver(record) : null),
+    );
   }
 
   getAllVehicles(): Observable<Vehicle[]> {
-    return listVal<Vehicle>(this.vehiclesRef, {keyField: '$key'}).pipe(
-      map(Utility.sortByDisplayName),
-      tap(ds => ds.forEach(d => {
-        if (d.latestInspection) d.latestInspection = new Date(d.latestInspection as unknown as number);
-        d.isRutebus ??= false;
-      })),
+    return listVal<VehicleRecord>(this.vehiclesRef, {keyField: '$key'}).pipe(
+      map(rs => Utility.sortByDisplayName(rs.map(toVehicle))),
       // See getAllDrivers's shareReplay above — same rationale, same duplicate-listener fix.
       shareReplay({bufferSize: 1, refCount: true}),
     );
@@ -770,8 +745,11 @@ export class DataStore {
     return update(child(this.vehiclesRef, vehicle.$key), payload);
   }
 
-  getVehicle(key: string): Observable<Vehicle> {
-    return objectVal<Vehicle>(child(this.vehiclesRef, key), {keyField: '$key'});
+  // Null for a missing key, and converted rather than raw — same as getDriver above.
+  getVehicle(key: string): Observable<Vehicle | null> {
+    return objectVal<VehicleRecord | null>(child(this.vehiclesRef, key), {keyField: '$key'}).pipe(
+      map(record => record ? toVehicle(record) : null),
+    );
   }
 
   getAllTemplates(): Observable<Template[]> {
@@ -823,43 +801,29 @@ export class DataStore {
   // partially-inserted template if any of the writes failed.
   async insertTemplate(date: Moment, templateKey: string): Promise<string[]> {
     const tripsInTemplateRef = ref(db, `/tripsInTemplate/${templateKey}`);
-    const trips = await firstValueFrom(listVal<Trip>(tripsInTemplateRef, {keyField: '$key'}).pipe(first()));
-    const refs = await Promise.all(trips.map(t => {
-      if (t.start) {
-        t.start = moment(t.start as unknown as number);
-        Utility.copyDate(date, t.start);
-      }
-      if (t.end) {
-        t.end = moment(t.end as unknown as number);
-        Utility.copyDate(date, t.end);
-      }
-      return this.addTrip(t);
+    const records = await firstValueFrom(listVal<TripRecord>(tripsInTemplateRef, {keyField: '$key'}).pipe(first()));
+    const refs = await Promise.all(records.map(record => {
+      // The template stores each trip's own start/end; only their time-of-day carries over, with
+      // the date replaced by the day being inserted into.
+      const trip = toTrip(record);
+      Utility.copyDate(date, trip.start);
+      if (trip.end) Utility.copyDate(date, trip.end);
+      return this.addTrip(trip);
     }));
     return refs.map(r => r.key!).filter(Boolean);
   }
 
   getTemplateTrips(template: Template): Observable<Trip[]> {
     const q = query(ref(db, `/tripsInTemplate/${template.$key}`), orderByChild('start'));
-    return listVal<Trip>(q, {keyField: '$key'}).pipe(
-      tap(ts => ts.forEach(t => {
-        // Same absent-empty-array normalization as getTrips — see its comment.
-        t.drivers ??= [];
-        t.vehicles ??= [];
-        t.start = moment(t.start as unknown as number);
-        t.end = (t.end) ? moment(t.end as unknown as number) : null;
-      }))
-    );
+    return listVal<TripRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.map(toTrip)));
   }
 
   // Notes are low-volume (a handful of vacations/shop visits at a time) compared to trips, so
   // unlike getTrips there's no windowed query here — every caller just fetches all of them and
   // filters client-side for whichever date(s) it cares about.
   getAllNotes(): Observable<Note[]> {
-    return listVal<Note>(this.notesRef, {keyField: '$key'}).pipe(
-      tap(ns => ns.forEach(n => {
-        n.start = this.dateUtility.getDate(moment(n.start as unknown as number));
-        n.end = this.dateUtility.getDate(moment(n.end as unknown as number));
-      })),
+    return listVal<NoteRecord>(this.notesRef, {keyField: '$key'}).pipe(
+      map(rs => rs.map(toNote)),
       // Day Plans and My Trips both subscribe to this on the same page load, and it's an
       // unwindowed read of the whole node — see getAllDrivers's shareReplay for the same
       // rationale.

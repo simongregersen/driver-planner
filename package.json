@@ -15,7 +15,8 @@
     "lint": "ng lint",
     "format": "prettier --write \"src/**/*.{ts,html,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css}\"",
-    "test:rules": "firebase emulators:exec --only database --config firebase.test.json --project driver-planner \"node test/integration/database-rules.spec.mjs\""
+    "test:integration": "firebase emulators:exec --only database,auth --config firebase.test.json --project driver-planner \"node test/integration/database-rules.spec.mjs && ng test --watch=false --include=src/app/data.service.integration.spec.ts\"",
+    "test:rules": "firebase emulators:exec --only database,auth --config firebase.test.json --project driver-planner \"node test/integration/database-rules.spec.mjs\""
   },
   "private": true,
   "dependencies": {

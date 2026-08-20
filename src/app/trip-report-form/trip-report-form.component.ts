@@ -53,7 +53,9 @@ export class TripReportFormComponent implements OnInit {
   readonly saving = signal(false);
   readonly dialogRef = inject(MatDialogRef<TripReportFormComponent>);
 
-  driver$!: Observable<Driver>;
+  // Null when the driver record has since been removed — the title already renders that case
+  // as a plain "Chaufførrapport" with no name (see the template's @if).
+  driver$!: Observable<Driver | null>;
   /** Whether trip.reports[driverKey] already existed on open — gates the "Slet" button, which
    * only makes sense once there's actually a report to delete. */
   hasExistingReport = false;

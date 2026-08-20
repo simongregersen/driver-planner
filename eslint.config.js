@@ -19,6 +19,20 @@ module.exports = defineConfig([
     ],
     processor: angular.processInlineTemplates,
     rules: {
+      // The leading underscore is the codebase's existing signal for "bound deliberately, never
+      // read" — it appears where a property is destructured purely to omit it from the rest
+      // object (see removeDriverFromTrip in trip-editing.service.ts). typescript-eslint's default
+      // options don't honour that convention, so the intent read as a mistake.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
       "@angular-eslint/directive-selector": [
         "error",
         {
