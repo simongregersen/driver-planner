@@ -93,12 +93,25 @@
 }
 
 @media print {
-  .day-block {
-    break-after: page;
-    page-break-after: always;
-  }
-
-  .day-block:last-child {
+  /* Keep a day's date with the trips underneath it. Without this a page break can land right
+     after the heading, stranding the date at the foot of one page while its trips start on the
+     next — which reads as an empty day followed by an unlabelled list.
+       This is the whole of the print handling. It replaced a break-after: page that started every
+     day on a fresh sheet, and then a break-inside: avoid on .day-block that kept days whole but
+     pushed any day too big for the remaining space onto the next page, wasting the tail of the
+     previous one.
+       Measured by printing a multi-day range to PDF at a range of content offsets: this removes
+     every stranded heading, and on the offsets that had none it produces pagination identical to
+     having no rule at all — so it costs nothing except in the case it exists to fix.
+       Known engine difference, and the reason this rule was briefly removed: Chromium keeps the
+     heading with the first *fragment* of the day below it, while Firefox keeps it with the whole
+     day. So in Firefox a first day too tall to fit under the page header drags the entire plan to
+     page two and leaves page one blank. Kept because the people who print these use Chrome; if
+     that ever stops being true, this is the rule to look at first, and the fix is to drop it
+     rather than to add anything to the header (see .print-header in styles.css).
+       break-after is the modern property; page-break-after is kept alongside it for older print
+     engines, matching the .data-table tr rule in styles.css. */
+  .day-heading {
     break-after: avoid;
     page-break-after: avoid;
   }

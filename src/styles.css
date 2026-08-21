@@ -728,6 +728,23 @@ button.confirm-danger.mat-mdc-unelevated-button {
        otherwise sit flush against whatever table/content follows it on every page that uses
        this print-header pattern (Timeseddel, Brændstof, Dagsplaner, Periodeplaner). */
     margin-bottom: 24px;
+    /* The title and the subtitle under it (a date range, an active driver/vehicle filter) are one
+       heading between them, so a page break must never fall between the two.
+         Note what is deliberately *not* here: break-after: avoid, to stop a break landing between
+       this header and the content it introduces. It does nothing — this header is the first thing
+       on the page, so there is nowhere for a browser to move it to in order to honour the request,
+       and it gets dropped. Worse, when it was honoured it was honoured by splitting the header
+       itself, leaving the title on one page and its subtitle on the next.
+         A header stranded alone above its own content is always a symptom of something *below* it
+       refusing to break, and has to be fixed there. Periodeplaner had exactly that: a
+       break-after: avoid on its day headings, which Firefox honours by keeping a heading with the
+       whole of the following day rather than just its first rows — so a first day that wouldn't
+       fit under this header pushed the entire plan onto page two and left page one blank. That
+       rule is still there (Chromium, which is what these are printed from, keeps the heading with
+       only the first fragment and behaves); the point here is that the cure was never anything
+       applied to this header. */
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .page-layout {
