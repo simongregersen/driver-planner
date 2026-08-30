@@ -24,6 +24,18 @@ export class RichTextComponent {
   // is non-greedy, so "a **x** b **y** c" is two highlights, not one spanning the middle.
   private static readonly PATTERN = /\*\*(.+?)\*\*|\[(.+?)\]/gs;
 
+  /** The same text with its markup stripped rather than rendered — the words inside the markers
+   * are kept, only the markers themselves go. For places that want a trip's name as a plain
+   * string and have no business showing a highlight or a tappable address: TripReportFormComponent's
+   * subheading, where the name identifies the report rather than being something to act on.
+   * Lives here so the markup grammar stays defined in exactly one place. */
+  static toPlainText(value: string | null | undefined): string {
+    if (!value) return '';
+    // new RegExp(re) copies source and flags, giving a fresh lastIndex — the same reason
+    // segments() below makes its own copy rather than reusing the static one.
+    return value.replace(new RegExp(RichTextComponent.PATTERN), (_match, highlight, address) => highlight ?? address ?? '');
+  }
+
   readonly segments = computed<Segment[]>(() => {
     const value = this.text();
     if (!value) return [];

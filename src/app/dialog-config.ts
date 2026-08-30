@@ -1,5 +1,11 @@
 import {MatDialogConfig} from '@angular/material/dialog';
 
+/** The panel class both editor-dialog sizes carry, so styles.css can let a form dialog use
+ * nearly the whole screen on mobile instead of Material's 65vh content cap — see the rule under
+ * its own name there. Deliberately not on the confirm/time-picker dialogs below: those are short
+ * by nature and should stay the size of what they contain. */
+const FORM_DIALOG_PANEL_CLASS = 'app-form-dialog-panel';
+
 /** Shared size for the app's editor dialogs, matching the previous "large" modal width.
  *
  * disableClose does NOT mean these can't be dismissed — it means Escape and a backdrop click are
@@ -10,6 +16,7 @@ import {MatDialogConfig} from '@angular/material/dialog';
 export const DIALOG_CONFIG: MatDialogConfig = {
   width: '800px',
   maxWidth: '95vw',
+  panelClass: FORM_DIALOG_PANEL_CLASS,
   disableClose: true,
 };
 
@@ -17,6 +24,7 @@ export const DIALOG_CONFIG: MatDialogConfig = {
 export const SMALL_DIALOG_CONFIG: MatDialogConfig = {
   width: '500px',
   maxWidth: '95vw',
+  panelClass: FORM_DIALOG_PANEL_CLASS,
   disableClose: true,
 };
 

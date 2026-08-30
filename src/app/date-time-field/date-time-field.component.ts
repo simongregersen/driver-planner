@@ -36,6 +36,18 @@ export class DateTimeFieldComponent {
    * e.g. Slut defaulting to Start's date when only a Slut time is typed, and to Start's time
    * when only a Slut date is picked. */
   fallbackValue = input<Moment | null>(null);
+  /** The same seeding, but from the current date and time — for a field deliberately left blank
+   * until it's being filled in (Chaufførrapport's Slut, entered when the driver finishes, long
+   * after the report was first created). Both halves follow: opening the time seeds today's date
+   * with it, and picking a date alone seeds the current time. Read at the moment the field is
+   * used rather than when the dialog opened. Takes precedence over fallbackValue. */
+  defaultsToNow = input(false);
+  /** In minutes — passed through to the time half, and the step defaultsToNow rounds to. */
+  minuteStep = input(5);
+  /** Passed through to the time half — see TimeFieldComponent.clearable. Clearing it here empties
+   * the date as well, since half a timestamp is not a value this field can emit. */
+  clearable = input(false);
+  clearLabel = input('Ryd tid');
   valueChange = output<Moment | null>();
 
   private readonly dateUtility = inject(DateUtility);
@@ -58,8 +70,18 @@ export class DateTimeFieldComponent {
     this.materialTimeControl.valueChanges.subscribe(time => this.emit(this.materialDateControl.value, time));
   }
 
+  /** Clearing runs after TimeFieldComponent has already emptied its own control, which by itself
+   * would trip emit()'s "fill the missing half from the fallback" rule and immediately re-seed
+   * the time it just cleared. Emptying both halves here — after that has happened — is what makes
+   * the clear stick. */
+  onCleared(): void {
+    this.materialDateControl.setValue(null, {emitEvent: false});
+    this.materialTimeControl.setValue(null, {emitEvent: false});
+    this.valueChange.emit(null);
+  }
+
   private emit(date: Moment | null, time: Moment | null): void {
-    const fallback = this.fallbackValue();
+    const fallback = this.defaultsToNow() ? this.dateUtility.nowRoundedTo(this.minuteStep()) : this.fallbackValue();
     if (!date && time && fallback) {
       date = this.dateUtility.getDate(fallback);
       this.materialDateControl.setValue(date, {emitEvent: false});

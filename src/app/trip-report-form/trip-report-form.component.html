@@ -1,6 +1,14 @@
 <h2 mat-dialog-title>Chaufførrapport@if (driver$ | async; as driver) { &ndash; {{ driver.displayName }} }</h2>
 
 <mat-dialog-content>
+  <!-- Which trip this report is for. The title above names the driver, not the trip, and the
+       dialog is opened from two different places (a driver's own "Min dag" row, an admin's
+       Dagsplaner) — on a phone it now covers the screen, so the row it was opened from isn't
+       there to check against. Plain text: an admin's **highlight**/[address] markup is stripped
+       rather than rendered (see tripName), since this line is here to say which trip you're
+       reporting on, not to be read or tapped. -->
+  <p class="trip-name">{{ tripName }}</p>
+
   <form id="tripReportForm" class="form-stack" (ngSubmit)="onSubmit()">
     <div class="field-group field-start">
       <div class="field-group-header">
@@ -25,7 +33,13 @@
           <mat-button-toggle value="customer">Kunden</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
-      <app-date-time-field [value]="end" [fallbackValue]="start" (valueChange)="end = $event"></app-date-time-field>
+      <!-- Blank until the driver comes back to close the report off, then seeded with the current
+           date/time on the first click (defaultsToNow) rather than with the trip's schedule — and
+           clearable, since that first click commits a value a stray tap would otherwise leave
+           behind on a report that isn't finished yet. -->
+      <app-date-time-field [value]="end" [defaultsToNow]="true"
+                           [clearable]="true" clearLabel="Ryd sluttidspunkt"
+                           (valueChange)="end = $event"></app-date-time-field>
     </div>
 
     <div class="field-group">
@@ -60,22 +74,28 @@
       </mat-form-field>
     </div>
 
-    @if (durationLabel() || distanceLabel()) {
-      <p class="report-summary">
-        @if (durationLabel()) { Varighed: {{ durationLabel() }} }
-        @if (durationLabel() && distanceLabel()) { &middot; }
-        @if (distanceLabel()) { Afstand: {{ distanceLabel() }} }
-      </p>
-    }
+    <!-- Always rendered, with an em dash standing in until there's a figure for it. Both of these
+         only become computable part-way through filling the form in, and a block that appears
+         then resized the dialog under the driver's hands — this way the line is also a running
+         answer to "what have I told it so far". -->
+    <p class="report-summary">
+      Varighed: {{ durationLabel() ?? '—' }} &middot; Afstand: {{ distanceLabel() ?? '—' }}
+    </p>
 
     <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Bemærkninger</mat-label>
       <textarea matInput rows="4" [(ngModel)]="note" name="note"></textarea>
     </mat-form-field>
 
-    @if (error(); as msg) {
-      <div class="app-error">{{ msg }}</div>
-    }
+    <!-- Same reasoning, for the same reason the summary above is always there: the slot stays put
+         and the message appears inside it, so a value that contradicts another doesn't push the
+         dialog taller the moment it's typed. Sized in the .css for the longest message this form
+         produces. -->
+    <div class="form-error-slot">
+      @if (error(); as msg) {
+        <div class="app-error">{{ msg }}</div>
+      }
+    </div>
   </form>
 </mat-dialog-content>
 

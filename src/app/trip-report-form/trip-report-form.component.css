@@ -1,3 +1,11 @@
+/* The trip this report belongs to, directly under the dialog title — see the .html. Its own line
+   rather than part of the title, since a trip name can be long enough to wrap on a phone and the
+   title also carries the driver's name. */
+.trip-name {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
 .field-group {
   margin-bottom: 12px;
 }
@@ -48,6 +56,18 @@
 
 .report-summary {
   margin: 0 0 8px;
+  /* One line, always — durationLabel()/distanceLabel() fall back to an em dash rather than the
+     paragraph disappearing (see the .html), so this can't change the dialog's height. */
+  min-height: 1.25rem;
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
+}
+
+/* Holds the validation message, and holds its space when there isn't one. Sized for two lines of
+   .app-error (see styles.css: 12px padding top and bottom around ~1.25rem lines), which is what
+   the longest message here — '"Triptæller slut" kan ikke være mindre end "Triptæller start".' —
+   wraps to on a phone. Reserving it costs a quiet gap above the buttons; not reserving it moved
+   every control in the dialog the moment a driver typed a km reading in the wrong order. */
+.form-error-slot {
+  min-height: 4.5rem;
 }

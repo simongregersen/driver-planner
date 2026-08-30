@@ -16,6 +16,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 import {WriteFeedbackService} from '../write-feedback.service';
 import {guardDialogDismissal} from '../dialog-dismiss-guard';
+import {RichTextComponent} from '../rich-text/rich-text.component';
 import {formatDecimal, isValidDecimalInput, parseDecimal} from '../decimal-input';
 
 // A single driver's own report for one trip — opened either by that driver themselves from
@@ -57,6 +58,9 @@ export class TripReportFormComponent implements OnInit {
   // Null when the driver record has since been removed — the title already renders that case
   // as a plain "Chaufførrapport" with no name (see the template's @if).
   driver$!: Observable<Driver | null>;
+  /** The trip's name with its rich-text markup stripped — the dialog's subheading (see the
+   * .html). Set once in ngOnInit; the trip can't change while the dialog is open. */
+  tripName = '';
   /** Whether trip.reports[driverKey] already existed on open — gates the "Slet" button, which
    * only makes sense once there's actually a report to delete. */
   hasExistingReport = false;
@@ -91,6 +95,7 @@ export class TripReportFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.driver$ = this.dataStore.getDriver(this.driverKey);
+    this.tripName = RichTextComponent.toPlainText(this.trip.name);
 
     const existing = this.trip.reports?.[this.driverKey];
     this.hasExistingReport = !!existing;
@@ -105,10 +110,13 @@ export class TripReportFormComponent implements OnInit {
       this.endKmFromCustomer = existing.endKmFromCustomer;
       this.note = existing.note;
     } else {
-      // Reasonable starting points for a driver to adjust rather than blank fields — the trip's
-      // own schedule, not a guess at km.
+      // Start only. A report is typically written in two sittings — created as the driver sets
+      // off, then reopened when they get back to fill in Slut and the km — so the trip's
+      // scheduled start is a reasonable thing to adjust, while a pre-filled Slut would be a
+      // finish time nobody entered, sitting in a report that hasn't finished yet. The field
+      // instead seeds itself with the time it's actually filled in at (defaultsToNow in the
+      // .html). No guess at km either way.
       this.start = this.trip.start;
-      this.end = this.trip.end;
     }
     this.pristineSnapshot = this.snapshot();
   }

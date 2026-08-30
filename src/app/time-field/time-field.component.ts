@@ -9,6 +9,7 @@ import {MatTimepickerModule} from '@angular/material/timepicker';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {Moment} from 'moment';
 import {BreakpointService} from '../breakpoint.service';
+import {DateUtility} from '../date-utility';
 import {TIME_PICKER_DIALOG_CONFIG} from '../dialog-config';
 import {TimePickerDialogComponent, TimePickerDialogData} from '../time-picker-dialog/time-picker-dialog.component';
 
@@ -42,6 +43,13 @@ export class TimeFieldComponent implements ControlValueAccessor {
    * opening already showing Start's time instead of blank/now, on both the desktop dropdown and
    * the mobile wheel dialog. */
   fallbackTime = input<Moment | null>(null);
+  /** Same seeding, but with the time right now, rounded to minuteStep (see
+   * DateUtility.nowRoundedTo) — for a field that stands empty until the moment it's actually
+   * being filled in, where "now" is nearly always the answer (Chaufførrapport's Slut, filled in
+   * as the driver finishes). Read when the field is opened, not when it's rendered, so a dialog
+   * left sitting open still seeds the real current time, and both pickers open sitting on it.
+   * Takes precedence over fallbackTime; pair it with `clearable` for the same reason. */
+  defaultsToNow = input(false);
   /** Shows a clear button in the field's own suffix whenever it holds a value. Worth turning on
    * wherever `fallbackTime` is used: seeding commits a value on the very first click, so without
    * a way back, opening the field by accident leaves a value the user never chose and may not be
@@ -54,6 +62,7 @@ export class TimeFieldComponent implements ControlValueAccessor {
 
   readonly breakpoints = inject(BreakpointService);
   private readonly dialog = inject(MatDialog);
+  private readonly dateUtility = inject(DateUtility);
 
   readonly materialTimeControl = new FormControl<Moment | null>(null);
   readonly displayValue = signal('');
@@ -99,14 +108,28 @@ export class TimeFieldComponent implements ControlValueAccessor {
   // Desktop's own mat-timepicker already opens from its own toggle/input clicks independently,
   // so this only needs to act on mobile.
   onFieldClick(): void {
-    if (!this.materialTimeControl.value) {
-      const fallback = this.fallbackTime();
-      if (fallback) {
-        this.materialTimeControl.setValue(fallback);
-      }
-    }
+    this.seedIfEmpty();
     if (this.breakpoints.isMobile()) {
       this.open();
+    }
+  }
+
+  // Seeding has to happen before the click, not on it: mat-timepicker's input only re-renders a
+  // value it didn't get from the user while the input is unfocused, and the same click that
+  // seeds also focuses it and opens the dropdown — so a value set on click stayed invisible
+  // until the field was blurred, and the dropdown, having read the value before it was set,
+  // opened at the top of its list rather than at the seeded time. pointerdown runs before both.
+  onFieldPointerDown(): void {
+    this.seedIfEmpty();
+  }
+
+  private seedIfEmpty(): void {
+    if (this.materialTimeControl.value) {
+      return;
+    }
+    const seed = this.defaultsToNow() ? this.dateUtility.nowRoundedTo(this.minuteStep()) : this.fallbackTime();
+    if (seed) {
+      this.materialTimeControl.setValue(seed);
     }
   }
 

@@ -138,3 +138,17 @@ describe('DateUtility.range', () => {
     expect(result.map(d => d.format('YYYY-MM-DD'))).toEqual(['2026-03-15']);
   });
 });
+
+// What a field seeds itself with when it's opened empty — see TimeFieldComponent's defaultsToNow.
+// Both pickers only deal in whole steps, so an unrounded seed is a time neither of them can land
+// on.
+describe('DateUtility.nowRoundedTo', () => {
+  it('rounds the current time to a whole step, with no seconds left on it', () => {
+    const rounded = dateUtility.nowRoundedTo(15);
+
+    expect(rounded.minutes() % 15).toBe(0);
+    expect(rounded.seconds()).toBe(0);
+    expect(rounded.milliseconds()).toBe(0);
+    expect(Math.abs(rounded.diff(moment(), 'minutes'))).toBeLessThanOrEqual(8);
+  });
+});

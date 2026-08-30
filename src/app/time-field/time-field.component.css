@@ -23,3 +23,12 @@
   height: 18px;
   line-height: 18px;
 }
+
+/* The clear button and the clock/picker toggle both project into Material's single icon-suffix
+   container, whose children are inline-level — so in a narrow field (two of these share a row in
+   DateTimeFieldComponent) they wrapped and the clear button sat *above* the clock instead of
+   beside it. A flex row keeps them on one line, in DOM order. */
+.picker-field ::ng-deep .mat-mdc-form-field-icon-suffix {
+  display: flex;
+  align-items: center;
+}

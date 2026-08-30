@@ -172,6 +172,33 @@ html {
   }
 }
 
+/* Material caps a dialog's scrollable content at 65vh, which on a phone leaves an editor form
+   scrolling inside its own little window with most of the screen unused around it — the
+   Chaufførrapport, four readings and a note long, does not come close to fitting. Lifting the cap
+   off the content and putting one on the panel instead hands the arithmetic to the browser: the
+   dialog grows with its content up to almost the full screen, and only what still doesn't fit
+   scrolls. dvh, not vh, so the cap follows the browser's own retracting toolbars rather than
+   assuming the tallest case.
+     The content keeps overflow: auto from Material, which is also what lets it shrink inside the
+   capped panel at all — a flex item's automatic minimum size is zero only when it's a scroll
+   container. So a form taller than the screen still scrolls inside a dialog that stops at 92dvh;
+   nothing here lets one grow past the viewport. Only the two editor-dialog sizes opt in (see
+   FORM_DIALOG_PANEL_CLASS in dialog-config.ts); a confirm prompt has no business being
+   screen-height.
+     Qualified with .cdk-overlay-pane deliberately, for specificity rather than for reach: CDK's
+   own .cdk-overlay-pane { max-height: 100% } is loaded at runtime by its private style loader
+   when the first overlay opens, so it lands in the document *after* this stylesheet and would
+   win a same-specificity tie on source order. Two classes beat one whatever the order. */
+@media (max-width: 767px) {
+  .cdk-overlay-pane.app-form-dialog-panel {
+    max-height: 92dvh;
+  }
+
+  .app-form-dialog-panel .mat-mdc-dialog-content {
+    max-height: none;
+  }
+}
+
 /* TimePickerDialogComponent's own grey surface, matching the touchUi datepicker's calendar
    dialog (mat-datepicker-content uses --mat-sys-surface-container-high; MatDialog's own default
    is plain --mat-sys-surface, which reads as white/near-white by comparison) — see

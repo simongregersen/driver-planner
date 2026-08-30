@@ -40,6 +40,16 @@ export class DateUtility {
     return moment().startOf('day');
   }
 
+  /** The current date and time, rounded to the nearest `minuteStep` — what a field seeds itself
+   * with when it's opened empty and "now" is the answer (see TimeFieldComponent.defaultsToNow).
+   * Rounded because both pickers only deal in whole steps: the desktop dropdown scrolls to the
+   * option matching the value exactly, and the mobile wheel offers nothing in between. Moment
+   * carries an overflowing 60 into the next hour, and 23:58 into tomorrow. */
+  nowRoundedTo(minuteStep: number): Moment {
+    const now = moment().seconds(0).milliseconds(0);
+    return now.minutes(Math.round(now.minutes() / minuteStep) * minuteStep);
+  }
+
   equals(one: Moment | null, two: Moment | null): boolean {
     return !!(one && two && one.isSame(two, 'day'));
   }

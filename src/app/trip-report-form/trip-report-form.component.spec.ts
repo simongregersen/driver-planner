@@ -7,7 +7,7 @@ import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {TripReportFormComponent} from './trip-report-form.component';
 import {DataStore} from '../data.service';
-import {Trip} from '../trip';
+import {Trip, TripReport} from '../trip';
 
 describe('TripReportFormComponent', () => {
   let dataStore: {setTripReport: ReturnType<typeof vi.fn>; deleteTripReport: ReturnType<typeof vi.fn>; getDriver: ReturnType<typeof vi.fn>};
@@ -54,12 +54,17 @@ describe('TripReportFormComponent', () => {
   }
 
   describe('pre-fill', () => {
-    it('defaults start/end to the trip schedule when no report exists yet', async () => {
+    // Start comes from the trip's schedule; Slut deliberately does not. A report is written in
+    // two sittings — created when the driver sets off, finished when they get back — so a
+    // pre-filled finish time would be one nobody entered, on a trip that hasn't finished. The
+    // field seeds itself with the current time on the first tap instead (defaultsToNow in the
+    // .html).
+    it('defaults start to the trip schedule and leaves the finish blank, when no report exists yet', async () => {
       const fixture = create();
       const c = fixture.componentInstance;
       expect(c.hasExistingReport).toBe(false);
       expect(c.start!.isSame(tripStart)).toBe(true);
-      expect(c.end!.isSame(tripEnd)).toBe(true);
+      expect(c.end).toBeNull();
     });
 
     it('pre-fills from an existing report when one is present', async () => {
@@ -80,6 +85,82 @@ describe('TripReportFormComponent', () => {
       expect(c.startKmText).toBe('100');
       expect(c.startKm).toBe(100);
       expect(c.note).toBe('Forsinket');
+    });
+  });
+
+  // The title names the driver, and the dialog opens from two different lists — so the trip it
+  // belongs to has to be on the dialog itself, not left to whatever is behind it.
+  describe('naming the trip the report is for', () => {
+    it('shows the trip name under the title', () => {
+      const fixture = create();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('.trip-name')?.textContent).toContain('Randers tur');
+    });
+
+    // An admin's markup is for the trip lists, where a driver acts on it. Here the name is only
+    // saying which report this is, so the markers are stripped rather than rendered — and
+    // certainly not left showing as literal asterisks and brackets.
+    it('strips an admin\'s highlight and address markup instead of rendering it', () => {
+      const fixture = create({...trip, name: 'Randers **VIP** tur [Havnegade 3]'});
+      const line = (fixture.nativeElement as HTMLElement).querySelector('.trip-name')!;
+
+      expect(line.textContent).toBe('Randers VIP tur Havnegade 3');
+      expect(line.querySelector('a')).toBeNull();
+    });
+  });
+
+  // The dialog is filled in over two sittings and half-filled for most of that, so nothing in it
+  // may change size as values arrive — see the .html/.css around .report-summary and
+  // .form-error-slot. Each case renders the state it wants from an existing report, since these
+  // are plain properties on an OnPush component: setting one from a test marks nothing dirty,
+  // where in the app they arrive through ngModel/valueChange bindings that do.
+  describe('a dialog that keeps its size', () => {
+    function withReport(report: Partial<TripReport>): Trip {
+      return {
+        ...trip,
+        reports: {
+          d1: {
+            start: null, startFromCustomer: false, end: null, endFromCustomer: false,
+            startKm: null, startKmFromCustomer: false, endKm: null, endKmFromCustomer: false,
+            note: '', ...report,
+          },
+        },
+      };
+    }
+
+    function html(fixture: ReturnType<typeof create>): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('shows the summary line before there is anything to put in it', () => {
+      const summary = html(create()).querySelector('.report-summary')!;
+
+      expect(summary.textContent).toContain('—');
+    });
+
+    it('fills that same line in once the readings are there, rather than adding one', () => {
+      const fixture = create(withReport({
+        start: tripStart, end: tripStart.clone().add(2, 'hours'), startKm: 100, endKm: 180,
+      }));
+
+      const summaries = html(fixture).querySelectorAll('.report-summary');
+      expect(summaries).toHaveLength(1);
+      expect(summaries[0].textContent).toContain('2 t 00 min');
+      expect(summaries[0].textContent).toContain('80 km');
+    });
+
+    it('keeps the error slot in place while there is no error to show', () => {
+      const fixture = create();
+
+      expect(html(fixture).querySelector('.form-error-slot')).not.toBeNull();
+      expect(html(fixture).querySelector('.app-error')).toBeNull();
+    });
+
+    it('puts the message inside that slot rather than beside it', () => {
+      const fixture = create(withReport({start: tripStart, end: tripStart.clone().subtract(1, 'hour')}));
+
+      const error = html(fixture).querySelector('.form-error-slot .app-error');
+      expect(error?.textContent).toContain('kan ikke være før');
     });
   });
 

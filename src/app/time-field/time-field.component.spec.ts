@@ -32,6 +32,14 @@ describe('TimeFieldComponent', () => {
   describe('fallbackTime', () => {
     it('seeds the field on first open when it has no value of its own', () => {
       const fixture = create({fallbackTime: timeAt('09:00')});
+      fixture.componentInstance.onFieldPointerDown();
+      expect(fixture.componentInstance.materialTimeControl.value?.format('HH:mm')).toBe('09:00');
+    });
+
+    // Not every open starts with a pointer — a click synthesised by the keyboard has no
+    // pointerdown in front of it, so the click path still seeds too.
+    it('still seeds from a click on its own', () => {
+      const fixture = create({fallbackTime: timeAt('09:00')});
       fixture.componentInstance.onFieldClick();
       expect(fixture.componentInstance.materialTimeControl.value?.format('HH:mm')).toBe('09:00');
     });
@@ -41,6 +49,48 @@ describe('TimeFieldComponent', () => {
       fixture.componentInstance.writeValue(timeAt('14:30'));
       fixture.componentInstance.onFieldClick();
       expect(fixture.componentInstance.materialTimeControl.value?.format('HH:mm')).toBe('14:30');
+    });
+  });
+
+  describe('defaultsToNow', () => {
+    // pointerdown, not click: mat-timepicker's input won't re-render a value set while it has
+    // focus, and the click that seeds is the same one that focuses it and opens the dropdown.
+    it('seeds the field with the current time before the click that opens the picker', () => {
+      const fixture = create({defaultsToNow: true});
+
+      fixture.componentInstance.onFieldPointerDown();
+
+      const seeded = fixture.componentInstance.materialTimeControl.value!;
+      expect(Math.abs(seeded.diff(moment(), 'minutes'))).toBeLessThanOrEqual(3);
+    });
+
+    // The desktop dropdown scrolls to the option matching the value exactly, and to the top of
+    // the list when none does, so an unrounded seed would leave it sitting on 00:00.
+    it('rounds the seeded time to a whole minuteStep, which the pickers can land on', () => {
+      const fixture = create({defaultsToNow: true, minuteStep: 15});
+
+      fixture.componentInstance.onFieldPointerDown();
+
+      expect(fixture.componentInstance.materialTimeControl.value!.minutes() % 15).toBe(0);
+      expect(fixture.componentInstance.materialTimeControl.value!.seconds()).toBe(0);
+    });
+
+    it('leaves an existing value alone', () => {
+      const fixture = create({defaultsToNow: true});
+      fixture.componentInstance.writeValue(timeAt('14:30'));
+
+      fixture.componentInstance.onFieldPointerDown();
+      fixture.componentInstance.onFieldClick();
+
+      expect(fixture.componentInstance.materialTimeControl.value?.format('HH:mm')).toBe('14:30');
+    });
+
+    it('wins over a fallbackTime, which is the stale answer once both are given', () => {
+      const fixture = create({defaultsToNow: true, fallbackTime: timeAt('09:00')});
+
+      fixture.componentInstance.onFieldPointerDown();
+
+      expect(fixture.componentInstance.materialTimeControl.value?.format('HH:mm')).not.toBe('09:00');
     });
   });
 

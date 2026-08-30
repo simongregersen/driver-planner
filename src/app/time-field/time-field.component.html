@@ -1,4 +1,5 @@
-<mat-form-field class="picker-field" subscriptSizing="dynamic" (click)="onFieldClick()">
+<mat-form-field class="picker-field" subscriptSizing="dynamic"
+                (pointerdown)="onFieldPointerDown()" (click)="onFieldClick()">
   <mat-label>{{ label() }}</mat-label>
   @if (breakpoints.isMobile()) {
     <input matInput readonly [value]="displayValue()" [disabled]="materialTimeControl.disabled">
@@ -8,9 +9,9 @@
   <!-- Sits in the field's own suffix rather than beside it, so appearing and disappearing can't
        reflow the surrounding row. Rendered only when there is a value to clear. -->
   @if (clearable() && displayValue()) {
-    <button matIconButton matSuffix type="button" class="clear-button"
+    <button matIconButton matIconSuffix type="button" class="clear-button"
             [attr.aria-label]="clearLabel()" [matTooltip]="clearLabel()"
-            (click)="clear($event)">
+            (pointerdown)="$event.stopPropagation()" (click)="clear($event)">
       <mat-icon>close</mat-icon>
     </button>
   }
