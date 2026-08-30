@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject, input, OnInit, output} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal} from '@angular/core';
 import {AsyncPipe, DatePipe, NgTemplateOutlet} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatChipsModule} from '@angular/material/chips';
@@ -211,6 +211,21 @@ export class TripsComponent implements OnInit {
     if (!conflicts.length) return '';
     const parts = conflicts.map(t => `'${t.name}' ${Utility.timeRangeLabel(t)}`).join(', ');
     return `${name ?? 'Ressourcen'} er også tildelt: ${parts}.`;
+  }
+
+  /** The trip whose action buttons the pointer is currently over, if any — suppresses that row's
+   * "Ændret …" tooltip (see modifiedLabel and the <tr> in the .html).
+   *
+   * The row tooltip opens the moment the pointer crosses into the row, so by the time it reaches
+   * a button it is already sitting open below the row, competing with the button's own tooltip
+   * ("Marker som afsluttet", "Tilføj rapport", ...). Hovering the actions is a deliberate reach
+   * for one specific button, so the button's tooltip wins there and the row's steps aside.
+   * Desktop-only in practice: the row tooltip is off for touch (matTooltipTouchGestures). */
+  readonly hoveredActionsTripKey = signal<string | null>(null);
+
+  setActionsHovered(trip: Trip, hovered: boolean): void {
+    if (hovered) this.hoveredActionsTripKey.set(trip.$key);
+    else if (this.hoveredActionsTripKey() === trip.$key) this.hoveredActionsTripKey.set(null);
   }
 
   isRecentlyModified(trip: Trip): boolean {

@@ -684,6 +684,23 @@ describe('DataStore against the emulator', () => {
       expect(await firstValueFrom(store.getFuelReports('v1', DAY, DAY))).toEqual([]);
     }, 30000);
 
+    // The regression this pins: these reads were briefly one-time `get`s, so a driver's own list
+    // (FuelReportingComponent) only picked up the refuelling they had just saved once something
+    // re-created the component — switching tabs and back. Nothing re-subscribes here either.
+    it('pushes a newly added report to an already-open subscription', async () => {
+      const seen: number[][] = [];
+      const sub = store.getFuelReports('v1', DAY, DAY).subscribe(rs => seen.push(rs.map(r => r.odometerKm)));
+      try {
+        await eventually(() => expect(seen).toEqual([[]]));
+
+        await store.addFuelReport('v1', {date: at('09:00'), driverKey: 'd1', odometerKm: 1000, liters: 50});
+
+        await eventually(() => expect(seen.at(-1)).toEqual([1000]));
+      } finally {
+        sub.unsubscribe();
+      }
+    }, 30000);
+
     it('collects reports across the fleet, tagged with the vehicle they belong to', async () => {
       await store.addVehicle('Bus 1', 'Volvo', 'AB12345', null, false);
       const vehicles = await firstValueFrom(store.getAllVehicles());
@@ -731,6 +748,23 @@ describe('DataStore against the emulator', () => {
 
       await store.removeTankRefill(refill);
       expect(await firstValueFrom(store.getTankRefills(DAY, DAY))).toEqual([]);
+    }, 30000);
+
+    // Live for the same reason as the fuel reports above: the Tank section used to refresh only
+    // because FuelTrackingComponent re-read it by hand whenever its own dialog closed, which any
+    // future write path would have had to remember to do too.
+    it('pushes a newly added refill to an already-open subscription', async () => {
+      const seen: number[][] = [];
+      const sub = store.getTankRefills(DAY, DAY).subscribe(rs => seen.push(rs.map(r => r.liters)));
+      try {
+        await eventually(() => expect(seen).toEqual([[]]));
+
+        await store.addTankRefill({date: at('09:00'), liters: 2000, price: 25000});
+
+        await eventually(() => expect(seen.at(-1)).toEqual([2000]));
+      } finally {
+        sub.unsubscribe();
+      }
     }, 30000);
   });
 

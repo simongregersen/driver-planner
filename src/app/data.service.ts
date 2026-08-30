@@ -1,5 +1,5 @@
 import {Injectable, inject} from '@angular/core';
-import {child, endAt, endBefore, get, limitToLast, orderByChild, orderByKey, push, query, Query, ref, remove, serverTimestamp, startAt, update} from 'firebase/database';
+import {child, endAt, endBefore, get, limitToLast, orderByChild, orderByKey, push, query, ref, remove, serverTimestamp, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
 import {NewTrip, TemplateTripRecord, Trip, TripOffice, TripRecord, TripReport, toTemplateTrip, toTrip} from './trip';
 import {ClockRecord, StoredClockRecord, toClockRecord} from './clock-record';
@@ -404,13 +404,12 @@ export class DataStore {
     return remove(child(this.clockRecordsRef, `${driverKey}/${record.$key}`));
   }
 
-  // A one-time read rather than a live listener — unlike trips/clock records, this is a
-  // backward-looking date-range report (see FuelTrackingComponent/FuelReportingComponent) over
-  // data that's only ever written by whichever driver logged it, so another admin/driver
-  // changing it while the report happens to be open is rare enough that a manual reload covers
-  // it. Not worth keeping open the 2×N persistent Firebase connections (N = fleet size,
-  // multiplied by getFuelReportsForVehicles/getLatestFuelReportBefore below) a live listener per
-  // vehicle would cost every time this report is viewed.
+  // A live listener, like trips and clock records. This was briefly a one-time read — one fewer
+  // listener per vehicle on a page that opens one per vehicle it shows — but the saving wasn't
+  // worth what it cost: a driver's own refuelling then only appeared in their list (see
+  // FuelReportingComponent) once something happened to re-create the component, which from the
+  // driver's side looks simply like the app losing what they just typed in. Every write path
+  // would have had to re-trigger the read by hand, and the one that mattered most didn't.
   //
   // Keyed by vehicle rather than driver (see FuelReport's doc comment) — open-ended above when
   // `to` is omitted, same rationale as getClockRecords.
@@ -420,16 +419,7 @@ export class DataStore {
     const q = to
       ? query(vehicleRef, orderByChild('date'), startAt(fromDate.valueOf()), endAt(this.dateUtility.toMoment(to)!.add(1, 'days').valueOf() - 1))
       : query(vehicleRef, orderByChild('date'), startAt(fromDate.valueOf()));
-    return observableFrom(this.fetchFuelReports(q));
-  }
-
-  private async fetchFuelReports(q: Query): Promise<FuelReport[]> {
-    const snapshot = await get(q);
-    const reports: FuelReport[] = [];
-    snapshot.forEach(child => {
-      reports.push(toFuelReport({...(child.val() as FuelReportRecord), $key: child.key!}));
-    });
-    return reports;
+    return listVal<FuelReportRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.map(toFuelReport)));
   }
 
   addFuelReport(vehicleKey: string, report: NewFuelReport) {
@@ -481,24 +471,19 @@ export class DataStore {
   getLatestFuelReportBefore(vehicleKey: string, before: Moment): Observable<FuelReport | null> {
     const vehicleRef = child(this.fuelReportsRef, vehicleKey);
     const q = query(vehicleRef, orderByChild('date'), endAt(this.dateUtility.toMoment(before)!.valueOf() - 1), limitToLast(1));
-    return observableFrom(this.fetchFuelReports(q).then(reports => reports[0] ?? null));
+    return listVal<FuelReportRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.length ? toFuelReport(rs[0]) : null));
   }
 
   // Admin-only (see database.rules.json) — a flat collection, unlike fuelReports, since there's
-  // only one company tank rather than one per vehicle.
+  // only one company tank rather than one per vehicle. Live, like getFuelReports above and for
+  // the same reason: one listener on a low-volume node costs less than an invariant every future
+  // write path has to remember to honour. Cheaper here than there, in fact — one listener rather
+  // than one per vehicle — and it keeps the Tank section of the fuel page in step with the
+  // per-vehicle figures its kr/L is multiplied against.
   getTankRefills(from: Moment, to: Moment): Observable<TankRefill[]> {
     const fromDate = this.dateUtility.toMoment(from)!;
     const q = query(this.tankRefillsRef, orderByChild('date'), startAt(fromDate.valueOf()), endAt(this.dateUtility.toMoment(to)!.add(1, 'days').valueOf() - 1));
-    return observableFrom(this.fetchTankRefills(q));
-  }
-
-  private async fetchTankRefills(q: Query): Promise<TankRefill[]> {
-    const snapshot = await get(q);
-    const refills: TankRefill[] = [];
-    snapshot.forEach(child => {
-      refills.push(toTankRefill({...(child.val() as TankRefillRecord), $key: child.key!}));
-    });
-    return refills;
+    return listVal<TankRefillRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.map(toTankRefill)));
   }
 
   addTankRefill(refill: NewTankRefill) {

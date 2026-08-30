@@ -286,6 +286,28 @@ describe('TripsComponent read receipts', () => {
       expect(render({}).length).toBe(0);
     });
 
+    // The row's "Ændret …" tooltip opens as soon as the pointer crosses into the row, so it is
+    // already showing by the time the pointer reaches an action button with a tooltip of its own.
+    it('stands the row tooltip down while the pointer is over the action buttons', () => {
+      const fixture = TestBed.createComponent(TripsComponent);
+      fixture.componentRef.setInput('trips', [trip({modified: moment()})]);
+      fixture.componentRef.setInput('highlightModified', true);
+      fixture.componentRef.setInput('showFinishToggle', true);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      const row = host.querySelector('tr.hoverable')!;
+      const actions = host.querySelector('.cell-trip-actions')!;
+      expect(row.classList.contains('mat-mdc-tooltip-disabled')).toBe(false);
+
+      actions.dispatchEvent(new MouseEvent('mouseenter'));
+      fixture.detectChanges();
+      expect(row.classList.contains('mat-mdc-tooltip-disabled')).toBe(true);
+
+      actions.dispatchEvent(new MouseEvent('mouseleave'));
+      fixture.detectChanges();
+      expect(row.classList.contains('mat-mdc-tooltip-disabled')).toBe(false);
+    });
+
     it('stops rendering once everyone has read the change', () => {
       const fixture = TestBed.createComponent(TripsComponent);
       fixture.componentRef.setInput('trips', [trip({reads: {d1: read(VERSION)}})]);

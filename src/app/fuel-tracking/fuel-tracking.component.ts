@@ -147,14 +147,8 @@ export class FuelTrackingComponent {
     return selected.length ? all.filter(v => selected.includes(v.$key)) : all;
   });
 
-  // getFuelReports/getLatestFuelReportBefore below are one-time reads, not live listeners (see
-  // their own doc comments on why) — so nothing re-fetches on its own after a report is added,
-  // edited, or toggled. Bumping this is what makes those actions (see setExcludedFromStatistics,
-  // editRow, startFuelingAsAdmin) actually show up here afterwards.
-  private readonly refreshTrigger = signal(0);
-
   private readonly rawReports = toSignal(
-    combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from), toObservable(this.to), toObservable(this.refreshTrigger)]).pipe(
+    combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from), toObservable(this.to)]).pipe(
       switchMap(([vehicles, from, to]) => this.dataStore.getFuelReportsForVehicles(vehicles, from, to)),
     ) as Observable<(FuelReport & {vehicleKey: string; vehicleName: string})[] | null>,
     {initialValue: null},
@@ -165,7 +159,7 @@ export class FuelTrackingComponent {
   // below). Kept as the full report (not just its odometerKm) so it can also be shown as
   // context — see VehicleGroup.baselineRow — rather than only folded invisibly into the math.
   private readonly beforePeriodReadings = toSignal(
-    combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from), toObservable(this.refreshTrigger)]).pipe(
+    combineLatest([toObservable(this.vehiclesToQuery), toObservable(this.from)]).pipe(
       switchMap(([vehicles, from]) => vehicles.length
         ? combineLatest(vehicles.map(v => this.dataStore.getLatestFuelReportBefore(v.$key, from).pipe(
             map(r => r ? {vehicleKey: v.$key, vehicleName: v.displayName, report: r} : null),
@@ -180,7 +174,7 @@ export class FuelTrackingComponent {
   // Admin-only data (see database.rules.json) — gated on isAdmin() so a driver's session never
   // even issues the request, which would otherwise fail as permission-denied.
   private readonly tankRefills = toSignal(
-    combineLatest([toObservable(this.isAdmin), toObservable(this.from), toObservable(this.to), toObservable(this.refreshTrigger)]).pipe(
+    combineLatest([toObservable(this.isAdmin), toObservable(this.from), toObservable(this.to)]).pipe(
       switchMap(([isAdmin, from, to]) => isAdmin ? this.dataStore.getTankRefills(from, to) : of([]))
     ) as Observable<TankRefill[]>,
     {initialValue: [] as TankRefill[]},
@@ -369,18 +363,15 @@ export class FuelTrackingComponent {
   // else's behalf is a real case too — but it's pre-selected to the admin's own driver profile,
   // if they have one, since reporting their own refuelling is the far more common case.
   startFuelingAsAdmin(): void {
-    const dialogRef = this.dialog.open(FuelReportFormComponent, SMALL_DIALOG_CONFIG);
-    dialogRef.componentInstance.defaultDriverKey = this.ownDriverProfile()?.$key;
-    dialogRef.afterClosed().subscribe(() => this.refreshTrigger.update(n => n + 1));
+    const instance = this.dialog.open(FuelReportFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
+    instance.defaultDriverKey = this.ownDriverProfile()?.$key;
   }
 
   editRow(row: FuelReportRow): void {
-    const dialogRef = this.dialog.open(FuelReportFormComponent, SMALL_DIALOG_CONFIG);
-    const instance = dialogRef.componentInstance;
+    const instance = this.dialog.open(FuelReportFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
     instance.mode = 'edit';
     instance.vehicleKey = row.vehicleKey;
     instance.record = row;
-    dialogRef.afterClosed().subscribe(() => this.refreshTrigger.update(n => n + 1));
   }
 
   // Admin-only control, only ever reachable from this component's own admin table — see
@@ -391,24 +382,21 @@ export class FuelTrackingComponent {
         failureMessage: 'Kunne ikke ændre statistikindstillingen. Prøv igen.',
       })
       .then(outcome => {
-        // Reset the toggle rather than leaving it claiming a state that was never stored — the
-        // rows here come from a one-time read (see refreshTrigger), so nothing else would ever
-        // correct it.
+        // Reset the toggle rather than leaving it claiming a state that was never stored: a
+        // failed write leaves the stored value untouched, so the live listener behind these rows
+        // never fires and nothing else would correct it. A successful one needs nothing — that
+        // same listener re-renders the row.
         if (outcome === 'failed') event.source.checked = !!row.excludeFromStatistics;
-        else this.refreshTrigger.update(n => n + 1);
       });
   }
 
   addToTank(): void {
-    const dialogRef = this.dialog.open(TankRefillFormComponent, SMALL_DIALOG_CONFIG);
-    dialogRef.afterClosed().subscribe(() => this.refreshTrigger.update(n => n + 1));
+    this.dialog.open(TankRefillFormComponent, SMALL_DIALOG_CONFIG);
   }
 
   editTankRefill(refill: TankRefill): void {
-    const dialogRef = this.dialog.open(TankRefillFormComponent, SMALL_DIALOG_CONFIG);
-    const instance = dialogRef.componentInstance;
+    const instance = this.dialog.open(TankRefillFormComponent, SMALL_DIALOG_CONFIG).componentInstance;
     instance.mode = 'edit';
     instance.record = refill;
-    dialogRef.afterClosed().subscribe(() => this.refreshTrigger.update(n => n + 1));
   }
 }

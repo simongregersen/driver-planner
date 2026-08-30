@@ -157,6 +157,7 @@
             [class.trip-finished]="isFinished(trip)"
             [class.pointer]="!readonly()"
             [matTooltip]="showsModifiedFooter(trip) ? modifiedLabel(trip) : ''"
+            [matTooltipDisabled]="hoveredActionsTripKey() === trip.$key"
             matTooltipTouchGestures="off"
             (click)="onRowClick(trip)">
           <td data-label="Start">
@@ -223,7 +224,9 @@
                        reserved-padding corner, this only costs width on the line(s) it actually
                        shares, not every line of a long description. -->
                   @if (showFinishToggle() || showReportButton() || showReportsColumn() || showReadReceipts()) {
-                    <div class="trip-card-actions">
+                    <div class="trip-card-actions"
+                         (mouseenter)="setActionsHovered(trip, true)"
+                         (mouseleave)="setActionsHovered(trip, false)">
                       <ng-container [ngTemplateOutlet]="reportButton"></ng-container>
                       <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
                       <ng-container [ngTemplateOutlet]="reportsIndicator"></ng-container>
@@ -249,7 +252,11 @@
             <ng-container [ngTemplateOutlet]="vehicleChips"></ng-container>
           </td>
           @if (showFinishToggle() || showReportButton() || showReportsColumn() || showReadReceipts()) {
-            <td class="no-print cell-actions cell-trip-actions">
+            <!-- The buttons in here carry tooltips of their own, so the row's "Ændret …" tooltip
+                 stands down while the pointer is over them — see hoveredActionsTripKey. -->
+            <td class="no-print cell-actions cell-trip-actions"
+                (mouseenter)="setActionsHovered(trip, true)"
+                (mouseleave)="setActionsHovered(trip, false)">
               <div class="trip-actions-inner">
                 <ng-container [ngTemplateOutlet]="reportButton"></ng-container>
                 <ng-container [ngTemplateOutlet]="finishToggle"></ng-container>
