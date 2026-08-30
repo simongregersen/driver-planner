@@ -1,4 +1,5 @@
 import {TestBed} from '@angular/core/testing';
+import {By} from '@angular/platform-browser';
 import {flushWrites} from '../../test-helpers';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 import {ConfirmDialogComponent} from '../confirm-dialog/confirm-dialog.component';
@@ -6,6 +7,7 @@ import {MatSnackBar} from '@angular/material/snack-bar';
 import {EMPTY, of} from 'rxjs';
 import moment from 'moment';
 import {ClockRecordFormComponent} from './clock-record-form.component';
+import {TimeFieldComponent} from '../time-field/time-field.component';
 import {DataStore} from '../data.service';
 import {ClockRecord} from '../clock-record';
 
@@ -50,6 +52,30 @@ describe('ClockRecordFormComponent', () => {
     fixture.detectChanges();
     return fixture;
   }
+
+  // Nothing in an editor dialog may change size as it's filled in — see .form-error-slot in
+  // styles.css.
+  describe('a dialog that keeps its size', () => {
+    function html(fixture: ReturnType<typeof create>): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('keeps the error slot in place while there is no error to show', () => {
+      const fixture = create('edit', {record});
+
+      expect(html(fixture).querySelector('.form-error-slot')).not.toBeNull();
+      expect(html(fixture).querySelector('.app-error')).toBeNull();
+    });
+
+    it('puts the message inside that slot rather than beside it', () => {
+      const fixture = create('edit', {
+        record: {...record, clockOut: record.clockIn.clone().subtract(1, 'hour')},
+      });
+
+      const error = html(fixture).querySelector('.form-error-slot .app-error');
+      expect(error?.textContent).toContain('kan ikke være før');
+    });
+  });
 
   describe('create', () => {
     it('adds a clock-in record and closes the dialog on success', async () => {
@@ -115,10 +141,17 @@ describe('ClockRecordFormComponent', () => {
       expect(dialogRefClose).toHaveBeenCalled();
     });
 
-    it('clearClockOut() clears the end time', async () => {
+    // A shift that is still running has no end yet, so the field has to be clearable — through
+    // its own suffix button, the same way Chaufførrapport's Slut clears (see the .html), rather
+    // than through a method of this component's own.
+    it('clears the end time from the field itself', async () => {
       const fixture = create('edit', {record});
       const c = fixture.componentInstance;
-      c.clearClockOut();
+      const slut = fixture.debugElement.queryAll(By.directive(TimeFieldComponent)).at(-1)!
+        .componentInstance as TimeFieldComponent;
+
+      slut.clear(new MouseEvent('click'));
+
       expect(c.clockOut).toBeNull();
     });
   });

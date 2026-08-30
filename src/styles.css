@@ -468,6 +468,20 @@ body {
   color: var(--mat-sys-on-error-container);
 }
 
+/* Wraps an .app-error inside an editor dialog, and holds its space when there isn't one. A
+   validation message is written the moment a value contradicts another — mid-typing, in other
+   words — and a message box appearing there moved every control below it and grew the dialog
+   under the user's hands.
+     Sized for two lines of .app-error (its 12px padding top and bottom around ~1.25rem lines),
+   which is what the longest of these messages — '"Triptæller slut" kan ikke være mindre end
+   "Triptæller start".' — wraps to on a phone. The cost is a quiet gap above the buttons while
+   the form is valid; that's the trade, and it's the right way round for a form filled in on a
+   phone with one thumb. Not for the sign-in/driver-login errors, which report a failed request
+   rather than the state of a field being typed into. */
+.form-error-slot {
+  min-height: 4.5rem;
+}
+
 /* Chips
    ------------------------------------------------------------------ */
 

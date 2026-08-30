@@ -17,9 +17,14 @@
       <input matInput [(ngModel)]="note" name="note" placeholder="Fx kunde eller destination">
     </mat-form-field>
 
-    @if (error(); as msg) {
-      <div class="app-error">{{ msg }}</div>
-    }
+    <!-- The slot stays put and the message appears inside it, so a start/slut pair in the wrong
+         order doesn't grow the dialog the moment it's picked — see .form-error-slot in
+         styles.css. -->
+    <div class="form-error-slot">
+      @if (error(); as msg) {
+        <div class="app-error">{{ msg }}</div>
+      }
+    </div>
   </form>
 </mat-dialog-content>
 

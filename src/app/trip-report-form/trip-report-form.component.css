@@ -62,12 +62,3 @@
   font: var(--mat-sys-body-medium);
   color: var(--mat-sys-on-surface-variant);
 }
-
-/* Holds the validation message, and holds its space when there isn't one. Sized for two lines of
-   .app-error (see styles.css: 12px padding top and bottom around ~1.25rem lines), which is what
-   the longest message here — '"Triptæller slut" kan ikke være mindre end "Triptæller start".' —
-   wraps to on a phone. Reserving it costs a quiet gap above the buttons; not reserving it moved
-   every control in the dialog the moment a driver typed a km reading in the wrong order. */
-.form-error-slot {
-  min-height: 4.5rem;
-}

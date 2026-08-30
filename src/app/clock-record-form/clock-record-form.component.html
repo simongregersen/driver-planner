@@ -8,13 +8,14 @@
     </div>
 
     <div class="field-group field-end">
-      <div class="field-group-header">
-        <span class="field-group-title">Slut</span>
-        <button matIconButton type="button" aria-label="Ikke afsluttet endnu" matTooltip="Ikke afsluttet endnu" (click)="clearClockOut()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-      <app-date-time-field [value]="clockOut" [fallbackValue]="clockIn" (valueChange)="clockOut = $event"></app-date-time-field>
+      <span class="field-group-title">Slut</span>
+      <!-- clearable: a record legitimately has no end yet (a shift still running), and the clear
+           lives in the field's own suffix — the same affordance as Chaufførrapport's Slut and
+           TripFormComponent's Til tid, rather than a second close button up in the group header
+           that read as "close this section". -->
+      <app-date-time-field [value]="clockOut" [fallbackValue]="clockIn"
+                           [clearable]="true" clearLabel="Ikke afsluttet endnu"
+                           (valueChange)="clockOut = $event"></app-date-time-field>
     </div>
 
     <mat-form-field class="full-width" subscriptSizing="dynamic">
@@ -24,9 +25,14 @@
 
     <mat-slide-toggle [(ngModel)]="dognbetaling" name="dognbetaling">Døgnbetaling</mat-slide-toggle>
 
-    @if (error(); as msg) {
-      <div class="app-error">{{ msg }}</div>
-    }
+    <!-- The slot stays put and the message appears inside it, so a start/slut pair in the wrong
+         order doesn't grow the dialog the moment it's picked — see .form-error-slot in
+         styles.css. -->
+    <div class="form-error-slot">
+      @if (error(); as msg) {
+        <div class="app-error">{{ msg }}</div>
+      }
+    </div>
   </form>
 </mat-dialog-content>
 

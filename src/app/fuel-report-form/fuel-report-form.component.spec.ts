@@ -57,6 +57,45 @@ describe('FuelReportFormComponent', () => {
     return fixture;
   }
 
+  // The same reporting as the other editor dialogs: one message box at the foot of the form, in
+  // a slot that holds its space so the dialog is one size from open to save. See
+  // .form-error-slot in styles.css.
+  describe('error reporting', () => {
+    function html(fixture: ReturnType<typeof create>): HTMLElement {
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('keeps the slot in place while there is nothing to report', () => {
+      const fixture = create('create', {driverKey: 'd1'});
+
+      expect(html(fixture).querySelector('.form-error-slot')).not.toBeNull();
+      expect(html(fixture).querySelector('.app-error')).toBeNull();
+    });
+
+    it('reports an unparseable number in that slot', () => {
+      const fixture = create('create', {driverKey: 'd1'});
+      const c = fixture.componentInstance;
+      c.fuelReportForm.controls['liters'].setValue('ikke et tal');
+      fixture.detectChanges();
+
+      expect(c.error()).toBe('Angiv et gyldigt tal for "Brændstof".');
+      expect(html(fixture).querySelector('.form-error-slot .app-error')?.textContent)
+        .toContain('Brændstof');
+    });
+
+    // Opening a blank form and being told off for it is worse than saying nothing — the disabled
+    // submit button is what covers a field nobody has been near yet.
+    it('says nothing about a required field the user has not touched', () => {
+      const c = create('create').componentInstance;
+
+      expect(c.fuelReportForm.controls['vehicleKey'].hasError('required')).toBe(true);
+      expect(c.error()).toBeNull();
+
+      c.fuelReportForm.controls['vehicleKey'].markAsTouched();
+      expect(c.error()).toBe('Vælg et køretøj.');
+    });
+  });
+
   describe('create', () => {
     it('adds a fuel report with a comma decimal separator parsed correctly', async () => {
       const fixture = create('create', {driverKey: 'd1'});

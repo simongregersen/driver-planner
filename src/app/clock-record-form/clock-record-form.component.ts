@@ -3,10 +3,8 @@ import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatIconModule} from '@angular/material/icon';
 import {MatInputModule} from '@angular/material/input';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
-import {MatTooltipModule} from '@angular/material/tooltip';
 import moment, {Moment} from 'moment';
 import {ClockRecord} from '../clock-record';
 import {DataStore} from '../data.service';
@@ -42,7 +40,7 @@ export interface ClockRecordUpdates {
   styleUrls: ['./clock-record-form.component.css'],
   imports: [
     FormsModule,
-    MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSlideToggleModule, MatTooltipModule,
+    MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSlideToggleModule,
     DateTimeFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -98,10 +96,6 @@ export class ClockRecordFormComponent implements OnInit {
     this.note = isEdit ? (this.record.note ?? '') : '';
     this.dognbetaling = isEdit ? !!this.record.dognbetaling : false;
     this.pristineSnapshot = this.snapshot();
-  }
-
-  clearClockOut(): void {
-    this.clockOut = null;
   }
 
   error(): string | null {

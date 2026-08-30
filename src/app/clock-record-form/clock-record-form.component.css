@@ -2,12 +2,6 @@
   margin-bottom: 12px;
 }
 
-.field-group-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .field-group-title {
   font-weight: 600;
 }

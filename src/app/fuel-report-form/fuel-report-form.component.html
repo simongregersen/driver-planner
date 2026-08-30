@@ -15,9 +15,6 @@
             <mat-option [value]="vehicle.$key">{{ vehicle.displayName }}</mat-option>
           }
         </mat-select>
-        @if (fuelReportForm.controls['vehicleKey'].hasError('required')) {
-          <mat-error>Vælg et køretøj.</mat-error>
-        }
       </mat-form-field>
     }
 
@@ -29,9 +26,6 @@
             <mat-option [value]="driver.$key">{{ driver.displayName }}</mat-option>
           }
         </mat-select>
-        @if (fuelReportForm.controls['driverKey'].hasError('required')) {
-          <mat-error>Vælg en chauffør.</mat-error>
-        }
       </mat-form-field>
     }
 
@@ -44,24 +38,30 @@
       <mat-label>Triptæller</mat-label>
       <input matInput type="text" inputmode="numeric" formControlName="odometerKm">
       <span matSuffix>km</span>
-      @if (fuelReportForm.controls['odometerKm'].hasError('decimal')) {
-        <mat-error>Angiv et gyldigt tal.</mat-error>
-      }
     </mat-form-field>
 
     <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Brændstof</mat-label>
       <input matInput type="text" inputmode="numeric" formControlName="liters">
       <span matSuffix>L</span>
-      @if (fuelReportForm.controls['liters'].hasError('decimal')) {
-        <mat-error>Angiv et gyldigt tal.</mat-error>
-      }
     </mat-form-field>
 
     <mat-form-field class="full-width" subscriptSizing="dynamic">
       <mat-label>Bemærkning</mat-label>
       <textarea matInput rows="3" formControlName="note"></textarea>
     </mat-form-field>
+
+    <!-- One message box at the foot of the form, in a slot that holds its space — the same
+         reporting the other editor dialogs use (Chaufførrapport, Tidsregistrering; see
+         .form-error-slot in styles.css). It replaced a mat-error under each field: those
+         reserved a subscript line on every field to stop the dialog growing as they appeared,
+         which is a lot of permanent empty space to buy one line of text, and left this dialog
+         saying its piece somewhere the other two don't. -->
+    <div class="form-error-slot">
+      @if (error(); as msg) {
+        <div class="app-error">{{ msg }}</div>
+      }
+    </div>
   </form>
 </mat-dialog-content>
 

@@ -120,6 +120,26 @@ export class FuelReportFormComponent implements OnInit {
     }
   }
 
+  /** The one message this form shows, in the box at the foot of it — the same reporting
+   * TripReportFormComponent and ClockRecordFormComponent use, rather than a mat-error under each
+   * field (see the .html for why it moved).
+   *
+   * Only ever about a value that has actually been given: a required field left empty says
+   * nothing, since the submit button being disabled is what covers that, and telling someone off
+   * for not yet having filled in a form they just opened is worse than saying nothing. That's
+   * also what Material's own error state does for a mat-error, so the messages appear exactly
+   * when they used to. */
+  error(): string | null {
+    const controls = this.fuelReportForm?.controls;
+    if (!controls) return null;
+    const chosen = (name: string) => controls[name].touched && controls[name].hasError('required');
+    if (chosen('vehicleKey')) return 'Vælg et køretøj.';
+    if (chosen('driverKey')) return 'Vælg en chauffør.';
+    if (controls['odometerKm'].hasError('decimal')) return 'Angiv et gyldigt tal for "Triptæller".';
+    if (controls['liters'].hasError('decimal')) return 'Angiv et gyldigt tal for "Brændstof".';
+    return null;
+  }
+
   setDate(value: Moment | null): void {
     this.fuelReportForm.controls['date'].setValue(value);
   }
