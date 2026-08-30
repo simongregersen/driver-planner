@@ -16,6 +16,7 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 import {WriteFeedbackService} from '../write-feedback.service';
 import {guardDialogDismissal} from '../dialog-dismiss-guard';
+import {formatDecimal, isValidDecimalInput, parseDecimal} from '../decimal-input';
 
 // A single driver's own report for one trip — opened either by that driver themselves from
 // "Min dag" (TripsComponent's report button) or by an admin from Dagsplaner
@@ -67,11 +68,22 @@ export class TripReportFormComponent implements OnInit {
   startFromCustomer = true;
   end: Moment | null = null;
   endFromCustomer = true;
-  startKm: number | null = null;
+  // Raw text rather than numbers: like the fuel report's Triptæller, these are text inputs with
+  // inputmode="numeric" so the decimal separator doesn't depend on the browser's locale — see
+  // decimal-input.ts. startKm/endKm below are the parsed readings the rest of the form works on.
+  startKmText = '';
   startKmFromCustomer = false;
-  endKm: number | null = null;
+  endKmText = '';
   endKmFromCustomer = false;
   note = '';
+
+  get startKm(): number | null {
+    return parseDecimal(this.startKmText);
+  }
+
+  get endKm(): number | null {
+    return parseDecimal(this.endKmText);
+  }
 
   constructor() {
     guardDialogDismissal(this.dialogRef, () => this.snapshot() !== this.pristineSnapshot);
@@ -87,9 +99,9 @@ export class TripReportFormComponent implements OnInit {
       this.startFromCustomer = existing.startFromCustomer;
       this.end = existing.end;
       this.endFromCustomer = existing.endFromCustomer;
-      this.startKm = existing.startKm;
+      this.startKmText = formatDecimal(existing.startKm);
       this.startKmFromCustomer = existing.startKmFromCustomer;
-      this.endKm = existing.endKm;
+      this.endKmText = formatDecimal(existing.endKm);
       this.endKmFromCustomer = existing.endKmFromCustomer;
       this.note = existing.note;
     } else {
@@ -111,8 +123,8 @@ export class TripReportFormComponent implements OnInit {
     return JSON.stringify([
       this.start?.valueOf() ?? null, this.startFromCustomer,
       this.end?.valueOf() ?? null, this.endFromCustomer,
-      this.startKm, this.startKmFromCustomer,
-      this.endKm, this.endKmFromCustomer,
+      this.startKmText, this.startKmFromCustomer,
+      this.endKmText, this.endKmFromCustomer,
       this.note,
     ]);
   }
@@ -142,8 +154,9 @@ export class TripReportFormComponent implements OnInit {
   }
 
   distanceLabel(): string | null {
-    if (this.startKm == null || this.endKm == null || this.endKm < this.startKm) return null;
-    return `${this.endKm - this.startKm} km`;
+    const startKm = this.startKm, endKm = this.endKm;
+    if (startKm == null || endKm == null || endKm < startKm) return null;
+    return `${formatDecimal(Number((endKm - startKm).toFixed(3)))} km`;
   }
 
   // Nothing here is mandatory — a driver can save just a note, or just one reading, without the
@@ -153,6 +166,8 @@ export class TripReportFormComponent implements OnInit {
     if (this.start && !this.start.isValid()) return 'Ugyldig dato eller tid for "Start".';
     if (this.end && !this.end.isValid()) return 'Ugyldig dato eller tid for "Slut".';
     if (this.start && this.end && this.end.isBefore(this.start)) return '"Slut" kan ikke være før "Start".';
+    if (!isValidDecimalInput(this.startKmText)) return 'Angiv et gyldigt tal for "Triptæller start".';
+    if (!isValidDecimalInput(this.endKmText)) return 'Angiv et gyldigt tal for "Triptæller slut".';
     if (this.startKm != null && this.endKm != null && this.endKm < this.startKm) {
       return '"Triptæller slut" kan ikke være mindre end "Triptæller start".';
     }

@@ -1,7 +1,7 @@
 import {Injectable, inject} from '@angular/core';
 import {child, endAt, endBefore, get, limitToLast, orderByChild, orderByKey, push, query, Query, ref, remove, serverTimestamp, startAt, update} from 'firebase/database';
 import {listVal, objectVal} from 'rxfire/database';
-import {NewTrip, Trip, TripOffice, TripRecord, TripReport, toTrip} from './trip';
+import {NewTrip, TemplateTripRecord, Trip, TripOffice, TripRecord, TripReport, toTemplateTrip, toTrip} from './trip';
 import {ClockRecord, StoredClockRecord, toClockRecord} from './clock-record';
 import {FuelReport, FuelReportRecord, NewFuelReport, toFuelReport} from './fuel-report';
 import {NewTankRefill, TankRefill, TankRefillRecord, toTankRefill} from './tank-refill';
@@ -824,6 +824,9 @@ export class DataStore {
     });
   }
 
+  // Unlike updateTrip, this deliberately does NOT strip officeDescription/labels out of the
+  // payload: on a template they belong on the record itself rather than in /tripOffice (see
+  // TemplateTripRecord), so the bare spread below is what persists them.
   updateTripFromTemplate(template: Template, trip: Trip, updates: Partial<NewTrip>) {
     const payload: Record<string, unknown> = {...updates};
     if (updates.start) payload.start = updates.start.valueOf();
@@ -843,11 +846,16 @@ export class DataStore {
   // partially-inserted template if any of the writes failed.
   async insertTemplate(date: Moment, templateKey: string): Promise<string[]> {
     const tripsInTemplateRef = ref(db, `/tripsInTemplate/${templateKey}`);
-    const records = await firstValueFrom(listVal<TripRecord>(tripsInTemplateRef, {keyField: '$key'}).pipe(first()));
+    const records = await firstValueFrom(listVal<TemplateTripRecord>(tripsInTemplateRef, {keyField: '$key'}).pipe(first()));
     const refs = await Promise.all(records.map(record => {
       // The template stores each trip's own start/end; only their time-of-day carries over, with
       // the date replaced by the day being inserted into.
-      const trip = toTrip(record);
+      //
+      // toTemplateTrip rather than toTrip, so the admin-only officeDescription/labels survive the
+      // read: addTrip below is where they get split off onto /tripOffice, in the same atomic
+      // write as the trip itself. Mapping through toTrip here dropped them silently, and every
+      // inserted trip lost its note and labels.
+      const trip = toTemplateTrip(record);
       Utility.copyDate(date, trip.start);
       if (trip.end) Utility.copyDate(date, trip.end);
       return this.addTrip(trip);
@@ -855,9 +863,14 @@ export class DataStore {
     return refs.map(r => r.key!).filter(Boolean);
   }
 
+  // toTemplateTrip, not toTrip: a template trip carries officeDescription/labels on the record
+  // (see TemplateTripRecord). Reading these through toTrip dropped both, which not only hid them
+  // from the list but destroyed them on the next edit — the trip editor initializes its fields
+  // from the Trip it is given and resubmits all of them on save, so the blanks came straight back
+  // through updateTripFromTemplate.
   getTemplateTrips(template: Template): Observable<Trip[]> {
     const q = query(ref(db, `/tripsInTemplate/${template.$key}`), orderByChild('start'));
-    return listVal<TripRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.map(toTrip)));
+    return listVal<TemplateTripRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.map(toTemplateTrip)));
   }
 
   // Notes are low-volume (a handful of vacations/shop visits at a time) compared to trips, so

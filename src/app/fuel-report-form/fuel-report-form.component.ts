@@ -21,28 +21,13 @@ import {ConfirmDialogComponent, ConfirmDialogData} from '../confirm-dialog/confi
 import {CONFIRM_DIALOG_CONFIG} from '../dialog-config';
 import {WriteFeedbackService} from '../write-feedback.service';
 import {guardDialogDismissal} from '../dialog-dismiss-guard';
+import {formatDecimal, isValidDecimalInput, parseDecimal} from '../decimal-input';
 
 export type FuelReportFormMode = 'create' | 'edit';
 
-// <input type="number">'s decimal separator follows the browser's own locale rather than this
-// app's — Danish, throughout every other number this app displays (see DecimalPipe usage
-// elsewhere). These two fields are plain text inputs instead so a comma always works as the
-// decimal point regardless of the browser's locale; a period is accepted too, since some
-// devices/locales still produce one from their numeric keypad.
-function parseDecimal(value: string | number | null | undefined): number | null {
-  if (value == null || value === '') return null;
-  const parsed = Number(String(value).trim().replace(',', '.'));
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function formatDecimal(value: number | null | undefined): string {
-  return value == null ? '' : String(value).replace('.', ',');
-}
-
 function decimalValidator(control: AbstractControl): ValidationErrors | null {
   if (control.value == null || control.value === '') return null; // Validators.required covers emptiness
-  const parsed = parseDecimal(control.value);
-  return (parsed != null && parsed >= 0) ? null : {decimal: true};
+  return isValidDecimalInput(control.value) ? null : {decimal: true};
 }
 
 // Create and edit share one form, following VehicleFormComponent's convention. The vehicle

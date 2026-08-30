@@ -37,6 +37,7 @@
          what it advertises rather than being a dead control. -->
     <app-trips [trips]="(trips$ | async) ?? []"
                [showLabels]="true"
+               [showOfficeNotes]="true"
                [showWarnings]="false"
                (edit)="edit($event)"
                (removeDriver)="removeDriverFromTrip($event)"

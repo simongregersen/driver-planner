@@ -39,7 +39,7 @@
         </mat-button-toggle-group>
       </div>
       <mat-form-field class="full-width" subscriptSizing="dynamic">
-        <input matInput type="number" min="0" aria-label="Triptæller start, km" [(ngModel)]="startKm" name="startKm">
+        <input matInput type="text" inputmode="numeric" aria-label="Triptæller start, km" [(ngModel)]="startKmText" name="startKm">
         <span matSuffix>km</span>
       </mat-form-field>
     </div>
@@ -55,7 +55,7 @@
         </mat-button-toggle-group>
       </div>
       <mat-form-field class="full-width" subscriptSizing="dynamic">
-        <input matInput type="number" min="0" aria-label="Triptæller slut, km" [(ngModel)]="endKm" name="endKm">
+        <input matInput type="text" inputmode="numeric" aria-label="Triptæller slut, km" [(ngModel)]="endKmText" name="endKm">
         <span matSuffix>km</span>
       </mat-form-field>
     </div>

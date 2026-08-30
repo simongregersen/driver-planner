@@ -77,6 +77,7 @@ describe('TripReportFormComponent', () => {
       const c = fixture.componentInstance;
       expect(c.hasExistingReport).toBe(true);
       expect(c.start!.isSame(existingStart)).toBe(true);
+      expect(c.startKmText).toBe('100');
       expect(c.startKm).toBe(100);
       expect(c.note).toBe('Forsinket');
     });
@@ -107,11 +108,41 @@ describe('TripReportFormComponent', () => {
     it('does not submit when endKm is less than startKm', async () => {
       const fixture = create();
       const c = fixture.componentInstance;
-      c.startKm = 500;
-      c.endKm = 400;
+      c.startKmText = '500';
+      c.endKmText = '400';
       c.onSubmit();
       await fixture.whenStable();
       expect(dataStore.setTripReport).not.toHaveBeenCalled();
+    });
+
+    it('parses km readings with either decimal separator', async () => {
+      const fixture = create();
+      const c = fixture.componentInstance;
+      c.startKmText = '1234,5';
+      c.endKmText = '1240.5';
+      c.onSubmit();
+      await fixture.whenStable();
+      expect(dataStore.setTripReport).toHaveBeenCalledWith('t1', 'd1', expect.objectContaining({startKm: 1234.5, endKm: 1240.5}));
+    });
+
+    it('does not submit when a km reading is not a number', async () => {
+      const fixture = create();
+      const c = fixture.componentInstance;
+      c.startKmText = 'abc';
+      c.onSubmit();
+      await fixture.whenStable();
+      expect(dataStore.setTripReport).not.toHaveBeenCalled();
+      expect(c.error()).toBe('Angiv et gyldigt tal for "Triptæller start".');
+    });
+
+    it('does not submit a negative km reading', async () => {
+      const fixture = create();
+      const c = fixture.componentInstance;
+      c.endKmText = '-5';
+      c.onSubmit();
+      await fixture.whenStable();
+      expect(dataStore.setTripReport).not.toHaveBeenCalled();
+      expect(c.error()).toBe('Angiv et gyldigt tal for "Triptæller slut".');
     });
 
     it('shows a snackbar and leaves the dialog open when the write fails', async () => {

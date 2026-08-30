@@ -786,6 +786,88 @@ describe('DataStore against the emulator', () => {
       expect(inserted.drivers).toEqual(['d1']);
     }, 30000);
 
+    // The admin-only pair kept on the template record itself rather than in /tripOffice — see
+    // TemplateTripRecord. Both halves of the round trip matter: the write path always stored
+    // them, but the read path mapped through toTrip, which drops them for /trips.
+    it('keeps office notes and labels on a template trip across a read', async () => {
+      const template = await seedTemplate();
+      await store.addTripToTemplate(template, {
+        start: at('08:00'), end: at('10:00'), name: 'Skoletur',
+        officeDescription: 'Husk nøglen', labels: ['Fast', 'Skole'],
+        drivers: [], vehicles: [], vehicleAssignments: {},
+      });
+
+      const [templateTrip] = await firstValueFrom(store.getTemplateTrips(template));
+      expect(templateTrip.officeDescription).toBe('Husk nøglen');
+      expect(templateTrip.labels).toEqual(['Fast', 'Skole']);
+      // On the record, not in the side table: a template has no /tripOffice half at all.
+      expect(await rawAt(`tripOffice/${templateTrip.$key}`)).toBeNull();
+    }, 30000);
+
+    // The destructive half of the same bug: the trip editor initializes from the Trip it is given
+    // and resubmits every field on save, so a read that dropped these two fed blanks straight back
+    // through updateTripFromTemplate and erased them on the first edit.
+    it('does not blank office notes and labels when an edit resubmits them unchanged', async () => {
+      const template = await seedTemplate();
+      await store.addTripToTemplate(template, {
+        start: at('08:00'), end: at('10:00'), name: 'Skoletur',
+        officeDescription: 'Husk nøglen', labels: ['Fast'],
+        drivers: [], vehicles: [], vehicleAssignments: {},
+      });
+
+      const [templateTrip] = await firstValueFrom(store.getTemplateTrips(template));
+      // Exactly what TripFormComponent submits: every field, changed or not.
+      await store.updateTripFromTemplate(template, templateTrip, {
+        start: templateTrip.start, end: templateTrip.end, name: 'Omdøbt',
+        description: templateTrip.description,
+        officeDescription: templateTrip.officeDescription,
+        labels: templateTrip.labels,
+        drivers: templateTrip.drivers, vehicles: templateTrip.vehicles,
+        vehicleAssignments: templateTrip.vehicleAssignments ?? {},
+      });
+
+      const [updated] = await firstValueFrom(store.getTemplateTrips(template));
+      expect(updated.name).toBe('Omdøbt');
+      expect(updated.officeDescription).toBe('Husk nøglen');
+      expect(updated.labels).toEqual(['Fast']);
+    }, 30000);
+
+    // Insertion is where the two fields get split off onto /tripOffice, by addTrip's own atomic
+    // multi-path write — the template itself keeps them inline.
+    it('splits office notes and labels onto /tripOffice when a template is inserted', async () => {
+      const template = await seedTemplate();
+      await store.addTripToTemplate(template, {
+        start: moment('2020-01-01 08:00', 'YYYY-MM-DD HH:mm'), end: moment('2020-01-01 10:00', 'YYYY-MM-DD HH:mm'),
+        name: 'Skoletur', officeDescription: 'Husk nøglen', labels: ['Fast', 'Skole'],
+        drivers: [], vehicles: [], vehicleAssignments: {},
+      });
+
+      const [key] = await store.insertTemplate(DAY, template.$key);
+
+      // Not on the trip itself — a driver reading /trips must not see either field.
+      const rawTrip = await rawAt(`trips/${key}`);
+      expect(rawTrip?.['officeDescription']).toBeUndefined();
+      expect(rawTrip?.['labels']).toBeUndefined();
+
+      const [withOffice] = await firstValueFrom(store.getTripsWithOffice(DAY));
+      expect(withOffice.officeDescription).toBe('Husk nøglen');
+      expect(withOffice.labels).toEqual(['Fast', 'Skole']);
+    }, 30000);
+
+    // The sparse counterpart: a template trip with neither field must leave no /tripOffice record
+    // behind at all, exactly as addTrip does for a trip created by hand.
+    it('writes no /tripOffice record for an inserted trip with neither note nor labels', async () => {
+      const template = await seedTemplate();
+      await store.addTripToTemplate(template, {
+        start: moment('2020-01-01 08:00', 'YYYY-MM-DD HH:mm'), end: null,
+        name: 'Skoletur', drivers: [], vehicles: [], vehicleAssignments: {},
+      });
+
+      const [key] = await store.insertTemplate(DAY, template.$key);
+
+      expect(await rawAt(`tripOffice/${key}`)).toBeNull();
+    }, 30000);
+
     it('removes a template together with the trips inside it', async () => {
       const template = await seedTemplate();
       await store.addTripToTemplate(template, {

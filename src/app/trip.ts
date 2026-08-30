@@ -150,7 +150,10 @@ export interface TripReportRecord {
 }
 
 /** Carries no officeDescription/labels: those are not stored on the trip at all, but merged in
- * from the /tripOffice side table afterwards by DataStore.attachOffice. See TripOffice. */
+ * from the /tripOffice side table afterwards by DataStore.attachOffice. See TripOffice.
+ *
+ * That holds for /trips only. A trip stored inside a *template* keeps both fields on the record
+ * itself — see TemplateTripRecord below. */
 export interface TripRecord extends AngularFireObject {
   start?: number;
   end?: number | null;
@@ -163,6 +166,25 @@ export interface TripRecord extends AngularFireObject {
   multiDayStart?: number;
   reports?: Record<string, TripReportRecord>;
   reads?: Record<string, TripReadRecord>;
+}
+
+/** A trip stored inside a template, at /tripsInTemplate/$templateKey/$tripKey.
+ *
+ * The same shape as TripRecord plus the two admin-only fields, which live directly on the record
+ * here rather than in a side table. /tripsInTemplate is admin-only end to end (see
+ * database.rules.json) and templates are an office-only feature, so the reason /tripOffice exists
+ * — keeping these unreadable by drivers, since read access on /trips cascades — simply doesn't
+ * apply. Splitting them out here would buy nothing and cost a second node to keep in step.
+ *
+ * The split into /tripOffice happens on insertion instead: DataStore.insertTemplate hands each
+ * trip to addTrip, which already routes these two fields to /tripOffice in its own atomic write.
+ *
+ * Reading these through toTrip (which drops them, correctly, for /trips) is what previously made
+ * template labels and office notes invisible — and, because the trip editor resubmits every field
+ * on save, made the first edit of a template trip overwrite them with blanks. */
+export interface TemplateTripRecord extends TripRecord {
+  officeDescription?: string;
+  labels?: string[];
 }
 
 export function toTrip(record: TripRecord): Trip {
@@ -217,5 +239,17 @@ function toTripReport(record: TripReportRecord): TripReport {
     endKm: record.endKm ?? null,
     endKmFromCustomer: record.endKmFromCustomer ?? false,
     note: record.note ?? '',
+  };
+}
+
+
+/** Mirrors DataStore.attachOffice's own defaulting, so a template trip and an ordinary trip with
+ * office data attached are indistinguishable to everything downstream (the trip editor, the trip
+ * list's label chips, addTrip on insertion). */
+export function toTemplateTrip(record: TemplateTripRecord): Trip {
+  return {
+    ...toTrip(record),
+    officeDescription: record.officeDescription,
+    labels: record.labels ?? [],
   };
 }

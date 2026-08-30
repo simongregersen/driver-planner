@@ -1,5 +1,5 @@
 import moment from 'moment';
-import {toTrip, TripRecord} from './trip';
+import {TemplateTripRecord, toTemplateTrip, toTrip, TripRecord} from './trip';
 import {StoredClockRecord, toClockRecord} from './clock-record';
 import {FuelReportRecord, toFuelReport} from './fuel-report';
 import {TankRefillRecord, toTankRefill} from './tank-refill';
@@ -136,6 +136,56 @@ describe('toTrip', () => {
   });
 });
 
+describe('toTemplateTrip', () => {
+  it('gives a bare record every field Trip promises, plus empty labels', () => {
+    const trip = toTemplateTrip(BARE as TemplateTripRecord);
+
+    expect(trip.drivers).toEqual([]);
+    expect(trip.vehicles).toEqual([]);
+    expect(trip.name).toBe('');
+    expect(trip.end).toBeNull();
+    expect(trip.officeDescription).toBeUndefined();
+    // Unlike toTrip, which leaves this undefined: there is no side table to merge in here, so an
+    // absent key genuinely means "no labels" rather than "not looked up yet". Mirrors the
+    // defaulting DataStore.attachOffice applies to an ordinary trip.
+    expect(trip.labels).toEqual([]);
+  });
+
+  // The regression this mapper exists for: read through toTrip, these two were dropped, which hid
+  // them from the template list and — because the trip editor resubmits every field on save —
+  // blanked them on the next edit. See TemplateTripRecord.
+  it('keeps the admin-only fields the template stores on the record itself', () => {
+    const trip = toTemplateTrip({
+      $key: 'k1',
+      start: 1700000000000,
+      name: 'Skoletur',
+      officeDescription: 'Husk nøglen',
+      labels: ['Fast', 'Skole'],
+    } as TemplateTripRecord);
+
+    expect(trip.officeDescription).toBe('Husk nøglen');
+    expect(trip.labels).toEqual(['Fast', 'Skole']);
+  });
+
+  it('converts the rest of the record exactly as toTrip does', () => {
+    const record = {
+      $key: 'k1',
+      start: 1700000000000,
+      end: 1700003600000,
+      name: 'Skoletur',
+      drivers: ['d1'],
+      vehicles: ['v1'],
+      vehicleAssignments: {d1: 'v1'},
+    } as TemplateTripRecord;
+
+    expect(toTemplateTrip(record)).toEqual({
+      ...toTrip(record),
+      officeDescription: undefined,
+      labels: [],
+    });
+  });
+});
+
 describe('toNote', () => {
   it('gives a bare record the arrays Note promises', () => {
     const note = toNote(BARE as NoteRecord);
@@ -254,6 +304,7 @@ describe('every mapper', () => {
   // outright missing key, but not one filled in as `undefined` — this catches that too.
   const cases: [string, () => object][] = [
     ['toTrip', () => toTrip(BARE as TripRecord)],
+    ['toTemplateTrip', () => toTemplateTrip(BARE as TemplateTripRecord)],
     ['toNote', () => toNote(BARE as NoteRecord)],
     ['toClockRecord', () => toClockRecord(BARE as StoredClockRecord)],
     ['toDriver', () => toDriver(BARE as DriverRecord)],
