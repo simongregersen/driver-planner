@@ -172,13 +172,18 @@ html {
   }
 }
 
-/* Material caps a dialog's scrollable content at 65vh, which on a phone leaves an editor form
-   scrolling inside its own little window with most of the screen unused around it — the
-   Chaufførrapport, four readings and a note long, does not come close to fitting. Lifting the cap
-   off the content and putting one on the panel instead hands the arithmetic to the browser: the
+/* Material caps a dialog's scrollable content at 65vh, which leaves an editor form scrolling
+   inside its own little window with most of the screen unused around it — the Chaufførrapport on
+   a phone, four readings and a note long, does not come close to fitting, and neither does a trip
+   with several drivers and the "Tildel køretøjer" panel open on a desktop. Lifting the cap off
+   the content and putting one on the panel instead hands the arithmetic to the browser: the
    dialog grows with its content up to almost the full screen, and only what still doesn't fit
-   scrolls. dvh, not vh, so the cap follows the browser's own retracting toolbars rather than
+   scrolls. dvh, not vh, so the cap follows a mobile browser's retracting toolbars rather than
    assuming the tallest case.
+     Unconditional, not phone-only: 65vh is a fixed fraction of the screen no matter what the form
+   inside it needs, so it makes the same trade badly on a big monitor as on a phone — the taller
+   the screen, the more of it a form is made to scroll inside. 8dvh of backdrop still showing is
+   plenty to keep a desktop dialog reading as a dialog rather than as a page.
      The content keeps overflow: auto from Material, which is also what lets it shrink inside the
    capped panel at all — a flex item's automatic minimum size is zero only when it's a scroll
    container. So a form taller than the screen still scrolls inside a dialog that stops at 92dvh;
@@ -189,14 +194,12 @@ html {
    own .cdk-overlay-pane { max-height: 100% } is loaded at runtime by its private style loader
    when the first overlay opens, so it lands in the document *after* this stylesheet and would
    win a same-specificity tie on source order. Two classes beat one whatever the order. */
-@media (max-width: 767px) {
-  .cdk-overlay-pane.app-form-dialog-panel {
-    max-height: 92dvh;
-  }
+.cdk-overlay-pane.app-form-dialog-panel {
+  max-height: 92dvh;
+}
 
-  .app-form-dialog-panel .mat-mdc-dialog-content {
-    max-height: none;
-  }
+.app-form-dialog-panel .mat-mdc-dialog-content {
+  max-height: none;
 }
 
 /* TimePickerDialogComponent's own grey surface, matching the touchUi datepicker's calendar
