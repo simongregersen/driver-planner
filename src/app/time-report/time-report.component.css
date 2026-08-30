@@ -9,9 +9,8 @@
 
 /* Below the bottom-nav breakpoint (see app.component.css), period navigation is pinned above
    that bottom nav bar instead of sitting above a potentially long report — reachable with a
-   thumb without scrolling back up. Only the buttons move; the admin-only Chauffør filter
-   above them stays in normal flow, it's reached for far less often. The heading is dropped
-   since the buttons are self-explanatory once they're their own bottom toolbar. */
+   thumb without scrolling back up. The heading is dropped since the buttons are
+   self-explanatory once they're their own bottom toolbar. */
 @media (max-width: 1024px) {
   .periode-heading {
     display: none;
@@ -37,14 +36,15 @@
     padding-bottom: 68px;
   }
 
-  /* A non-admin driver never sees the Chauffør filter above, and the period nav right below
-     it is pinned out of flow (see .periode-nav above) — .page-aside renders with nothing
-     visible in it at all, making .page-main the effective first thing on the page. Its own
-     24px margin-top (styles.css) would otherwise stack with .container's own top padding
-     (also styles.css), doubling up the gap under the toolbar — same fix as my-trips/day-plans/
-     time-tracking, just conditional here since an admin's driver filter genuinely does need
-     that 24px gap below it. */
-  .page-aside.aside-empty + .page-main {
+  /* The period nav is the only thing in this page's sidebar and it's pinned out of flow (see
+     .periode-nav above), so .page-aside renders with nothing visible in it at all, making
+     .page-main the effective first thing on the page. Its own 24px margin-top (styles.css) would
+     otherwise stack with .container's own top padding (also styles.css), doubling up the gap
+     under the toolbar — same fix as my-trips/day-plans/time-tracking.
+       Unconditional, where this used to apply only to a driver: an admin's sidebar held the
+     Chauffør picker in flow above the nav, and no longer has one — the overview table is every
+     driver at once. */
+  .page-aside + .page-main {
     margin-top: 0;
   }
 }
@@ -56,99 +56,192 @@
   padding: 48px 0;
 }
 
-.week-heading {
-  margin: 24px 0 8px;
-  font: var(--mat-sys-title-large);
+/* --- The admin overview: drivers down, pay periods across ---------------------------------- */
+
+/* Never collapsed to cards on a phone (contrast .card-on-mobile): a matrix read as a stack of
+   cards stops being a matrix, and the whole point here is scanning a column of periods for the
+   ones nobody has ticked. It scrolls sideways instead, with the names pinned. */
+.overview-table {
+  /* A period column is a fixed width, not one sized to whatever the visible window happens to
+     contain. Two things follow from that, and both are the point of it:
+       Paging no longer moves the grid. Sized to content, a driver on 8:00 one fortnight and
+     132:45 the next resized every column under the pointer, and the columns stopped being
+     comparable at a glance because they were no longer the same size.
+       And a period costs a known amount of width, so the number of them that fits is a decision
+     rather than an accident — see PAY_PERIOD_COLUMNS in time-report.component.ts. 104px is the
+     widest figure a fortnight can hold (336:00) beside the toggle, with a little slack.
+       The name column is deliberately left auto: under a fixed layout the columns without a
+     stated width take the slack, so the table fills the page like every other .data-table in the
+     app while the periods stay exactly as wide as they need to be. */
+  --driver-col-min-width: 160px;
+  --period-col-width: 104px;
+  table-layout: fixed;
+  width: 100%;
+  /* The floor the fixed columns actually need, so a screen too narrow for them scrolls (see
+     .table-scroll) rather than crushing the names to nothing — a fixed layout will happily
+     collapse an auto column to zero to honour a stated table width. --period-count is bound from
+     the template, so this follows PAY_PERIOD_COLUMNS on its own; the fallback matches today's
+     value should the binding ever be dropped. */
+  min-width: calc(var(--driver-col-min-width) + var(--period-count, 8) * var(--period-col-width));
 }
 
-.week-heading:first-child {
-  margin-top: 0;
+/* Pinned so a driver's name stays readable while their periods scroll past it. Its own
+   background, since a sticky cell would otherwise be transparent over the rows moving under it.
+     Wraps rather than clipping or running under the next column, which is what a fixed layout
+     would otherwise do with an over-long name: this is the driver's kaldenavn ("Kim", "Bente"),
+     so the column is generous and the wrap is a safety valve rather than an expected state — but
+     a truncated name in a payroll table would be a real problem, and a widened row is not.
+     No width of its own — see .overview-table above: this is the column that takes up the slack
+     so the table can fill the page without stretching the periods. */
+.driver-cell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+  overflow-wrap: anywhere;
+  vertical-align: middle;
 }
 
-.day-block {
-  margin-bottom: 16px;
-}
-
-.day-heading-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 0 4px;
-}
-
-.day-heading {
-  margin: 0;
-  font: var(--mat-sys-title-medium);
-  text-transform: capitalize;
-}
-
-.day-trips {
-  margin: 0 0 6px;
-  padding-left: 18px;
-  font: var(--mat-sys-body-small);
-}
-
-.day-trip-time {
-  margin-right: 4px;
-}
-
-.week-total {
-  margin: 4px 0 0;
-  text-align: right;
-  font-weight: 600;
-}
-
-.period-total {
-  margin-top: 16px;
-  text-align: right;
-  font-weight: 600;
-}
-
-.in-progress {
+/* A driver who has left but still has hours or an unsettled period inside the window — see
+   TimeReportComponent.overviewDrivers. Dimmed rather than marked: they are here to be paid, not
+   to be acted on. */
+.driver-deleted {
+  color: var(--mat-sys-on-surface-variant);
   font-style: italic;
-  animation: pulse 1.4s ease-in-out infinite;
 }
 
-.report-start {
-  color: #2e7d32;
+/* .data-table thead th is nowrap globally, which would push the dates onto the same line as the
+   week numbers and widen every column by half again. The width here is what the fixed layout
+   above reads the column widths from — the first row's cells. */
+.period-heading {
+  width: var(--period-col-width);
+  white-space: normal;
+  text-align: center;
 }
 
-.report-end {
-  color: var(--mat-sys-error);
-}
-
-/* The date a shift that crossed midnight actually ended on — its own line under the end time,
-   in place of the asterisk-plus-tooltip this used to be. Sized and coloured like .overnight-date
-   in trips.component.css, which does the same job for a trip from the small hours: a quiet
-   annotation on the row rather than a second number to read.
-     Not muted away entirely, and deliberately not .no-print: on paper (a timesheet is printed
-   and signed) an unexplained 02:30 in a Slut column is a shift that looks 21 hours long. */
-.report-end-date {
-  font-size: 0.75em;
+.period-heading-dates {
+  font: var(--mat-sys-body-small);
   font-weight: 400;
-  line-height: 1.3;
-  color: var(--mat-sys-outline);
+  color: var(--mat-sys-on-surface-variant);
   white-space: nowrap;
 }
 
-/* Marks off Tid, the one column that's computed from the others, from the reported
-   Start/Slut/Bemærkning data (and the action button) to its left. */
-.col-computed {
-  border-left: 1px solid var(--mat-sys-outline-variant);
+/* Tighter than .data-table's own 8px sides: a period column is a six-character figure and a
+   26px toggle, so most of that padding was buying nothing but width — and every period column
+   pays for it again. */
+.period-heading,
+.period-cell {
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
-/* Each day renders its own <table>, so without a fixed layout their columns can
-   drift out of alignment depending on how much text lands in a given day's rows. Start/Slut/Tid
-   are just wide enough for their content (matching the Arbejdstid widget's table),
-   Bemærkning absorbs whatever's left. */
-.data-table {
-  table-layout: fixed;
+/* The icon button keeps Material's invisible 48px touch target (see .data-table
+   .mat-mdc-icon-button in styles.css), which extends 11px past its 26px visible edge. On every
+   other column that overhang lands harmlessly on the neighbour; on the last one it pokes past
+   the table's own right edge, and .table-scroll's overflow-x dutifully reports those few pixels
+   as a horizontal scrollbar on a screen with room to spare. Same fix, and the same reason, as
+   .cell-actions' padding-right in styles.css. */
+.period-heading:last-child,
+.period-cell:last-child {
+  padding-right: 12px;
 }
 
-.col-time {
-  width: 4.5em;
+.period-cell {
+  vertical-align: middle;
 }
 
-.col-actions {
-  width: 40px;
+.period-cell-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+/* The numbers themselves are the click target for the period dialog, so the cell reads as one
+   thing to open — but the checkmark beside them is its own button, which is why this is a button
+   rather than a click handler on the whole <td>. */
+.period-cell-open {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Hover lights the whole row and the whole column, not just the cell under the pointer. In a
+   matrix this wide and this sparse, a figure on its own says neither whose it is nor which
+   fortnight it belongs to without tracking a finger back to the edges — lighting both edges is
+   the answer to a question the table otherwise makes you answer yourself.
+     (hover: hover) excludes touchscreens throughout, for the reason given on
+   .data-table tbody tr.hoverable:hover in styles.css: without it a tap leaves the highlight stuck
+   on until the next tap somewhere else. */
+@media (hover: hover) {
+  .overview-table tbody tr:hover > :is(th, td) {
+    background-color: var(--mat-sys-surface-container);
+  }
+
+  /* CSS has no "same column as" selector, so each column index gets its own rule: if any cell in
+     column N is hovered, light every cell in column N. The header counts as a hover target too,
+     so running along the top row lights each period in turn.
+       Written out to 12 period columns, comfortably past PAY_PERIOD_COLUMNS (8) in
+     time-report.component.ts — raising that constant again should widen the table, not silently
+     stop the highlight at the thirteenth column. */
+  .overview-table:has(:is(thead th, tbody td):nth-child(2):hover) :is(th, td):nth-child(2),
+  .overview-table:has(:is(thead th, tbody td):nth-child(3):hover) :is(th, td):nth-child(3),
+  .overview-table:has(:is(thead th, tbody td):nth-child(4):hover) :is(th, td):nth-child(4),
+  .overview-table:has(:is(thead th, tbody td):nth-child(5):hover) :is(th, td):nth-child(5),
+  .overview-table:has(:is(thead th, tbody td):nth-child(6):hover) :is(th, td):nth-child(6),
+  .overview-table:has(:is(thead th, tbody td):nth-child(7):hover) :is(th, td):nth-child(7),
+  .overview-table:has(:is(thead th, tbody td):nth-child(8):hover) :is(th, td):nth-child(8),
+  .overview-table:has(:is(thead th, tbody td):nth-child(9):hover) :is(th, td):nth-child(9),
+  .overview-table:has(:is(thead th, tbody td):nth-child(10):hover) :is(th, td):nth-child(10),
+  .overview-table:has(:is(thead th, tbody td):nth-child(11):hover) :is(th, td):nth-child(11),
+  .overview-table:has(:is(thead th, tbody td):nth-child(12):hover) :is(th, td):nth-child(12),
+  .overview-table:has(:is(thead th, tbody td):nth-child(13):hover) :is(th, td):nth-child(13) {
+    background-color: var(--mat-sys-surface-container);
+  }
+
+  /* The click target itself, a shade stronger than the row and column crossing on it: the cell
+     holds two controls, and this is the half that opens the period rather than marking it paid. */
+  .period-cell-open:hover {
+    background: var(--mat-sys-surface-container-highest);
+  }
+}
+
+/* Døgn is not a footnote to the hours — a day-rate day is as much of the pay as an hourly one,
+   so it gets the same size and weight, on its own line only because the two are different units. */
+.period-dogn {
+  white-space: nowrap;
+}
+
+/* Settled: the same light green the trips list uses for a finished trip. The tint is what makes
+   an unticked period visible as a hole in the column at a glance; the icon says which is which
+   close up, so the cue never rests on colour alone.
+     A background-image rather than a background-color, so it layers *over* whatever colour is
+   underneath instead of competing with it — that is what lets the hover highlighting below paint
+   the cell without a settled period ceasing to look settled while the pointer is on it. */
+.period-cell-paid {
+  background-image: linear-gradient(rgba(46, 125, 50, 0.16), rgba(46, 125, 50, 0.16));
+}
+
+/* Grey outline when unset, green when set — the finish-toggle recipe from trips.component.css.
+   The icon overrides .data-table mat-icon's 16px: at that size a status marker reads as a
+   smudge rather than as a checkmark. */
+.paid-toggle mat-icon {
+  color: var(--mat-sys-outline);
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.paid-toggle-active mat-icon {
+  color: #2e7d32;
 }

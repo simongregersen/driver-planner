@@ -1,0 +1,21 @@
+<h2 mat-dialog-title>Timeseddel &ndash; {{ driverName }}</h2>
+
+<mat-dialog-content>
+  <!-- Which period this is, on its own line under the title rather than in it: the title already
+       carries the driver's name, and a date range wrapping into a heading on a phone reads
+       badly. Same treatment as .trip-name in trip-report-form. -->
+  <p class="period-range">{{ period.start.toDate() | date:'d. MMM' }} &ndash; {{ period.end.toDate() | date:'d. MMM y' }} &middot; {{ period.label }}</p>
+  <app-pay-period-report [driverKey]="driverKey" [periodStart]="periodStart"></app-pay-period-report>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <!-- The same mark the cell behind this dialog carries, offered here too: the natural order is
+       open the period, check it, then mark it — closing first and hunting for the cell again is
+       exactly the fiddliness worth avoiding. The cell updates itself from its own live listener. -->
+  <button [matButton]="paid() ? 'filled' : 'outlined'" type="button" class="paid-action" [class.paid-action-set]="paid()"
+          (click)="togglePaid()">
+    <mat-icon>{{ paid() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+    Udbetalt
+  </button>
+  <button matButton type="button" mat-dialog-close>Luk</button>
+</mat-dialog-actions>

@@ -229,6 +229,40 @@ async function tripWriteContract() {
     (await req('trips/t4/reads', {method: 'GET', as: 'adminU'})).json === null);
 }
 
+// Which pay periods have been settled with which driver — the admin Timeseddel's "Udbetalt"
+// mark. Admin-only for reading as well as writing, which is the part no client test can show:
+// the driver-facing UI simply never asks for this node, so a rule that exposed it would fail
+// nothing at all while telling every driver whether the office has processed their fortnight.
+async function paidPeriodRules() {
+  console.log('\nPaid pay periods — the office\'s own bookkeeping:');
+  check('an admin marks a period paid',
+    allowed(await req('paidPeriods/d1/2026-08-03', {as: 'adminU', body: true})));
+  check('an admin un-marks it again',
+    allowed(await req('paidPeriods/d1/2026-08-03', {as: 'adminU', method: 'DELETE'})));
+
+  await req('paidPeriods/d1/2026-08-03', {as: 'owner', body: true});
+  check('a driver cannot read their own mark',
+    denied(await req('paidPeriods/d1/2026-08-03', {method: 'GET', as: 'driverU'})));
+  check('a driver cannot enumerate the node',
+    denied(await req('paidPeriods', {method: 'GET', as: 'driverU'})));
+  check('a driver cannot mark their own period paid',
+    denied(await req('paidPeriods/d1/2026-08-17', {as: 'driverU', body: true})));
+  check('a driver cannot clear a mark',
+    denied(await req('paidPeriods/d1/2026-08-03', {as: 'driverU', method: 'DELETE'})));
+
+  // The value carries no information beyond its own presence, so anything but a literal true is
+  // a client that has misunderstood the node — including `false`, which would read as a settled
+  // period to anything that only checks whether the key exists.
+  check('false is rejected rather than stored as "not paid"',
+    denied(await req('paidPeriods/d1/2026-08-31', {as: 'adminU', body: false})));
+  check('a number is rejected',
+    denied(await req('paidPeriods/d1/2026-08-31', {as: 'adminU', body: 1})));
+  check('a string is rejected',
+    denied(await req('paidPeriods/d1/2026-08-31', {as: 'adminU', body: 'ja'})));
+  check('a nested object is rejected',
+    denied(await req('paidPeriods/d1/2026-08-31', {as: 'adminU', body: {at: 1000}})));
+}
+
 run(async () => {
   await seed();
   await tripReportRules();
@@ -236,4 +270,5 @@ run(async () => {
   await tripOfficeRules();
   await tripReadRules();
   await tripWriteContract();
+  await paidPeriodRules();
 });

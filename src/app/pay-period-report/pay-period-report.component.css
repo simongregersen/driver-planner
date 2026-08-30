@@ -1,0 +1,116 @@
+/* No box of its own: this sits directly inside Timeseddel's .page-main and inside the overview's
+   period dialog, and both supply their own spacing. */
+:host {
+  display: block;
+}
+
+.week-heading {
+  margin: 24px 0 8px;
+  font: var(--mat-sys-title-large);
+}
+
+.week-heading:first-child {
+  margin-top: 0;
+}
+
+.day-block {
+  margin-bottom: 16px;
+}
+
+.day-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 4px;
+}
+
+.day-heading {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  text-transform: capitalize;
+}
+
+.day-trips {
+  margin: 0 0 6px;
+  padding-left: 18px;
+  font: var(--mat-sys-body-small);
+}
+
+.day-trip-time {
+  margin-right: 4px;
+}
+
+.week-total {
+  margin: 4px 0 0;
+  text-align: right;
+  font-weight: 600;
+}
+
+.period-total {
+  margin-top: 16px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.in-progress {
+  font-style: italic;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* Defined here as well as in time-reporting.component.css, which is where this pulse started.
+   @keyframes names aren't scoped by Angular's emulated encapsulation, but a component's
+   stylesheet is only inserted once that component first renders — so while this rule lived on
+   the Timeseddel page (which never shows TimeReportingComponent) the animation silently did
+   nothing unless the driver had happened to open Arbejdstid earlier in the same session. */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.report-start {
+  color: #2e7d32;
+}
+
+.report-end {
+  color: var(--mat-sys-error);
+}
+
+/* The date a shift that crossed midnight actually ended on — its own line under the end time,
+   in place of the asterisk-plus-tooltip this used to be. Sized and coloured like .overnight-date
+   in trips.component.css, which does the same job for a trip from the small hours: a quiet
+   annotation on the row rather than a second number to read.
+     Not muted away entirely, and deliberately not .no-print: on paper (a timesheet is printed
+   and signed) an unexplained 02:30 in a Slut column is a shift that looks 21 hours long. */
+.report-end-date {
+  font-size: 0.75em;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--mat-sys-outline);
+  white-space: nowrap;
+}
+
+/* Marks off Tid, the one column that's computed from the others, from the reported
+   Start/Slut/Bemærkning data (and the action button) to its left. */
+.col-computed {
+  border-left: 1px solid var(--mat-sys-outline-variant);
+}
+
+/* Each day renders its own <table>, so without a fixed layout their columns can
+   drift out of alignment depending on how much text lands in a given day's rows. Start/Slut/Tid
+   are just wide enough for their content (matching the Arbejdstid widget's table),
+   Bemærkning absorbs whatever's left. */
+.data-table {
+  table-layout: fixed;
+}
+
+.col-time {
+  width: 4.5em;
+}
+
+.col-actions {
+  width: 40px;
+}

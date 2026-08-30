@@ -152,8 +152,9 @@
   /* .start-tankning-row is pinned out of flow above, leaving .page-aside empty on mobile — its
      own 24px margin-top (styles.css) would otherwise stack with .container's own top padding
      (also styles.css), doubling up the gap under the toolbar. Same fix as time-report's
-     .page-aside.aside-empty + .page-main, just scoped to .driver-main specifically since the
-     admin branch's aside (calendar + vehicle filter) still has real, visible content on mobile. */
+     .page-aside + .page-main, just scoped to .driver-main specifically since the admin branch's
+     aside (calendar + vehicle filter) still has real, visible content on mobile — where
+     time-report's sidebar, holding only its pinned period nav, is empty for either role. */
   .driver-main {
     padding-bottom: 76px;
     margin-top: 0;

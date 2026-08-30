@@ -106,7 +106,7 @@ describe('DataStore against the emulator', () => {
   beforeEach(async () => {
     await Promise.all(['trips', 'tripOffice', 'notes', 'drivers', 'vehicles', 'templates',
       'tripsInTemplate', 'clockRecords', 'fuelReports', 'tankRefills', 'public',
-      'notificationQueue'].map(node => asOwner(node, null)));
+      'notificationQueue', 'paidPeriods'].map(node => asOwner(node, null)));
     TestBed.configureTestingModule({});
     store = TestBed.inject(DataStore);
   });
@@ -284,6 +284,78 @@ describe('DataStore against the emulator', () => {
 
       expect(record.clockOut?.format('HH:mm')).toBe('16:00');
       expect(record.dognbetaling).toBe(true);
+    }, 30000);
+
+    // The overview table's fan-out. A clock record carries no driver key of its own — the path it
+    // was read from is the only thing that ties it to one — so the attaching this does is what
+    // makes the records sortable into per-driver rows at all.
+    it('reads several drivers at once, tagging each record with whose it is', async () => {
+      await store.addClockRecord('d1', at('08:00'), null, at('16:00'));
+      await store.addClockRecord('d2', at('09:00'), null, at('17:00'));
+
+      const drivers = [
+        {$key: 'd1', displayName: 'Kim', name: 'Kim', birthday: null, deleted: false},
+        {$key: 'd2', displayName: 'Bente', name: 'Bente', birthday: null, deleted: false},
+      ];
+      const records = await firstValueFrom(store.getClockRecordsForDrivers(drivers, DAY, DAY));
+
+      expect(records.map(r => r.driverKey).sort()).toEqual(['d1', 'd2']);
+      expect(records.find(r => r.driverKey === 'd1')!.clockIn.format('HH:mm')).toBe('08:00');
+    }, 30000);
+
+    it('reads no drivers at all as an empty list rather than hanging', async () => {
+      expect(await firstValueFrom(store.getClockRecordsForDrivers([], DAY, DAY))).toEqual([]);
+    }, 30000);
+  });
+
+  // The "Udbetalt" marks behind the admin overview. Stored as a bare `true` keyed by driver and
+  // pay-period start, like /public — so what matters is that a key's presence and absence both
+  // survive the round trip, and that unsetting removes the key rather than writing a false.
+  describe('paid pay periods', () => {
+    it('marks, lists and clears a period', async () => {
+      expect(await firstValueFrom(store.getPaidPeriods())).toEqual([]);
+
+      await store.setPeriodPaid('d1', '2026-08-03', true);
+      await store.setPeriodPaid('d2', '2026-07-20', true);
+
+      expect((await firstValueFrom(store.getPaidPeriods())).sort())
+        .toEqual(['d1/2026-08-03', 'd2/2026-07-20']);
+
+      await store.setPeriodPaid('d1', '2026-08-03', false);
+
+      expect(await firstValueFrom(store.getPaidPeriods())).toEqual(['d2/2026-07-20']);
+    }, 30000);
+
+    it('stores nothing but the key itself', async () => {
+      await store.setPeriodPaid('d1', '2026-08-03', true);
+
+      expect(await rawAt('paidPeriods/d1')).toEqual({'2026-08-03': true});
+    }, 30000);
+
+    // Clearing the last mark for a driver leaves RTDB with no node at all under that driver,
+    // which getPaidPeriods has to read as "none" rather than tripping over.
+    it('reads a driver whose every mark has been cleared as having none', async () => {
+      await store.setPeriodPaid('d1', '2026-08-03', true);
+      await store.setPeriodPaid('d1', '2026-08-03', false);
+
+      expect(await firstValueFrom(store.getPaidPeriods())).toEqual([]);
+      expect(await rawAt('paidPeriods')).toBeNull();
+    }, 30000);
+
+    // Live, like clock records and fuel reports: the table stays in step with a mark set from the
+    // period dialog stacked on top of it, without the dialog having to report back.
+    it('pushes a new mark to an already-open subscription', async () => {
+      const seen: string[][] = [];
+      const sub = store.getPaidPeriods().subscribe(keys => seen.push(keys));
+      try {
+        await eventually(() => expect(seen).toEqual([[]]));
+
+        await store.setPeriodPaid('d1', '2026-08-03', true);
+
+        await eventually(() => expect(seen.at(-1)).toEqual(['d1/2026-08-03']));
+      } finally {
+        sub.unsubscribe();
+      }
     }, 30000);
   });
 

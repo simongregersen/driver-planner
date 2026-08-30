@@ -227,6 +227,25 @@
       }
     },
 
+    // Which 14-day pay periods have been settled with which driver — "Udbetalt" on the admin
+    // Timeseddel. $periodKey is the period's start date, 'YYYY-MM-DD'; the value is a bare true,
+    // exactly like /public above, and an absent key means "not paid".
+    //
+    // Admin-only for reading too, unlike /public: this records that the office has processed the
+    // period, not that money has reached anyone, so an unticked box is not a statement a driver
+    // should be shown. The two wildcards below cover every reachable path and the leaf .validate
+    // rejects anything that isn't literal true, so the schema is closed without needing an
+    // explicit "$other".
+    "paidPeriods": {
+      ".read": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$driverKey": {
+        "$periodKey": {
+          ".validate": "newData.isBoolean() && newData.val() === true"
+        }
+      }
+    },
+
     "fcmTokens": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",

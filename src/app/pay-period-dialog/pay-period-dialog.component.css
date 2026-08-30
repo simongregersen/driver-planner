@@ -1,0 +1,16 @@
+/* The period this timesheet covers, directly under the dialog title — see the .html. */
+.period-range {
+  margin: 0 0 12px;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Green rather than the theme's primary blue when set, matching every other "done" affordance in
+   the app (the trips list's finish toggle, the day-plan publish switch). Material reads different
+   tokens per appearance, and this button switches between outlined and filled with its state, so
+   both are set — the same two-rule shape as .confirm-danger in styles.css. */
+.paid-action-set {
+  --mat-button-filled-container-color: #2e7d32;
+  --mat-button-filled-label-text-color: #fff;
+  --mat-button-filled-icon-color: #fff;
+}

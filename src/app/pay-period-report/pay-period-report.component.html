@@ -1,0 +1,113 @@
+@if (report(); as report) {
+  @if (report.weeks.length > 0) {
+    @for (week of report.weeks; track week.weekNumber) {
+      <h3 class="week-heading">Uge {{ week.weekNumber }}</h3>
+      @for (day of week.days; track day.date.valueOf()) {
+        <div class="day-block">
+          <div class="day-heading-row">
+            <h4 class="day-heading">{{ day.date.toDate() | date:'EEEE d/M' }}</h4>
+            <button matIconButton type="button" class="no-print" aria-label="Tilføj registrering" matTooltip="Tilføj registrering"
+                    (click)="addClockRecord(day.date)">
+              <mat-icon>add_circle</mat-icon>
+            </button>
+          </div>
+
+          @if (day.trips.length > 0) {
+            <ul class="day-trips no-print">
+              @for (trip of day.trips; track trip.key) {
+                <li class="muted">
+                  <span class="day-trip-time">{{ trip.start.toDate() | date:'HH:mm' }}@if (trip.end) { &ndash; {{ trip.end.toDate() | date:'HH:mm' }} }</span>
+                  <app-rich-text [text]="trip.name"></app-rich-text>
+                </li>
+              }
+            </ul>
+          }
+
+          <div class="table-scroll">
+            <table class="data-table">
+              <colgroup>
+                <col class="col-time">
+                <col class="col-time">
+                <col>
+                <col class="col-actions">
+                <col class="col-time">
+              </colgroup>
+              <thead>
+              <tr>
+                <th>Start</th>
+                <th>Slut</th>
+                <th>Bemærkning</th>
+                <th class="no-print"></th>
+                <th class="col-computed">Tid</th>
+              </tr>
+              </thead>
+              <tbody>
+                @for (dayRecord of day.records; track dayRecord.record.$key) {
+                  <tr class="hoverable">
+                    <td><span class="report-start">{{ dayRecord.record.clockIn.toDate() | date:'HH:mm' }}</span></td>
+                    <td>
+                      @if (dayRecord.record.clockOut) {
+                        <span class="report-end">{{ dayRecord.record.clockOut.toDate() | date:'HH:mm' }}</span>
+                        <!-- A shift that ran past midnight: the date it actually ended on, on
+                             its own line under the time — see the same block in
+                             time-reporting.component.html for why it's dated this briefly.
+                             Here the day it began is the heading this whole table sits under. -->
+                        @if (dayRecord.crossesDay) {
+                          <div class="report-end-date"
+                               [matTooltip]="dayRecord.record.clockOut.toDate() | date:'EEEE d. MMMM'">
+                            {{ dayRecord.record.clockOut.toDate() | date:'d/M' }}
+                          </div>
+                        }
+                      } @else {
+                        <span class="in-progress">I gang</span>
+                      }
+                    </td>
+                    <td class="muted note-cell">{{ dayRecord.record.note }}</td>
+                    <td class="no-print cell-actions">
+                      <button matIconButton type="button" aria-label="Rediger" matTooltip="Rediger"
+                              (click)="editClockRecord(dayRecord.record)">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </td>
+                    <td class="col-computed" [class.cell-warning]="dayRecord.hasError"
+                        [matTooltip]="dayRecord.hasError ? 'Slut er registreret før start' : ''">
+                      {{ dayRecord.durationLabel }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="muted no-print">Ingen registreringer denne dag.</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+              <tr class="row-total">
+                <td colspan="3">Total</td>
+                <td class="no-print"></td>
+                <td class="col-computed">{{ day.totalLabel }}</td>
+              </tr>
+              @if (day.dognCount > 0) {
+                <tr class="row-total">
+                  <td colspan="3">Døgnbetaling</td>
+                  <td class="no-print"></td>
+                  <td class="col-computed">{{ day.dognCount }} døgn</td>
+                </tr>
+              }
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      }
+      <p class="week-total">Total (uge {{ week.weekNumber }}): {{ week.totalLabel }}</p>
+      @if (week.dognCount > 0) {
+        <p class="week-total">Døgnbetaling (uge {{ week.weekNumber }}): {{ week.dognCount }} døgn</p>
+      }
+    }
+    <p class="period-total">I alt: {{ report.totalLabel }}</p>
+    @if (report.dognCount > 0) {
+      <p class="period-total">Døgnbetaling i alt: {{ report.dognCount }} døgn</p>
+    }
+  } @else {
+    <em class="no-print">Ingen ture eller registreringer i denne periode.</em>
+  }
+}

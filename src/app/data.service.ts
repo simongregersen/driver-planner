@@ -56,6 +56,7 @@ export class DataStore {
   private notificationQueueRef = ref(db, '/notificationQueue');
   private notesRef = ref(db, '/notes');
   private tripOfficeRef = ref(db, '/tripOffice');
+  private paidPeriodsRef = ref(db, '/paidPeriods');
 
   private readonly dateUtility = inject(DateUtility);
   private readonly notificationDispatch = inject(NotificationDispatchService);
@@ -412,6 +413,20 @@ export class DataStore {
     return listVal<StoredClockRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.map(toClockRecord)));
   }
 
+  // The admin Timeseddel's overview table, which needs one figure per driver per pay period
+  // across a window of several periods: one range query per driver, combined — the same fan-out
+  // getFuelReportsForVehicles does per vehicle. The driver key is attached here because a clock
+  // record, unlike a FuelReport, carries no owner of its own; the only thing tying it to a driver
+  // is the path it was read from.
+  getClockRecordsForDrivers(drivers: Driver[], from: Moment, to: Moment): Observable<(ClockRecord & {driverKey: string})[]> {
+    if (!drivers.length) return of([]);
+    return combineLatest(drivers.map(d =>
+      this.getClockRecords(d.$key, from, to).pipe(
+        map(rs => rs.map(r => ({...r, driverKey: d.$key})))
+      )
+    )).pipe(map(lists => lists.flat()));
+  }
+
   addClockRecord(driverKey: string, clockIn: Moment, note?: string | null, clockOut?: Moment | null, dognbetaling?: boolean) {
     return push(child(this.clockRecordsRef, driverKey), {clockIn: clockIn.valueOf(), clockOut: clockOut ? clockOut.valueOf() : null, note: note || null, dognbetaling: dognbetaling || null});
   }
@@ -671,6 +686,37 @@ export class DataStore {
     return objectVal<Record<string, boolean> | null>(q).pipe(
       map(dates => Object.keys(dates || {}))
     );
+  }
+
+  // --- Payroll: which pay periods have been settled ----------------------------------------
+  //
+  // /paidPeriods/$driverKey/$periodKey, valued with a bare `true` — the same shape as /public
+  // above, one level deeper, and read and written the same way. $periodKey is the period's start
+  // date as 'YYYY-MM-DD' (see PayPeriod.key). An absent key means "not paid", so there is nothing
+  // to migrate and nothing to convert: no record type, no mapper.
+  //
+  // Admin-only end to end (see database.rules.json). The mark records that the office has
+  // processed the period, not that money has moved — a box the admin hasn't got round to ticking
+  // would read to a driver as "I haven't been paid", which the data can't support.
+  //
+  // Read as one listener on the whole node rather than a query per driver: it is one boolean per
+  // driver per fortnight, a few hundred bytes a year, and the alternative is N more listeners for
+  // data this small. Deliberately not pruned by the retention cleanup either (see
+  // CleanupComponent): these are the receipt for clock records kept far longer, and deleting a
+  // mark whose records survive would make a settled period read as unpaid.
+
+  /** Every settled (driver, period) pair, as '$driverKey/$periodKey' paths. */
+  getPaidPeriods(): Observable<string[]> {
+    return objectVal<Record<string, Record<string, boolean>> | null>(this.paidPeriodsRef).pipe(
+      map(byDriver => Object.entries(byDriver || {}).flatMap(
+        ([driverKey, periods]) => Object.keys(periods || {}).map(periodKey => `${driverKey}/${periodKey}`)
+      ))
+    );
+  }
+
+  setPeriodPaid(driverKey: string, periodKey: string, paid: boolean) {
+    if (paid) return update(child(this.paidPeriodsRef, driverKey), {[periodKey]: true});
+    return remove(child(this.paidPeriodsRef, `${driverKey}/${periodKey}`));
   }
 
   // One multi-path update rather than one remove() per date — same rationale as removeTrips.
