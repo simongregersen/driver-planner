@@ -56,10 +56,17 @@ export class TripFormComponent implements OnInit {
   trip!: Trip;
   /** Used when mode is 'create' only. */
   defaultDate: Moment | null = null;
+  /** Whether this trip can be cancelled rather than only deleted (see Trip.deleted) — on for the
+   * real calendar trips TripEditingService edits, off for the template trips TemplatesComponent
+   * edits through this same dialog. A template trip isn't a booking anybody is driving to, so
+   * there is nobody to tell it's off; deleting one is simply removing a line from a list. */
+  canCancel = false;
 
   readonly save = output<NewTrip>();
   /** Emitted when mode is 'edit' and the user confirms deletion. */
   readonly remove = output<Trip>();
+  /** Emitted when the user confirms "Aflys" (true) or "Gendan" (false) — see canCancel. */
+  readonly setCancelled = output<boolean>();
 
   /** Set by whoever handles `save`/`remove` (TripEditingService, TemplatesComponent) for as long
    * as the resulting write is in flight, so the submit button can't be pressed a second time
@@ -331,6 +338,29 @@ export class TripFormComponent implements OnInit {
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
         this.remove.emit(this.trip);
+      }
+    });
+  }
+
+  /** "Aflys" and "Gendan" — the same button, either way round depending on where the trip
+   * currently stands. Both say what the drivers on the trip will see, because that is the whole
+   * difference between this and "Slet" beside it: the trip stays on their day, struck through,
+   * and they are notified. */
+  toggleCancelled() {
+    const cancelled = !this.trip.deleted;
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      ...CONFIRM_DIALOG_CONFIG,
+      data: {
+        message: cancelled
+          ? `Vil du aflyse turen\n'${this.trip.name}'?\n\nTuren bliver stående i planen som aflyst, og chaufførerne får besked.`
+          : `Vil du gendanne turen\n'${this.trip.name}'?\n\nTuren kommer til at gælde igen, og chaufførerne får besked.`,
+        confirmLabel: cancelled ? 'Aflys' : 'Gendan',
+        danger: cancelled,
+      } as ConfirmDialogData,
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.setCancelled.emit(cancelled);
       }
     });
   }

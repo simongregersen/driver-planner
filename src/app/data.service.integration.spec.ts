@@ -18,9 +18,9 @@
 import {TestBed} from '@angular/core/testing';
 import {createUserWithEmailAndPassword} from 'firebase/auth';
 import {goOffline} from 'firebase/database';
-import moment from 'moment';
+import moment, {Moment} from 'moment';
 import {firstValueFrom} from 'rxjs';
-import {DataStore} from './data.service';
+import {DataStore, DAY_PLAN_OVERNIGHT_HOURS} from './data.service';
 import {Template} from './template';
 import {Trip} from './trip';
 import {Utility} from './utility';
@@ -379,6 +379,42 @@ describe('DataStore against the emulator', () => {
     }, 30000);
   });
 
+  // A day's plan reaches DAY_PLAN_OVERNIGHT_HOURS past its own midnight (Min dag, Dagsplaner), so
+  // a trip leaving at 01:00 is planned on the evening it continues rather than backdated to 23:59
+  // to make it land on a page a driver would look at. The boundary itself is the whole feature —
+  // and it lives in an RTDB range query, where an off-by-one is invisible until a trip silently
+  // stops appearing — so it is pinned here against the real database rather than in a unit test.
+  describe('the overnight tail of a day plan', () => {
+    const nextDayAt = (hhmm: string) => moment(`2026-04-16 ${hhmm}`, 'YYYY-MM-DD HH:mm');
+
+    async function namesFor(overnightHours: number): Promise<string[]> {
+      const trips = await firstValueFrom(store.getTrips(DAY, DAY, overnightHours));
+      return trips.map(t => t.name);
+    }
+
+    async function seedAt(start: Moment, name: string): Promise<void> {
+      await store.addTrip({start, end: null, name, drivers: [], vehicles: [], vehicleAssignments: {}});
+    }
+
+    it('reaches into the small hours of the next morning, and stops there', async () => {
+      await seedAt(at('22:00'), 'aften');
+      await seedAt(nextDayAt('01:00'), 'natten');
+      await seedAt(nextDayAt('02:59'), 'lige inden for');
+      await seedAt(nextDayAt('03:30'), 'uden for');
+
+      // Ordered by start, so this also says the tail lands at the foot of the day rather than
+      // anywhere in the middle of it.
+      expect(await namesFor(DAY_PLAN_OVERNIGHT_HOURS)).toEqual(['aften', 'natten', 'lige inden for']);
+    }, 30000);
+
+    it('leaves a plain day query at midnight, as every report period still needs', async () => {
+      await seedAt(at('22:00'), 'aften');
+      await seedAt(nextDayAt('01:00'), 'natten');
+
+      expect(await namesFor(0)).toEqual(['aften']);
+    }, 30000);
+  });
+
   describe('public days', () => {
     it('publishes, reads back, and unpublishes a day', async () => {
       expect(await firstValueFrom(store.getDayPublic(DAY))).toBe(false);
@@ -446,6 +482,106 @@ describe('DataStore against the emulator', () => {
       // Nothing a driver can see changed, so no new stamp and no push.
       expect((await rawAt(`trips/${trip.$key}`))?.['modified']).toBe(before);
       expect(await rawAt('notificationQueue')).toBeNull();
+    }, 30000);
+  });
+
+  // "Aflys" rather than "Slet" (see Trip.deleted): the trip stays where the drivers on it are
+  // looking, struck through, instead of disappearing out from under them. The seam worth pinning
+  // here is that it stays a *whole* trip in storage — reports, receipts, name and all — and that
+  // the flag actually reaches, and leaves, the two read paths that disagree about it.
+  describe('cancelling a trip', () => {
+    /** getTrips' plan-view mode, the only one a cancelled trip is visible through. */
+    async function planTrips(): Promise<Trip[]> {
+      return firstValueFrom(store.getTrips(DAY, DAY, 0, true));
+    }
+
+    it('keeps the whole trip and marks it cancelled', async () => {
+      await store.setDayPublic(DAY, true);
+      const trip = await seedTrip({drivers: ['d1'], officeDescription: 'Husk nøgle'});
+
+      await store.setTripCancelled(trip, true);
+
+      const [cancelled] = await planTrips();
+      expect(cancelled.deleted).toBe(true);
+      // Cancelled, not blanked: a field-path write, so nothing else about the trip moved.
+      expect(cancelled.name).toBe('Tur');
+      expect(cancelled.start.format('HH:mm')).toBe('08:00');
+      expect(await rawAt(`tripOffice/${trip.$key}`)).not.toBeNull();
+    }, 30000);
+
+    it('is news like any other change: re-stamped, and every receipt stranded', async () => {
+      await store.setDayPublic(DAY, true);
+      const trip = await seedTrip({drivers: ['d1']});
+      const version = trip.modified!.valueOf();
+      await store.markTripRead(trip.$key, 'd1', version);
+
+      await store.setTripCancelled(trip, true);
+
+      const [cancelled] = await planTrips();
+      expect(cancelled.modified!.valueOf()).toBeGreaterThan(version);
+      // The receipt survives the write, but no longer matches — so Dagsplaner's unread warning
+      // now asks who has seen the cancellation, rather than who had seen the trip.
+      expect(cancelled.reads?.['d1']).toBeDefined();
+      expect(Utility.hasReadTrip(cancelled, 'd1')).toBe(false);
+    }, 30000);
+
+    it('notifies the drivers who were on it', async () => {
+      // Its own driverId rather than the shared 'd1', for the same reason as the addTrip
+      // notification test above: /users is the one node beforeEach leaves alone.
+      await asOwner('users/notify-cancel', {role: 'driver', driverId: 'cancel-driver'});
+      await eventually(async () => {
+        expect((await firstValueFrom(store.getAllUsers()))['notify-cancel']).toBeDefined();
+      });
+      await store.setDayPublic(DAY, true);
+      const trip = await seedTrip({drivers: ['cancel-driver']});
+      await asOwner('notificationQueue', null);
+
+      await store.setTripCancelled(trip, true);
+
+      const queued = Object.values((await rawAt('notificationQueue')) ?? {}) as Record<string, unknown>[];
+      expect(queued).toHaveLength(1);
+      expect(queued[0]['uids']).toEqual(['notify-cancel']);
+      expect(queued[0]['title']).toBe('Din tur er aflyst');
+      await asOwner('users/notify-cancel', null);
+    }, 30000);
+
+    it('drops out of every view but the plan views', async () => {
+      await store.setDayPublic(DAY, true);
+      const trip = await seedTrip();
+
+      await store.setTripCancelled(trip, true);
+
+      // The default: a Timeseddel must not count it, and the trip editor must not warn about
+      // double-booking against it.
+      expect(await firstValueFrom(store.getTrips(DAY))).toEqual([]);
+      expect(await firstValueFrom(store.getTripsWithOffice(DAY))).toEqual([]);
+      expect((await planTrips()).map(t => t.$key)).toEqual([trip.$key]);
+    }, 30000);
+
+    it('leaves no trace of the flag once the trip is restored', async () => {
+      await store.setDayPublic(DAY, true);
+      const trip = await seedTrip();
+      await store.setTripCancelled(trip, true);
+
+      await store.setTripCancelled(trip, false);
+
+      // Written as null, not false — an absent key, so the field stays as sparse as actual use
+      // and a restored trip is indistinguishable from one that was never cancelled.
+      expect((await rawAt(`trips/${trip.$key}`))?.['deleted']).toBeUndefined();
+      expect((await onlyTrip()).deleted).toBe(false);
+    }, 30000);
+
+    it('says nothing on a day nobody can open yet', async () => {
+      await store.setDayPublic(DAY, false);
+      const trip = await seedTrip({drivers: ['d1']});
+
+      await store.setTripCancelled(trip, true);
+
+      // Same gate as addTrip/updateTrip: no audience, no news. The flag still lands, so the
+      // office sees its own cancellation on the plan.
+      const [cancelled] = await planTrips();
+      expect(cancelled.deleted).toBe(true);
+      expect(cancelled.modified).toBeUndefined();
     }, 30000);
   });
 

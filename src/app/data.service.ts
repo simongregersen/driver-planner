@@ -25,6 +25,18 @@ import {NotificationDispatchService} from './notification-dispatch.service';
 // stop appearing on its later days once it's this far in the past.
 const MULTI_DAY_LOOKBACK_DAYS = 30;
 
+// How far past midnight a single day's plan reaches, in hours — see getTrips' `overnightHours`.
+//
+// A trip leaving at 01:00 is the tail end of the previous evening's work to the driver who has to
+// be at it, not "tomorrow": a day that stopped dead at 23:59 meant such a trip only ever appeared
+// on a plan the driver had no reason to be looking at yet, and the office had taken to booking it
+// at 23:59 with the real departure written into the name to force it onto the right page. Both
+// Min dag and Dagsplaner therefore ask for this much of the following night as well. The trips it
+// pulls in are shown as belonging to the next day rather than as one of this day's own — dimmed,
+// and dated — since they also appear on that day's plan in their own right (see
+// TripsComponent.startsAfterReference).
+export const DAY_PLAN_OVERNIGHT_HOURS = 3;
+
 // How long isDayPublicNow waits for /public before assuming "not public" and letting the trip
 // write proceed regardless — see its own comment. Generous enough that a merely slow connection
 // still gets the right answer, short enough that an offline save isn't left hanging.
@@ -70,10 +82,23 @@ export class DataStore {
   // trips are uncommon, this instead fetches them via their own sparse multiDayStart index (see
   // addTrip/updateTrip) — present only on multi-day trips, so this stays cheap regardless of
   // how many ordinary single-day trips exist — and merges that with the normal windowed query.
-  getTrips(from: Moment, to?: Moment): Observable<Trip[]> {
+  //
+  // `overnightHours` extends the window that far past the last day's midnight, without moving the
+  // day boundary itself: it is the only way a trip in the small hours of the following morning can
+  // reach a day's plan at all, since it belongs to the next calendar day by every other measure
+  // (its own date, the /public day that publishes it). See DAY_PLAN_OVERNIGHT_HOURS. Zero — no
+  // extension, whole calendar days exactly — everywhere the window is a report period rather than
+  // a plan (Timeseddel, Periodeplaner), where a day is a day.
+  //
+  // `includeDeleted` keeps soft-deleted trips in the result (see Trip.deleted). Off by default,
+  // because a cancelled trip is a message to the drivers who were on it rather than a booking:
+  // it must not be counted in a Timeseddel, warned about as a double-booking by the trip editor,
+  // or planned around in a period overview. On only in the two day-plan views that are that
+  // message's delivery — Min dag and Dagsplaner — where it shows as struck through and cancelled.
+  getTrips(from: Moment, to?: Moment, overnightHours = 0, includeDeleted = false): Observable<Trip[]> {
     const fromDate = this.dateUtility.toMoment(from)!;
     const toDate = (to) ? this.dateUtility.toMoment(to)! : moment(fromDate);
-    toDate.add(1, 'days');
+    toDate.add(1, 'days').add(overnightHours, 'hours');
 
     const inWindow$ = listVal<TripRecord>(
       query(this.tripsRef, orderByChild('start'), startAt(fromDate.valueOf()), endAt(toDate.valueOf() - 1)),
@@ -96,7 +121,7 @@ export class DataStore {
       // at $key — so toTrip runs once per trip instead of once per query hit, with the duplicate
       // a multi-day trip makes across both windows dropped before it is paid for.
       map(([inWindow, multiDay]) => Utility.mergeTripWindows(inWindow, multiDay)),
-      map(rs => rs.map(toTrip).filter(t => Utility.tripOverlaps(t, fromDate, toDate)))
+      map(rs => rs.map(toTrip).filter(t => (includeDeleted || !t.deleted) && Utility.tripOverlaps(t, fromDate, toDate)))
     );
   }
 
@@ -120,9 +145,9 @@ export class DataStore {
   // multi-path update (see updateTrip), so the trip listener firing is itself the signal to
   // re-read. A record is absent for every trip with no note and no labels — the common case —
   // which keeps both this node and these reads small.
-  getTripsWithOffice(from: Moment, to?: Moment): Observable<Trip[]> {
+  getTripsWithOffice(from: Moment, to?: Moment, overnightHours = 0, includeDeleted = false): Observable<Trip[]> {
     return combineLatest([
-      this.getTrips(from, to),
+      this.getTrips(from, to, overnightHours, includeDeleted),
       this.officeUpdated$.pipe(startWith(undefined)),
     ]).pipe(
       map(([trips]) => trips),
@@ -507,10 +532,45 @@ export class DataStore {
   // Removes the trip and its /tripOffice half together, so deleting a trip can't leave an
   // orphaned office record behind — which would otherwise accumulate invisibly and, worse,
   // re-attach itself to a future trip that happened to reuse the key.
+  //
+  // This is the office saying the trip should never have been there. For a trip that was going to
+  // happen and now isn't, see setTripCancelled below — that one leaves the trip on the plan, said
+  // out loud, which is what the drivers on it actually need. Deleting is also how a cancelled
+  // trip is finally taken off a plan, once the notice has done its job.
   removeTrip(trip: Trip) {
     return update(ref(db), {
       [`/trips/${trip.$key}`]: null,
       [`/tripOffice/${trip.$key}`]: null,
+    });
+  }
+
+  // Cancels a trip (or takes the cancellation back) without removing it: it stays in Min dag and
+  // Dagsplaner, struck through on a red row, because a driver who has been told to drive
+  // somewhere has to be told when that is called off. A row that simply vanishes from their day
+  // tells them nothing — the trip they read yesterday is still the trip they think they are
+  // driving tomorrow, and they turn up for it. See Trip.deleted, and TripFormComponent's "Aflys".
+  //
+  // A cancellation is a trip change like any other, so it gets exactly what an edit gets, gated
+  // on the same public-day check as addTrip/updateTrip (a day nobody can open yet has nobody to
+  // tell): the `modified` stamp — which also strands every read receipt, so Dagsplaner's unread
+  // warning starts tracking who has seen the *cancellation* rather than who had seen the trip —
+  // and a push notification to the drivers who were on it.
+  //
+  // Written as a field path rather than a whole-object write, same as updateTrip: everything else
+  // about the trip, including the driver-written reports and reads subtrees, stays exactly as it
+  // was. The trip is cancelled, not blanked. `false` is written as null — an absent key, which
+  // toTrip already reads as "not cancelled" — so an uncancelled trip leaves no trace of having
+  // been one and the field stays as sparse as actual use.
+  setTripCancelled(trip: Trip, cancelled: boolean): Promise<void> {
+    return this.isDayPublicNow(trip.start).then(async isPublic => {
+      await update(ref(db), {
+        [`/trips/${trip.$key}/deleted`]: cancelled || null,
+        ...(isPublic ? {[`/trips/${trip.$key}/modified`]: moment().valueOf()} : {}),
+      });
+      if (isPublic) {
+        const title = cancelled ? 'Din tur er aflyst' : 'Din tur er genoprettet';
+        this.enqueueTripChangeNotification(trip.drivers, trip.name, trip.start, title);
+      }
     });
   }
 

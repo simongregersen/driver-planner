@@ -40,6 +40,14 @@ describe('toTrip', () => {
     expect(trip.name).toBe('');
     expect(trip.end).toBeNull();
     expect(moment.isMoment(trip.start)).toBe(true);
+    // The key is written only by a soft delete, so every trip that has never been deleted — very
+    // nearly all of them — arrives without it. It has to read as false and not undefined: the
+    // plan views strike a row through on it, and getTrips filters on it everywhere else.
+    expect(trip.deleted).toBe(false);
+  });
+
+  it('keeps a soft-deleted trip marked deleted', () => {
+    expect(toTrip({$key: 'k1', deleted: true} as TripRecord).deleted).toBe(true);
   });
 
   it('does not read a missing start as "now"', () => {

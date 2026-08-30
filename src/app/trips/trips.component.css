@@ -312,6 +312,53 @@ mat-chip-set {
   padding-right: 14px;
 }
 
+/* A trip from the small hours of the morning *after* this day — pulled into the plan on purpose
+   (see DAY_PLAN_OVERNIGHT_HOURS in data.service.ts) because it is the tail of this evening's
+   work, but belonging to the next day's plan, where it appears again in its own right. Dimmed and
+   tinted so it reads as the context it is rather than as one of this day's own rows — the same
+   recipe as .row-baseline, the pre-period reading in fuel-tracking.component.css, and for the
+   same reason.
+     No italics, unlike that one: a whole trip row is name, description, office note and chips
+   rather than four numbers, and italicising the lot costs more legibility than the extra cue is
+   worth. The date beside the start time (.overnight-date below) carries the "which day, then?"
+   half, which a tint alone cannot say at all.
+     Deliberately placed above .trip-finished, so that on a row which is both, the green wins on
+   source order: "I have finished this" is something the driver said about this specific trip,
+   and it should not be swallowed by a note about which day the trip is filed under. */
+.trip-overnight {
+  background: var(--mat-sys-surface-container);
+}
+
+.trip-overnight td {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.trip-overnight .trip-chip {
+  --mat-chip-elevated-container-color: var(--mat-sys-surface-container-high);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
+/* The date an overnight trip actually starts on: its own line under the time in the desktop
+   Start cell, inline after the time on a mobile card (see the .html). Sized and coloured like
+   .modified-footer below — a quiet annotation on the row, not a second time to read. */
+.overnight-date {
+  font-size: 0.75em;
+  font-weight: 400;
+  color: var(--mat-sys-outline);
+  white-space: nowrap;
+}
+
+/* The mobile card layout's own answer to the same question, in place of that per-row date: one
+   divider and one heading in front of the whole overnight group (see startsOvernightTail). A card
+   list has no Start column to scan and no room to spare on every card, and the cards are
+   contiguous — so saying it once, above them, is both clearer and cheaper than saying it on each.
+     Hidden by default rather than shown by default: this is a <tr> in a table that is a real
+   table everywhere except under 768px — including in print, which always uses the full table
+   layout regardless of the printing device's page width. */
+.overnight-heading-row {
+  display: none;
+}
+
 /* Marking a trip finished is purely a local/on-device thing (see FinishedTripsService) — tints
    the whole row, including its driver/vehicle chips, a light green so "done" reads clearly at
    a glance rather than just a subtle dimming. */
@@ -326,6 +373,50 @@ mat-chip-set {
 .trip-finished .trip-chip {
   --mat-chip-elevated-container-color: rgba(46, 125, 50, 0.22);
   --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
+/* A trip the office cancelled — "Aflys" rather than "Slet" (see Trip.deleted and
+   DataStore.setTripCancelled), so it stays where the drivers on it are looking instead of
+   quietly disappearing out from under them.
+     Red, where every other state on this row is a tint of amber or green: those say "look at
+   this" and "I have done this", and both leave the trip standing. This one says the trip is off,
+   which is a different kind of thing entirely and the only one a driver can get wrong by acting
+   on it.
+     Written with the full `.data-table tbody tr` prefix, unlike .trip-overnight/.trip-finished
+   above, purely to out-specify the global .data-table .row-highlight in styles.css — a
+   cancellation always carries a fresh `modified` stamp, so it is *always* also a recently-
+   modified row, and the amber would otherwise win or lose on stylesheet order. */
+.data-table tbody tr.trip-deleted {
+  background: rgba(198, 40, 40, 0.16);
+}
+
+/* The times and the trip's own words in the error red, struck through with a line thick enough
+   to be seen at a glance rather than squinted at — the cancellation said in the text itself and
+   not only in a background colour. That matters on paper especially: a day plan gets printed,
+   and browsers drop backgrounds in print by default, so the text is all that survives (which is
+   why this has to be on the text rather than, say, a red border).
+     Set on the cells rather than the row so it lands on the two time columns and the trip's own
+   name/description, and not on the driver/vehicle chips or the label chips — those are
+   inline-flex and inline-block respectively, which are atomic boxes that neither the colour nor
+   the strike reaches. A struck-through red chip would read as "this driver is cancelled".
+     The strike takes its colour from the text, so it stays in step with it by itself. 2px rather
+   than an em-relative thickness: this text runs from 0.75em annotations to the trip's own name,
+   and one weight for the lot reads as one line drawn through the row rather than as several
+   lines of varying confidence. */
+.data-table tbody tr.trip-deleted td[data-label="Start"],
+.data-table tbody tr.trip-deleted td[data-label="Slut"],
+.data-table tbody tr.trip-deleted .trip-cell {
+  color: var(--mat-sys-error);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+/* The description and the mobile card's time — .muted sets its own colour, so inheriting from
+   the cell above never reaches them. The action buttons in the same block are unaffected: each
+   sets its own icon colour (see .finish-toggle/.report-toggle/.read-warning), as does the
+   "Ændret …" footer, which stays a quiet grey aside rather than joining the cancellation. */
+.data-table tbody tr.trip-deleted .trip-cell .muted {
+  color: var(--mat-sys-error);
 }
 
 /* Below 768px the table becomes a stack of cards, one per trip. Start/Slut/Chauffører/Køretøjer
@@ -439,6 +530,36 @@ mat-chip-set {
      bottom of a description-less or very-short-description card's icon row). */
   .mobile-trip-info {
     display: flow-root;
+  }
+
+  /* Overrides the card styling .data-table tbody tr gives every row above — this one is a
+     section break between cards, not a card. The rule is the divider; the space above it is
+     larger than the gap between cards, so the break reads as a break rather than as one more
+     card boundary. */
+  .data-table tbody tr.overnight-heading-row {
+    display: block;
+    margin: 20px 0 8px;
+    padding: 12px 0 0;
+    border: none;
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 0;
+  }
+
+  .overnight-heading {
+    font: var(--mat-sys-title-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  /* The cards under that heading, dashed rather than solid. The tint .trip-overnight already
+     gives every row survives into the card layout, but a card is read one at a time with its
+     own border around it — where the desktop table's rows sit side by side and a tint reads as
+     a difference. A dashed edge is the one part of a card that still says "provisional, filed
+     elsewhere" when the card is the only thing on screen.
+       Outline rather than outline-variant: a dash is thinner ink than a solid line of the same
+     width, so the lighter colour the solid cards use would come out fainter here, not equal. */
+  .data-table tbody tr.trip-overnight {
+    border-style: dashed;
+    border-color: var(--mat-sys-outline);
   }
 
   /* Mobile-only companion to the row's own hover tooltip (see [matTooltip] on the <tr> in the

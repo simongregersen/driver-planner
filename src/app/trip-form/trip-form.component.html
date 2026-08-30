@@ -131,6 +131,14 @@
 <mat-dialog-actions align="end">
   @if (mode === 'edit') {
     <button matButton type="button" class="confirm-danger" [disabled]="saving()" (click)="deleteTrip()">Slet</button>
+    <!-- Beside Slet, not instead of it: deleting removes a trip that should never have been
+         there, aflysning keeps one that was real on the plan as a struck-through notice so the
+         drivers on it find out (see Trip.deleted). Gendan is the same button the other way
+         round. Off for template trips, which nobody is driving to — see canCancel. -->
+    @if (canCancel) {
+      <button matButton type="button" [class.confirm-danger]="!trip.deleted" [disabled]="saving()"
+              (click)="toggleCancelled()">{{ trip.deleted ? 'Gendan' : 'Aflys' }}</button>
+    }
   }
   <button matButton type="button" mat-dialog-close [disabled]="saving()">Annuller</button>
   <button matButton="filled" type="submit" form="tripForm" [disabled]="!tripForm.valid || saving()">{{ saving() ? 'Gemmer…' : (mode === 'edit' ? 'Gem' : 'Opret') }}</button>

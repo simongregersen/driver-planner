@@ -80,8 +80,9 @@ export class TripsComponent implements OnInit {
   markReadWhenSeen = input(false);
   /** The single day this list is being shown under, if any (a day-plans/period-plans day-block,
    * my-trips' selected day, ...) — lets a multi-day trip's start time be marked with an asterisk
-   * and a fuller tooltip on the days it didn't actually start on. Templates/other callers with
-   * no such day context simply leave this unset, and no trip ever gets marked. */
+   * and a fuller tooltip on the days it didn't actually start on, and an overnight trip from the
+   * following morning be dimmed and dated (see startsAfterReference). Templates/other callers
+   * with no such day context simply leave this unset, and no trip ever gets marked. */
   referenceDate = input<Moment | null>(null);
   /** Precomputed by the caller (Day Plans/Period Plans) off its own full, pre-filter trip list —
    * see Utility.computeAssignmentWarnings. Must NOT be derived from `trips()` itself, since
@@ -172,12 +173,16 @@ export class TripsComponent implements OnInit {
     return trip.vehicles.filter(key => !pairedVehicleKeys.has(key));
   }
 
+  // Never on a cancelled trip (see Trip.deleted): nobody has to be found for it and nothing has
+  // to be assigned to it, so an amber "no driver assigned" beside a struck-through row is asking
+  // the office to fix a trip that isn't happening. Conflicts drop out one level further up, in
+  // Utility.computeAssignmentWarnings, which leaves such a trip out of the comparison entirely.
   hasDriverCountMismatch(trip: Trip): boolean {
-    return this.showWarnings() && Utility.hasDriverStaffingWarning(trip);
+    return this.showWarnings() && !trip.deleted && Utility.hasDriverStaffingWarning(trip);
   }
 
   hasVehicleCountMismatch(trip: Trip): boolean {
-    return this.showWarnings() && Utility.hasVehicleStaffingWarning(trip);
+    return this.showWarnings() && !trip.deleted && Utility.hasVehicleStaffingWarning(trip);
   }
 
   // Empty and imbalanced are both warnings but they are not the same problem, and the tooltip is
@@ -337,14 +342,78 @@ export class TripsComponent implements OnInit {
     });
   }
 
-  startsOutsideReference(trip: Trip): boolean {
+  /** A trip that starts *after* the day it is being listed under: the 00:00–03:00 tail of the
+   * night that day runs into, pulled into the plan on purpose (see DAY_PLAN_OVERNIGHT_HOURS in
+   * data.service.ts) because that is the evening's work continuing, not tomorrow's.
+   *
+   * It is the one kind of trip here that appears twice — once at the foot of this day, once as
+   * an ordinary trip of its own day — so the row says which of the two it really belongs to:
+   * dimmed rather than presented as one of this day's own (see .trip-overnight in the .css), and
+   * carrying the date it starts on (see overnightDateLabel). */
+  startsAfterReference(trip: Trip): boolean {
     const reference = this.referenceDate();
+    return !!reference && trip.start.isAfter(reference, 'day');
+  }
+
+  /** The day the two cells below measure "same day as this list" against.
+   *
+   * The reference day for every trip pulled in *for* that day, but an overnight trip's own start
+   * day for an overnight trip. Without the second half both cells would see "not this day", draw
+   * the em dash that says "this trip runs outside the day you're looking at" — and hide the very
+   * times the trip was pulled in to show. The em dash is for a multi-day trip whose start or end
+   * genuinely lies out of sight elsewhere in the week; an overnight trip's start and end are both
+   * right here, a couple of hours past midnight. */
+  private effectiveReference(trip: Trip): Moment | null {
+    return this.startsAfterReference(trip) ? trip.start : this.referenceDate();
+  }
+
+  startsOutsideReference(trip: Trip): boolean {
+    const reference = this.effectiveReference(trip);
     return !!reference && !Utility.sameDate(trip.start, reference);
   }
 
   endsOutsideReference(trip: Trip): boolean {
-    const reference = this.referenceDate();
+    const reference = this.effectiveReference(trip);
     return !!reference && !!trip.end && !Utility.sameDate(trip.end, reference);
+  }
+
+  /** The date an overnight trip starts on, shown beside its start time in the desktop table.
+   * Weekday included, and spelled the short way: "which night is this?" is the whole question the
+   * dimming raises, and "16/4" alone answers it only for someone who already knows what date
+   * tomorrow is.
+   *   The mobile card layout says the same thing once, in a heading above the group, instead of
+   * on every card — see overnightHeading. */
+  overnightDateLabel(trip: Trip): string {
+    return this.startsAfterReference(trip) ? trip.start.format('ddd D/M') : '';
+  }
+
+  /** Whether this trip opens the overnight tail — the first of the run of trips at the foot of
+   * the list that belong to the following morning. Drives the divider and heading the mobile card
+   * layout puts in front of them (see .overnight-heading-row in the .css).
+   *
+   * A run, not a scatter: every list here is ordered by start (see DataStore.getTrips), so the
+   * overnight trips are contiguous and last. This still asks about the trip *before* rather than
+   * trusting that ordering blindly — an unordered list would get a heading per group rather than
+   * one heading with ordinary trips loose underneath it, which is wrong but not misleading.
+   *   Desktop gets no such heading: its rows carry the date individually, in a table whose Start
+   * column makes the ordering plain, and a full-width heading row mid-table would read as a
+   * second table starting. */
+  startsOvernightTail(trip: Trip, index: number): boolean {
+    if (!this.startsAfterReference(trip)) return false;
+    const previous = this.trips()[index - 1];
+    return !previous || !this.startsAfterReference(previous);
+  }
+
+  /** "Natten til søndag, 16. april" — the heading over the overnight group on a mobile card list.
+   * Names the night rather than the date alone ("16. april" is ambiguous about whether the group
+   * is tonight's late work or tomorrow's early work; "natten til søndag" is not). */
+  overnightHeading(trip: Trip): string {
+    return this.startsAfterReference(trip) ? `Natten til ${trip.start.format('dddd[,] [d.] D. MMMM')}` : '';
+  }
+
+  overnightTooltip(trip: Trip): string {
+    if (!this.startsAfterReference(trip)) return '';
+    return `Afgår natten til ${trip.start.format('dddd [d.] D. MMMM')} — turen fremgår også af denne dagsplan.`;
   }
 
   // Computed in TS rather than inline in the template — the desired "HH:mm–HH:mm" (or just

@@ -14,7 +14,7 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSlideToggleChange, MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {DataStore} from '../data.service';
+import {DataStore, DAY_PLAN_OVERNIGHT_HOURS} from '../data.service';
 import {Note} from '../note';
 import {Utility} from '../utility';
 import {Driver} from '../driver';
@@ -83,7 +83,14 @@ export class DayPlansComponent implements OnInit {
       tap(() => this.isLoadingTrips.set(true)),
       // ...WithOffice: this page shows the admin-only officeDescription/labels, which live in
       // the separate admin-readable /tripOffice node rather than on the trip itself.
-      switchMap(date => this.dataStore.getTripsWithOffice(date)),
+      //   The window reaches DAY_PLAN_OVERNIGHT_HOURS past midnight, so a trip leaving at 01:00
+      // can be planned on the evening it actually belongs to instead of being backdated to 23:59
+      // to make it land on the right page. Ungated here, unlike Min dag: those trips are the
+      // office's own, published or not, and this is where they get planned.
+      //   Cancelled trips included (see Trip.deleted): an aflyst trip stays on the plan as a
+      // struck-through notice, and the office needs to see the same page its drivers are seeing
+      // — including whether they have read the cancellation yet, and where to click to undo it.
+      switchMap(date => this.dataStore.getTripsWithOffice(date, date, DAY_PLAN_OVERNIGHT_HOURS, true)),
       tap(() => this.isLoadingTrips.set(false)),
     )
   );

@@ -14,6 +14,7 @@ import {NewTrip, Trip} from './trip';
 describe('TripEditingService', () => {
   let dataStore: {
     updateTrip: ReturnType<typeof vi.fn>; addTrip: ReturnType<typeof vi.fn>; removeTrip: ReturnType<typeof vi.fn>;
+    setTripCancelled: ReturnType<typeof vi.fn>;
     getAllDrivers: ReturnType<typeof vi.fn>; getAllVehicles: ReturnType<typeof vi.fn>;
   };
   let snackBarOpen: ReturnType<typeof vi.fn>;
@@ -21,13 +22,14 @@ describe('TripEditingService', () => {
 
   const driver: Driver = {$key: 'd1', displayName: 'Kim', name: 'Kim Hansen', birthday: null, deleted: false};
   const vehicle: Vehicle = {$key: 'v1', displayName: 'Bus 1', brand: '', regNo: '', latestInspection: null, isRutebus: false, deleted: false};
-  const trip: Trip = {$key: 't1', name: 'Tur', start: moment('2026-01-01 09:00', 'YYYY-MM-DD HH:mm'), end: null, drivers: ['d1'], vehicles: ['v1']};
+  const trip: Trip = {$key: 't1', name: 'Tur', start: moment('2026-01-01 09:00', 'YYYY-MM-DD HH:mm'), end: null, drivers: ['d1'], vehicles: ['v1'], deleted: false};
 
   beforeEach(() => {
     dataStore = {
       updateTrip: vi.fn(() => Promise.resolve()),
       addTrip: vi.fn(() => Promise.resolve()),
       removeTrip: vi.fn(() => Promise.resolve()),
+      setTripCancelled: vi.fn(() => Promise.resolve()),
       getAllDrivers: vi.fn(() => of([driver])),
       getAllVehicles: vi.fn(() => of([vehicle])),
     };
@@ -51,11 +53,13 @@ describe('TripEditingService', () => {
   function fakeTripFormDialogRef() {
     const save = new Subject<NewTrip>();
     const remove = new Subject<void>();
+    const setCancelled = new Subject<boolean>();
     const close = vi.fn();
     // `saving` mirrors TripFormComponent's own signal — closeOnSave drives it while the
     // write is in flight, so the fake has to carry it too.
-    dialogOpen.mockReturnValue({componentInstance: {save, remove, saving: signal(false)}, close});
-    return {save, remove, close};
+    const componentInstance = {save, remove, setCancelled, saving: signal(false), canCancel: false};
+    dialogOpen.mockReturnValue({componentInstance, close});
+    return {save, remove, setCancelled, close, componentInstance};
   }
 
   function mockConfirmDialog(confirmed: boolean) {
@@ -97,6 +101,25 @@ describe('TripEditingService', () => {
       expect(dataStore.removeTrip).toHaveBeenCalledWith(trip);
       await flushWrites();
       expect(close).toHaveBeenCalled();
+    });
+
+    // "Aflys"/"Gendan" — a real calendar trip, so the dialog offers them at all (contrast
+    // TemplatesComponent, which drives this same dialog for trips nobody is driving to).
+    it('cancels and restores the trip through setTripCancelled, and offers the option', async () => {
+      const {setCancelled, close, componentInstance} = fakeTripFormDialogRef();
+      const service = TestBed.inject(TripEditingService);
+      service.edit(trip);
+      expect(componentInstance.canCancel).toBe(true);
+
+      setCancelled.next(true);
+      await Promise.resolve();
+      expect(dataStore.setTripCancelled).toHaveBeenCalledWith(trip, true);
+      await flushWrites();
+      expect(close).toHaveBeenCalled();
+
+      setCancelled.next(false);
+      await Promise.resolve();
+      expect(dataStore.setTripCancelled).toHaveBeenCalledWith(trip, false);
     });
   });
 

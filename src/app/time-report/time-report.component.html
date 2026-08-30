@@ -83,10 +83,17 @@
                           <td><span class="report-start">{{ dayRecord.record.clockIn.toDate() | date:'HH:mm' }}</span></td>
                           <td>
                             @if (dayRecord.record.clockOut) {
-                              <span class="report-end"
-                                    [matTooltip]="dayRecord.crossesDay ? (dayRecord.record.clockOut.toDate() | date:'EEE d/M HH:mm') : ''">
-                                {{ dayRecord.record.clockOut.toDate() | date:'HH:mm' }}@if (dayRecord.crossesDay) {*}
-                              </span>
+                              <span class="report-end">{{ dayRecord.record.clockOut.toDate() | date:'HH:mm' }}</span>
+                              <!-- A shift that ran past midnight: the date it actually ended on, on
+                                   its own line under the time — see the same block in
+                                   time-reporting.component.html for why it's dated this briefly.
+                                   Here the day it began is the heading this whole table sits under. -->
+                              @if (dayRecord.crossesDay) {
+                                <div class="report-end-date"
+                                     [matTooltip]="dayRecord.record.clockOut.toDate() | date:'EEEE d. MMMM'">
+                                  {{ dayRecord.record.clockOut.toDate() | date:'d/M' }}
+                                </div>
+                              }
                             } @else {
                               <span class="in-progress">I gang</span>
                             }

@@ -117,6 +117,20 @@
   color: var(--mat-sys-error);
 }
 
+/* The date a shift that crossed midnight actually ended on — its own line under the end time,
+   in place of the asterisk-plus-tooltip this used to be. Sized and coloured like .overnight-date
+   in trips.component.css, which does the same job for a trip from the small hours: a quiet
+   annotation on the row rather than a second number to read.
+     Not muted away entirely, and deliberately not .no-print: on paper (a timesheet is printed
+   and signed) an unexplained 02:30 in a Slut column is a shift that looks 21 hours long. */
+.report-end-date {
+  font-size: 0.75em;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--mat-sys-outline);
+  white-space: nowrap;
+}
+
 /* Marks off Tid, the one column that's computed from the others, from the reported
    Start/Slut/Bemærkning data (and the action button) to its left. */
 .col-computed {

@@ -79,8 +79,13 @@ export class TripEditingService {
     const instance = dialogRef.componentInstance;
     instance.mode = 'edit';
     instance.trip = trip;
+    // Real calendar trips, so "Aflys" is offered alongside "Slet" — unlike the template trips
+    // TemplatesComponent edits through this same dialog. See TripFormComponent.canCancel.
+    instance.canCancel = true;
     instance.save.subscribe((updates: NewTrip) => this.closeOnSave(dialogRef, this.dataStore.updateTrip(trip, updates)));
     instance.remove.subscribe(() => this.closeOnSave(dialogRef, this.removeTrip(trip)));
+    instance.setCancelled.subscribe((cancelled: boolean) =>
+      this.closeOnSave(dialogRef, this.dataStore.setTripCancelled(trip, cancelled)));
   }
 
   create(defaultDate: Moment | null) {

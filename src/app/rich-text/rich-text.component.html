@@ -1,7 +1,10 @@
 @for (segment of segments(); track $index) {
-  @switch (segment.type) {
-    @case ('highlight') {<mark>{{ segment.text }}</mark>}
-    @case ('address') {<a [href]="mapsUrl(segment.address)" target="_blank" rel="noopener noreferrer">{{ segment.address }}</a>}
-    @default {{{ segment.text }}}
-  }
+  @if (segment.type === 'highlight') {<mark>@for (part of segment.parts; track $index) {<ng-container [ngTemplateOutlet]="inline" [ngTemplateOutletContext]="{$implicit: part}"></ng-container>}</mark>}
+  @else {<ng-container [ngTemplateOutlet]="inline" [ngTemplateOutletContext]="{$implicit: segment}"></ng-container>}
 }
+<!-- One <mark> per highlight, with its addresses linked inside it, rather than one <mark> per
+     part: the marks would otherwise butt up against each other mid-sentence, each adding its own
+     2px of padding and rounded corners at the join. That means the inside of a highlight and the
+     top level render the same two things, so both go through this template instead of repeating
+     the anchor's href/target/rel in two places. -->
+<ng-template #inline let-part>@if (part.type === 'address') {<a [href]="mapsUrl(part.address)" target="_blank" rel="noopener noreferrer">{{ part.address }}</a>} @else {{{ part.text }}}</ng-template>

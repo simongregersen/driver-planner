@@ -12,7 +12,7 @@ describe('TripFilterStateService', () => {
   function trip(overrides: Partial<Trip>): Trip {
     return {
       $key: 'x', start: moment('2026-01-01 09:00', 'YYYY-MM-DD HH:mm'), end: moment('2026-01-01 10:00', 'YYYY-MM-DD HH:mm'),
-      name: 'Trip', drivers: [], vehicles: [], ...overrides,
+      name: 'Trip', drivers: [], vehicles: [], deleted: false, ...overrides,
     };
   }
 

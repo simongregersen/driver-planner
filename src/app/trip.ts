@@ -86,6 +86,17 @@ export interface Trip extends AngularFireObject {
    * TripFormComponent.hasAmbiguousAssignment). */
   vehicleAssignments?: Record<string, string>;
   modified?: Moment;
+  /** Cancelled: the trip was going to happen and now isn't, so it stays on the plan — struck
+   * through on a red row in Min dag and Dagsplaner — instead of disappearing. A driver who has
+   * already been told to drive somewhere has to be told when that is called off, and a row that
+   * quietly vanishes from their day tells them nothing; they turn up for it. Filtered out of
+   * every other view (see DataStore.getTrips' `includeDeleted`), since a cancelled trip is a
+   * message rather than a booking: nothing to count, staff, or plan around.
+   *   Set from "Aflys" in the trip editor and cleared by "Gendan" (see
+   * DataStore.setTripCancelled). Deleting a trip with "Slet" still removes it outright, which is
+   * both what to do with one that should never have been there and how a cancelled trip is
+   * finally taken off the plan. Named `deleted` to match Driver/Vehicle's own soft-delete flag. */
+  deleted: boolean;
   /** Derived and maintained by DataStore (addTrip/updateTrip/multiDayStart) purely as a query
    * optimization for getTrips — never set directly by a form or shown in the UI. Present (as
    * this trip's own start) only when it spans more than one calendar day; omitted entirely
@@ -163,6 +174,7 @@ export interface TripRecord extends AngularFireObject {
   vehicles?: string[];
   vehicleAssignments?: Record<string, string>;
   modified?: number;
+  deleted?: boolean;
   multiDayStart?: number;
   reports?: Record<string, TripReportRecord>;
   reads?: Record<string, TripReadRecord>;
@@ -202,6 +214,9 @@ export function toTrip(record: TripRecord): Trip {
     vehicles: record.vehicles ?? [],
     vehicleAssignments: record.vehicleAssignments,
     modified: record.modified != null ? moment(record.modified) : undefined,
+    // Written only by the soft delete itself, so the absent key — every trip that has never been
+    // deleted, which is nearly all of them — reads as false. Same shape as Driver.deleted.
+    deleted: record.deleted ?? false,
     multiDayStart: record.multiDayStart,
     reports: record.reports
       ? Object.fromEntries(Object.entries(record.reports).map(([driverKey, r]) => [driverKey, toTripReport(r)]))

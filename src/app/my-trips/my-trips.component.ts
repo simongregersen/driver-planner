@@ -9,7 +9,7 @@ import {MatInputModule} from '@angular/material/input';
 import {switchMap} from 'rxjs/operators';
 import moment, {Moment} from 'moment';
 import {Note} from '../note';
-import {DataStore} from '../data.service';
+import {DataStore, DAY_PLAN_OVERNIGHT_HOURS} from '../data.service';
 import {UserService} from '../user.service';
 import {AuthenticationService} from '../authentication.service';
 import {Utility} from '../utility';
@@ -47,8 +47,16 @@ export class MyTripsComponent implements OnInit {
 
   readonly driver = toSignal(this.userService.driverProfile$);
 
+  // The window reaches DAY_PLAN_OVERNIGHT_HOURS past midnight, so a trip leaving at 01:00 shows
+  // up on the evening a driver is actually working towards it rather than only on the next day's
+  // plan. Which of those two days it belongs to is said in the list itself (see
+  // TripsComponent.startsAfterReference), and whether the driver may see it yet is decided in
+  // filteredTrips below.
+  //   Cancelled trips included (see Trip.deleted). This is the whole point of "Aflys" existing:
+  // a driver who has already been told to drive somewhere has to be told when that is called off,
+  // and a row that quietly disappears from their day is exactly what doesn't tell them.
   readonly trips = toSignal(
-    toObservable(this.selectedDate).pipe(switchMap(date => this.dataStore.getTrips(date)))
+    toObservable(this.selectedDate).pipe(switchMap(date => this.dataStore.getTrips(date, date, DAY_PLAN_OVERNIGHT_HOURS, true)))
   );
   readonly dayPublic = toSignal(
     toObservable(this.selectedDate).pipe(switchMap(date => this.dataStore.getDayPublic(date))),
@@ -68,7 +76,17 @@ export class MyTripsComponent implements OnInit {
   readonly filteredTrips = computed(() => {
     const driver = this.driver();
     if (!driver) return [];
-    return (this.trips() ?? []).filter(t => Utility.isAssigned(driver, t));
+    const date = this.selectedDate();
+    // The overnight tail belongs to the *next* day, and that day has its own /public flag — which
+    // the whole page is gated on for the selected day (see dayPublic in the .html), because an
+    // unpublished day is one the office is still moving trips around on. Reaching past midnight
+    // must not reach past that gate too: without this, a driver opening a published today would
+    // be shown a 01:00 trip out of a tomorrow nobody has published yet, and could be told it was
+    // theirs right up until the moment it was given to someone else.
+    const showOvernight = this.isPublicDate(this.dateUtility.addDays(date, 1), this.publicDates());
+    return (this.trips() ?? [])
+      .filter(t => Utility.isAssigned(driver, t))
+      .filter(t => showOvernight || !t.start.isAfter(date, 'day'));
   });
 
   private readonly calendar = viewChild<MatCalendar<Moment>>(MatCalendar);

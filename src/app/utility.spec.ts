@@ -14,6 +14,7 @@ function trip(overrides: Partial<Trip> = {}): Trip {
     name: 'Trip',
     drivers: [],
     vehicles: [],
+    deleted: false,
     ...overrides,
   };
 }
@@ -251,6 +252,18 @@ describe('Utility.computeAssignmentWarnings', () => {
     const result = Utility.computeAssignmentWarnings([solo]);
     expect(result.has('solo')).toBe(true);
     expect(result.get('solo')!.driverConflicts.size).toBe(0);
+  });
+
+  // A cancelled trip (Trip.deleted) is a notice to the drivers who were on it, not a booking —
+  // the driver it names is free, so it neither has a clash of its own nor gives anyone else one.
+  // Without this, cancelling one of two overlapping trips leaves the surviving trip flagged as
+  // double-booked against a trip nobody is driving.
+  it('leaves a cancelled trip out of the comparison, from both sides', () => {
+    const live = trip({$key: 'live', start: t('10:00'), end: t('14:00'), drivers: ['d1']});
+    const cancelled = trip({$key: 'cancelled', start: t('12:00'), end: t('16:00'), drivers: ['d1'], deleted: true});
+    const result = Utility.computeAssignmentWarnings([live, cancelled]);
+    expect(result.get('live')!.driverConflicts.size).toBe(0);
+    expect(result.has('cancelled')).toBe(false);
   });
 });
 

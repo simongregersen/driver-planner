@@ -18,7 +18,7 @@ describe('TripReportFormComponent', () => {
   const tripStart = moment('2026-01-01 09:00', 'YYYY-MM-DD HH:mm');
   const tripEnd = moment('2026-01-01 17:00', 'YYYY-MM-DD HH:mm');
   const trip: Trip = {
-    $key: 't1', start: tripStart, end: tripEnd, name: 'Randers tur', drivers: ['d1'], vehicles: ['v1'],
+    $key: 't1', start: tripStart, end: tripEnd, name: 'Randers tur', drivers: ['d1'], vehicles: ['v1'], deleted: false,
   };
 
   beforeEach(() => {

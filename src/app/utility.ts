@@ -210,10 +210,15 @@ export class Utility {
   // recomputing them itself.
   static computeAssignmentWarnings(trips: Trip[]): Map<string, AssignmentConflicts> {
     const result = new Map<string, AssignmentConflicts>();
-    for (const trip of trips) {
+    // A cancelled trip (see Trip.deleted) is not a booking, so it neither has clashes of its own
+    // nor creates one for anybody else — the driver and vehicle it names are free. Excluded from
+    // both sides of the comparison, and left without an entry entirely, which every reader of
+    // this map already treats as "no conflicts".
+    const booked = trips.filter(t => !t.deleted);
+    for (const trip of booked) {
       result.set(trip.$key, Utility.findAssignmentConflicts(
         {key: trip.$key, start: trip.start, end: trip.end, drivers: trip.drivers ?? [], vehicles: trip.vehicles ?? []},
-        trips
+        booked
       ));
     }
     return result;

@@ -27,10 +27,18 @@
         <td data-label="Start"><span class="report-start">{{ record.clockIn.toDate() | date:'HH:mm' }}</span></td>
         <td data-label="Slut">
           @if (record.clockOut) {
-            <span class="report-end"
-                  [matTooltip]="!sameDay(record.clockIn, record.clockOut) ? (record.clockOut.toDate() | date:'EEE d/M HH:mm') : ''">
-              {{ record.clockOut.toDate() | date:'HH:mm' }}@if (!sameDay(record.clockIn, record.clockOut)) {*}
-            </span>
+            <span class="report-end">{{ record.clockOut.toDate() | date:'HH:mm' }}</span>
+            <!-- A shift that ran past midnight: the date it actually ended on, on its own line
+                 under the time, the same way Min dag/Dagsplaner date an overnight trip's start.
+                 Day-and-month only, no weekday — this column is sized to the minute (see
+                 .col-time) and the row's own Dato column already says which day the shift began,
+                 so all this has to carry is "the next one"; the weekday is in the tooltip. -->
+            @if (!sameDay(record.clockIn, record.clockOut)) {
+              <div class="report-end-date"
+                   [matTooltip]="record.clockOut.toDate() | date:'EEEE d. MMMM'">
+                {{ record.clockOut.toDate() | date:'d/M' }}
+              </div>
+            }
           } @else {
             <span class="in-progress">I gang</span>
           }

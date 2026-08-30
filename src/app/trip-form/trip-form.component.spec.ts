@@ -204,7 +204,7 @@ describe('TripFormComponent', () => {
   describe('edit', () => {
     const trip: Trip = {
       $key: 't1', name: 'Eksisterende tur', start: moment('2026-03-01 09:00', 'YYYY-MM-DD HH:mm'),
-      end: moment('2026-03-01 12:00', 'YYYY-MM-DD HH:mm'), drivers: ['d1'], vehicles: ['v1'],
+      end: moment('2026-03-01 12:00', 'YYYY-MM-DD HH:mm'), drivers: ['d1'], vehicles: ['v1'], deleted: false,
     };
 
     it('pre-fills the form from the existing trip', () => {
@@ -217,7 +217,7 @@ describe('TripFormComponent', () => {
     it('warns (without blocking submission) when a driver already has an overlapping trip', async () => {
       const conflicting: Trip = {
         $key: 't2', name: 'Anden tur', start: moment('2026-03-01 10:00', 'YYYY-MM-DD HH:mm'),
-        end: moment('2026-03-01 11:00', 'YYYY-MM-DD HH:mm'), drivers: ['d1'], vehicles: [],
+        end: moment('2026-03-01 11:00', 'YYYY-MM-DD HH:mm'), drivers: ['d1'], vehicles: [], deleted: false,
       };
       dataStore.getTrips.mockReturnValue(of([trip, conflicting]));
       const fixture = create('edit', {trip});
@@ -235,7 +235,7 @@ describe('TripFormComponent', () => {
 
   describe('delete', () => {
     const trip: Trip = {
-      $key: 't1', name: 'Tur', start: moment('2026-03-01 09:00', 'YYYY-MM-DD HH:mm'), end: null, drivers: [], vehicles: [],
+      $key: 't1', name: 'Tur', start: moment('2026-03-01 09:00', 'YYYY-MM-DD HH:mm'), end: null, drivers: [], vehicles: [], deleted: false,
     };
 
     it('emits a remove output when the confirm dialog is accepted', () => {
@@ -256,6 +256,59 @@ describe('TripFormComponent', () => {
       c.remove.subscribe(t => removed.push(t));
       c.deleteTrip();
       expect(removed).toEqual([]);
+    });
+  });
+
+  /** "Aflys" — the other half of delete (see Trip.deleted): the trip stays on the plan, struck
+   * through, so the drivers who were on it are actually told it is off. */
+  describe('cancel', () => {
+    const trip: Trip = {
+      $key: 't1', name: 'Tur', start: moment('2026-03-01 09:00', 'YYYY-MM-DD HH:mm'), end: null, drivers: [], vehicles: [], deleted: false,
+    };
+    const cancelledTrip: Trip = {...trip, deleted: true};
+
+    function labels(fixture: ReturnType<typeof create>): string[] {
+      return [...(fixture.nativeElement as HTMLElement).querySelectorAll('mat-dialog-actions button')]
+        .map(b => b.textContent!.trim());
+    }
+
+    it('offers Aflys beside Slet, and Gendan in its place once the trip is cancelled', () => {
+      expect(labels(create('edit', {trip, canCancel: true}))).toContain('Aflys');
+      expect(labels(create('edit', {trip: cancelledTrip, canCancel: true}))).toContain('Gendan');
+      expect(labels(create('edit', {trip: cancelledTrip, canCancel: true}))).not.toContain('Aflys');
+    });
+
+    // Template trips go through this same dialog, and nobody is driving to one — there is no
+    // driver to tell it's off, so there is nothing to cancel.
+    it('offers neither where the trip cannot be cancelled', () => {
+      const rendered = labels(create('edit', {trip, canCancel: false}));
+      expect(rendered).toContain('Slet');
+      expect(rendered).not.toContain('Aflys');
+    });
+
+    it('emits true from Aflys and false from Gendan, once confirmed', () => {
+      confirmed = true;
+      const cancelling: boolean[] = [];
+      const c = create('edit', {trip, canCancel: true}).componentInstance;
+      c.setCancelled.subscribe(v => cancelling.push(v));
+      c.toggleCancelled();
+
+      const restoring: boolean[] = [];
+      const restored = create('edit', {trip: cancelledTrip, canCancel: true}).componentInstance;
+      restored.setCancelled.subscribe(v => restoring.push(v));
+      restored.toggleCancelled();
+
+      expect(cancelling).toEqual([true]);
+      expect(restoring).toEqual([false]);
+    });
+
+    it('emits nothing when the confirm dialog is declined', () => {
+      confirmed = false;
+      const emitted: boolean[] = [];
+      const c = create('edit', {trip, canCancel: true}).componentInstance;
+      c.setCancelled.subscribe(v => emitted.push(v));
+      c.toggleCancelled();
+      expect(emitted).toEqual([]);
     });
   });
 });
