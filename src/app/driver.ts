@@ -6,6 +6,9 @@ export interface Driver extends AngularFireObject {
   name: string;
   birthday: Moment | null;
   deleted: boolean;
+  /** Not employed directly — e.g. a subcontractor's driver. Excluded from the Timesedler
+   * overview, which exists to track hours owed by this company. */
+  external: boolean;
   uid?: string;
   email?: string;
 }
@@ -14,6 +17,7 @@ export interface NewDriver {
   displayName: string;
   name: string;
   birthday: Moment | null;
+  external: boolean;
 }
 
 // The storage shape of the above, and the boundary between them — see trip.ts for the full
@@ -28,6 +32,7 @@ export interface DriverRecord extends AngularFireObject {
   name?: string;
   birthday?: number | null;
   deleted?: boolean;
+  external?: boolean;
   uid?: string;
   email?: string;
 }
@@ -41,6 +46,7 @@ export function toDriver(record: DriverRecord): Driver {
     // Written explicitly as false on create, and RTDB does store false — but a driver record
     // predating that field would have no key at all, and "not deleted" is the right reading.
     deleted: record.deleted ?? false,
+    external: record.external ?? false,
     uid: record.uid,
     email: record.email,
   };

@@ -20,7 +20,7 @@ describe('TripEditingService', () => {
   let snackBarOpen: ReturnType<typeof vi.fn>;
   let dialogOpen: ReturnType<typeof vi.fn>;
 
-  const driver: Driver = {$key: 'd1', displayName: 'Kim', name: 'Kim Hansen', birthday: null, deleted: false};
+  const driver: Driver = {$key: 'd1', displayName: 'Kim', name: 'Kim Hansen', birthday: null, deleted: false, external: false};
   const vehicle: Vehicle = {$key: 'v1', displayName: 'Bus 1', brand: '', regNo: '', latestInspection: null, isRutebus: false, deleted: false};
   const trip: Trip = {$key: 't1', name: 'Tur', start: moment('2026-01-01 09:00', 'YYYY-MM-DD HH:mm'), end: null, drivers: ['d1'], vehicles: ['v1'], deleted: false};
 

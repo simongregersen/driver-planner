@@ -26,8 +26,8 @@ describe('TimeReportComponent', () => {
   const TODAY = moment('2026-08-06', 'YYYY-MM-DD');
   const at = (value: string) => moment(value, 'YYYY-MM-DD HH:mm');
 
-  function driver(key: string, displayName: string, deleted = false): Driver {
-    return {$key: key, displayName, name: displayName, birthday: null, deleted};
+  function driver(key: string, displayName: string, deleted = false, external = false): Driver {
+    return {$key: key, displayName, name: displayName, birthday: null, deleted, external};
   }
 
   const KIM = driver('d1', 'Kim');
@@ -213,6 +213,20 @@ describe('TimeReportComponent', () => {
 
         expect(rows.map(r => r.driver.$key)).toEqual(['d1']);
       });
+    });
+
+    // Unlike a soft-deleted driver, hours or an Udbetalt mark don't earn an external driver a
+    // row back — see TimeReportComponent.overviewDrivers.
+    it('excludes an external driver even with hours and an Udbetalt mark inside the window', () => {
+      const SUB = driver('d3', 'Ove', false, true);
+      const rows = create({
+        isAdmin: true,
+        drivers: [KIM, SUB],
+        records: [record('r1', 'd3', '2026-07-21 08:00', '2026-07-21 16:00')],
+        paid: ['d3/2026-07-20'],
+      }).componentInstance.overviewRows();
+
+      expect(rows.map(r => r.driver.$key)).toEqual(['d1']);
     });
 
     // A screenful at a time, not one period: the window is what the admin is looking at, so

@@ -845,8 +845,8 @@ export class DataStore {
     );
   }
 
-  addDriver(displayName: string, name: string, birthday: Moment | null) {
-    const driver = {displayName, name, birthday: (birthday) ? birthday.valueOf() : null, deleted: false};
+  addDriver(displayName: string, name: string, birthday: Moment | null, external: boolean) {
+    const driver = {displayName, name, birthday: (birthday) ? birthday.valueOf() : null, deleted: false, external};
     return push(this.driversRef, driver);
   }
 

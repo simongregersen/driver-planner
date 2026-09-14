@@ -20,7 +20,7 @@ function trip(overrides: Partial<Trip> = {}): Trip {
 }
 
 function driver(key: string): Driver {
-  return {$key: key, displayName: key, name: key, birthday: null, deleted: false};
+  return {$key: key, displayName: key, name: key, birthday: null, deleted: false, external: false};
 }
 
 function note(overrides: Partial<Note> = {}): Note {

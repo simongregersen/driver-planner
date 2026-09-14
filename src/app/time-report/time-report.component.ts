@@ -161,14 +161,17 @@ export class TimeReportComponent {
    * window. Filtering deleted drivers out wholesale would take an unsettled period off the
    * payroll screen the moment someone left — which is exactly when it still has to be paid, and
    * there is no per-driver view left to reach it from. They drop off on their own once the
-   * window has moved past their last records. */
+   * window has moved past their last records.
+   *
+   * External drivers are dropped outright, records or not: this table tracks hours this company
+   * owes, and an external driver's hours are never that, past or present. */
   private overviewDrivers(records: (ClockRecord & {driverKey: string})[], paid: Set<string>): Driver[] {
     const periodKeys = new Set(this.periods().map(p => p.key));
     const withRecords = new Set(records.map(r => r.driverKey));
     const withMark = new Set(
       [...paid].map(k => k.split('/')).filter(([, periodKey]) => periodKeys.has(periodKey)).map(([driverKey]) => driverKey)
     );
-    return this.driverList().filter(d => !d.deleted || withRecords.has(d.$key) || withMark.has(d.$key));
+    return this.driverList().filter(d => !d.external && (!d.deleted || withRecords.has(d.$key) || withMark.has(d.$key)));
   }
 
   /** An admin's header covers the whole visible window; a driver's, their single period. */

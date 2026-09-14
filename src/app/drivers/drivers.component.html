@@ -10,11 +10,12 @@
   <table class="data-table card-on-mobile">
     <thead>
     <tr>
-      <th class="col-w-25">Kaldenavn</th>
+      <th class="col-w-15">Kaldenavn</th>
       <th>Fulde navn</th>
-      <th class="col-w-25">Fødselsdag</th>
+      <th class="col-w-15">Fødselsdag</th>
       <th>Login</th>
-      <th class="col-w-15">Admin</th>
+      <th class="col-w-6">Admin</th>
+      <th class="col-w-6">Ekstern</th>
       <th class="col-w-5 no-print"></th>
     </tr>
     </thead>
@@ -33,6 +34,12 @@
                             [attr.aria-label]="'Administrator: ' + driver.displayName">
               </mat-checkbox>
             }
+          </td>
+          <td data-label="Ekstern">
+            <mat-checkbox [checked]="driver.external"
+                          (change)="setDriverExternal(driver, $event)"
+                          [attr.aria-label]="'Ekstern: ' + driver.displayName">
+            </mat-checkbox>
           </td>
           <td class="no-print cell-actions">
             <div class="row-actions">

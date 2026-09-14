@@ -25,7 +25,7 @@ describe('MyTripsComponent overnight trips', () => {
   const at = (date: string, hhmm: string) => moment(`${date} ${hhmm}`, 'YYYY-MM-DD HH:mm');
 
   const driver: Driver = {
-    $key: 'd1', displayName: 'Kim', name: 'Kim', birthday: null, deleted: false, uid: 'uid-d1',
+    $key: 'd1', displayName: 'Kim', name: 'Kim', birthday: null, deleted: false, external: false, uid: 'uid-d1',
   };
 
   function trip(key: string, start: Moment): Trip {

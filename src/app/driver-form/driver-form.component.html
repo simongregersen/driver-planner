@@ -21,6 +21,8 @@
     <app-date-field class="date-field" label="Fødselsdag" startView="multi-year"
                      [value]="driverForm.controls['birthday'].value" [minDate]="minDate"
                      (valueChange)="setBirthday($event)"></app-date-field>
+
+    <mat-checkbox formControlName="external">Ekstern</mat-checkbox>
   </form>
 </mat-dialog-content>
 

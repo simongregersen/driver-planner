@@ -1,6 +1,7 @@
 import {ChangeDetectionStrategy, Component, OnInit, inject, signal} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
+import {MatCheckboxModule} from '@angular/material/checkbox';
 import {MatDialog, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
@@ -36,7 +37,7 @@ export type DriverFormMode = 'create' | 'edit';
   styleUrls: ['./driver-form.component.css'],
   imports: [
     ReactiveFormsModule,
-    MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule,
+    MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule,
     DateFieldComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -74,7 +75,8 @@ export class DriverFormComponent implements OnInit {
     this.driverForm = this.fb.group({
       displayName: [isEdit ? this.driver.displayName : '', Validators.required],
       name: [isEdit ? this.driver.name : '', Validators.required],
-      birthday: (isEdit && this.driver.birthday) ? this.dateUtility.getDate(this.driver.birthday) : null
+      birthday: (isEdit && this.driver.birthday) ? this.dateUtility.getDate(this.driver.birthday) : null,
+      external: isEdit ? this.driver.external : false,
     });
   }
 
@@ -88,11 +90,12 @@ export class DriverFormComponent implements OnInit {
     const driver: NewDriver = {
       displayName: val.displayName || '',
       name: val.name || '',
-      birthday: this.dateUtility.toMoment(val.birthday)
+      birthday: this.dateUtility.toMoment(val.birthday),
+      external: !!val.external,
     };
     const saved = this.mode === 'edit'
       ? this.dataStore.updateDriver(this.driver, driver)
-      : this.dataStore.addDriver(driver.displayName, driver.name, driver.birthday);
+      : this.dataStore.addDriver(driver.displayName, driver.name, driver.birthday, driver.external);
     void this.writeFeedback.closeDialogOn(this.dialogRef, saved, this.saving);
   }
 

@@ -238,7 +238,7 @@ describe('DataStore against the emulator', () => {
     }, 30000);
 
     it('converts a stored driver, birthday included', async () => {
-      const ref = await store.addDriver('Anna', 'Anna Jensen', at('00:00'));
+      const ref = await store.addDriver('Anna', 'Anna Jensen', at('00:00'), false);
 
       const driver = await firstValueFrom(store.getDriver(ref.key!));
 
@@ -248,7 +248,7 @@ describe('DataStore against the emulator', () => {
     }, 30000);
 
     it('reads a driver saved without a birthday as null', async () => {
-      const ref = await store.addDriver('Bo', 'Bo Nielsen', null);
+      const ref = await store.addDriver('Bo', 'Bo Nielsen', null, false);
 
       expect((await firstValueFrom(store.getDriver(ref.key!)))?.birthday).toBeNull();
     }, 30000);
@@ -294,8 +294,8 @@ describe('DataStore against the emulator', () => {
       await store.addClockRecord('d2', at('09:00'), null, at('17:00'));
 
       const drivers = [
-        {$key: 'd1', displayName: 'Kim', name: 'Kim', birthday: null, deleted: false},
-        {$key: 'd2', displayName: 'Bente', name: 'Bente', birthday: null, deleted: false},
+        {$key: 'd1', displayName: 'Kim', name: 'Kim', birthday: null, deleted: false, external: false},
+        {$key: 'd2', displayName: 'Bente', name: 'Bente', birthday: null, deleted: false, external: false},
       ];
       const records = await firstValueFrom(store.getClockRecordsForDrivers(drivers, DAY, DAY));
 
@@ -770,7 +770,7 @@ describe('DataStore against the emulator', () => {
 
   describe('drivers', () => {
     it('creates, lists, updates and soft-deletes', async () => {
-      await store.addDriver('Anna', 'Anna Jensen', at('00:00'));
+      await store.addDriver('Anna', 'Anna Jensen', at('00:00'), false);
 
       const [created] = await firstValueFrom(store.getAllDrivers());
       expect(created.displayName).toBe('Anna');
@@ -787,8 +787,8 @@ describe('DataStore against the emulator', () => {
     }, 30000);
 
     it('sorts the list by display name', async () => {
-      await store.addDriver('Yrsa', 'Yrsa', null);
-      await store.addDriver('Anna', 'Anna', null);
+      await store.addDriver('Yrsa', 'Yrsa', null, false);
+      await store.addDriver('Anna', 'Anna', null, false);
 
       expect((await firstValueFrom(store.getAllDrivers())).map(d => d.displayName)).toEqual(['Anna', 'Yrsa']);
     }, 30000);
@@ -858,7 +858,7 @@ describe('DataStore against the emulator', () => {
     }, 30000);
 
     it('finds and removes records older than a cutoff, across every driver', async () => {
-      const driverRef = await store.addDriver('Anna', 'Anna', null);
+      const driverRef = await store.addDriver('Anna', 'Anna', null, false);
       await store.addClockRecord(driverRef.key!, at('08:00'), null, at('16:00'));
 
       const paths = await store.getClockRecordPathsOlderThan(DAY.clone().add(1, 'day'));

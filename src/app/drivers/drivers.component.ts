@@ -86,6 +86,17 @@ export class DriversComponent implements OnInit {
       });
   }
 
+  // Same one-way-[checked] hazard and reset-on-failure as setDriverAdmin above.
+  setDriverExternal(driver: Driver, event: MatCheckboxChange) {
+    void this.writeFeedback
+      .run(this.dataStore.updateDriver(driver, {external: event.checked}), {
+        failureMessage: 'Kunne ikke ændre ekstern-status. Prøv igen.',
+      })
+      .then(outcome => {
+        if (outcome === 'failed') event.source.checked = !event.checked;
+      });
+  }
+
   edit(driver: Driver) {
     const instance = this.dialog.open(DriverFormComponent, DIALOG_CONFIG).componentInstance;
     instance.mode = 'edit';

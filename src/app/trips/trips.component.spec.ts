@@ -38,7 +38,7 @@ describe('TripsComponent read receipts', () => {
   }
 
   function driver(key: string, overrides: Partial<Driver> = {}): Driver {
-    return {$key: key, displayName: key.toUpperCase(), name: key, birthday: null, deleted: false, uid: `uid-${key}`, ...overrides};
+    return {$key: key, displayName: key.toUpperCase(), name: key, birthday: null, deleted: false, external: false, uid: `uid-${key}`, ...overrides};
   }
 
   beforeEach(() => {

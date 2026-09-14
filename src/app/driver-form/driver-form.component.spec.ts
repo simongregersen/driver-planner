@@ -16,7 +16,7 @@ describe('DriverFormComponent', () => {
   let confirmed: boolean;
 
   const driver: Driver = {
-    $key: 'd1', displayName: 'Kim', name: 'Kim Hansen', birthday: moment('1980-01-01'), deleted: false,
+    $key: 'd1', displayName: 'Kim', name: 'Kim Hansen', birthday: moment('1980-01-01'), deleted: false, external: false,
   };
 
   beforeEach(() => {
@@ -55,20 +55,31 @@ describe('DriverFormComponent', () => {
     it('adds the driver with form values and closes the dialog on success', async () => {
       const fixture = create('create');
       const c = fixture.componentInstance;
-      c.driverForm.setValue({displayName: 'Jan', name: 'Jan Poulsen', birthday: null});
+      c.driverForm.setValue({displayName: 'Jan', name: 'Jan Poulsen', birthday: null, external: false});
       c.onSubmit();
       await fixture.whenStable();
-      expect(dataStore.addDriver).toHaveBeenCalledWith('Jan', 'Jan Poulsen', null);
+      expect(dataStore.addDriver).toHaveBeenCalledWith('Jan', 'Jan Poulsen', null, false);
       await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
       await flushWrites();
       expect(snackBarOpen).not.toHaveBeenCalled();
     });
 
+    // A subcontractor's driver, added straight off as excluded from the Timesedler overview
+    // rather than requiring a second edit afterwards — see TimeReportComponent.overviewDrivers.
+    it('passes external through when the checkbox is set', async () => {
+      const fixture = create('create');
+      const c = fixture.componentInstance;
+      c.driverForm.setValue({displayName: 'Jan', name: 'Jan Poulsen', birthday: null, external: true});
+      c.onSubmit();
+      await fixture.whenStable();
+      expect(dataStore.addDriver).toHaveBeenCalledWith('Jan', 'Jan Poulsen', null, true);
+    });
+
     it('shows a snackbar and leaves the dialog open when the write fails', async () => {
       dataStore.addDriver.mockReturnValue(Promise.reject(new Error('offline')));
       const fixture = create('create');
-      fixture.componentInstance.driverForm.setValue({displayName: 'Jan', name: 'Jan Poulsen', birthday: null});
+      fixture.componentInstance.driverForm.setValue({displayName: 'Jan', name: 'Jan Poulsen', birthday: null, external: false});
       fixture.componentInstance.onSubmit();
       await fixture.whenStable();
       await flushWrites();
@@ -84,6 +95,7 @@ describe('DriverFormComponent', () => {
       const val = fixture.componentInstance.driverForm.value;
       expect(val.displayName).toBe('Kim');
       expect(val.name).toBe('Kim Hansen');
+      expect(val.external).toBe(false);
     });
 
     it('updates the existing driver and closes the dialog on success', async () => {

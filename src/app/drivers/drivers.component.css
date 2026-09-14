@@ -7,6 +7,25 @@
   overflow-wrap: break-word;
 }
 
+/* Overrides styles.css's table-wide vertical-align: top — right for tables where a cell can
+   wrap to several lines and a short neighbour should hug the first one, but here nothing
+   wraps anymore (see the column-width comment above) and it only made the checkbox columns,
+   which centre themselves, look misaligned against the plain text ones. */
+.data-table th,
+.data-table td {
+  vertical-align: middle;
+}
+
+/* mat-checkbox's default 40px invisible touch target is taller than a plain text cell's line
+   height, so with every cell in a row forced to the same height, the two checkbox columns were
+   stretching every row on the page to fit them. Shrunk down near the text rows' own height —
+   still comfortably tappable, just no longer the tallest thing in the row. Below phone width,
+   the media query further down takes over with its own (larger, touch-oriented) sizing. */
+.data-table td[data-label="Admin"] mat-checkbox,
+.data-table td[data-label="Ekstern"] mat-checkbox {
+  --mat-checkbox-state-layer-size: 24px;
+}
+
 .row-actions {
   display: flex;
   justify-content: flex-end;
@@ -61,13 +80,15 @@
    otherwise beat styles.css's global :empty { display: none }, undoing that rule specifically
    for drivers without a login (no checkbox rendered, so this cell would otherwise stay empty). */
 @media (max-width: 767px) {
-  .data-table.card-on-mobile td[data-label="Admin"]:not(:empty) {
+  .data-table.card-on-mobile td[data-label="Admin"]:not(:empty),
+  .data-table.card-on-mobile td[data-label="Ekstern"]:not(:empty) {
     display: flex;
     align-items: center;
     gap: 4px;
   }
 
-  .data-table.card-on-mobile td[data-label="Admin"] mat-checkbox {
+  .data-table.card-on-mobile td[data-label="Admin"] mat-checkbox,
+  .data-table.card-on-mobile td[data-label="Ekstern"] mat-checkbox {
     --mat-checkbox-state-layer-size: 28px;
   }
 }
