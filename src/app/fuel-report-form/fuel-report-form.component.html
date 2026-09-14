@@ -2,21 +2,14 @@
 
 <mat-dialog-content>
   <form id="fuelReportForm" class="form-stack" [formGroup]="fuelReportForm" (ngSubmit)="onSubmit()">
-    @if (mode === 'edit') {
-      <div class="vehicle-readonly">
-        <span class="vehicle-readonly-label">Køretøj</span>
-        <span>{{ existingVehicleName }}</span>
-      </div>
-    } @else {
-      <mat-form-field class="full-width" subscriptSizing="dynamic">
-        <mat-label>Køretøj</mat-label>
-        <mat-select formControlName="vehicleKey">
-          @for (vehicle of (vehicles$ | async) ?? []; track vehicle.$key) {
-            <mat-option [value]="vehicle.$key">{{ vehicle.displayName }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    }
+    <mat-form-field class="full-width" subscriptSizing="dynamic">
+      <mat-label>Køretøj</mat-label>
+      <mat-select formControlName="vehicleKey">
+        @for (vehicle of (vehicles$ | async) ?? []; track vehicle.$key) {
+          <mat-option [value]="vehicle.$key">{{ vehicle.displayName }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
 
     @if (needsDriverPicker) {
       <mat-form-field class="full-width" subscriptSizing="dynamic">

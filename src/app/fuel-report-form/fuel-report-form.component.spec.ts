@@ -153,13 +153,13 @@ describe('FuelReportFormComponent', () => {
   });
 
   describe('edit', () => {
-    it('pre-fills the form with comma-formatted decimals and resolves the vehicle name', async () => {
+    it('pre-fills the form with comma-formatted decimals and the current vehicle', async () => {
       const fixture = create('edit', {vehicleKey: 'v1', record});
       await fixture.whenStable();
       const val = fixture.componentInstance.fuelReportForm.value;
       expect(val.odometerKm).toBe('1000');
       expect(val.liters).toBe('45,5');
-      expect(fixture.componentInstance.existingVehicleName).toBe('Bus 1');
+      expect(val.vehicleKey).toBe('v1');
     });
 
     it('updates the report and closes the dialog on success', async () => {
@@ -168,7 +168,20 @@ describe('FuelReportFormComponent', () => {
       c.fuelReportForm.controls['liters'].setValue('50');
       c.onSubmit();
       await fixture.whenStable();
-      expect(dataStore.updateFuelReport).toHaveBeenCalledWith('v1', record, expect.objectContaining({liters: 50}));
+      expect(dataStore.updateFuelReport).toHaveBeenCalledWith('v1', record, expect.objectContaining({vehicleKey: 'v1', liters: 50}));
+      await flushWrites();
+      expect(dialogRefClose).toHaveBeenCalled();
+    });
+
+    // Changing the vehicle is how a driver or admin corrects a report logged against the wrong
+    // one — see DataStore.updateFuelReport for how that move is actually written.
+    it('passes the new vehicleKey through when it is changed', async () => {
+      const fixture = create('edit', {vehicleKey: 'v1', record});
+      const c = fixture.componentInstance;
+      c.fuelReportForm.controls['vehicleKey'].setValue('v2');
+      c.onSubmit();
+      await fixture.whenStable();
+      expect(dataStore.updateFuelReport).toHaveBeenCalledWith('v1', record, expect.objectContaining({vehicleKey: 'v2'}));
       await flushWrites();
       expect(dialogRefClose).toHaveBeenCalled();
     });

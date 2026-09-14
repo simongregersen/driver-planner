@@ -472,9 +472,39 @@ export class DataStore {
     });
   }
 
-  updateFuelReport(vehicleKey: string, record: FuelReport, updates: {date?: Moment; odometerKm?: number | null; liters?: number | null; note?: string}) {
-    const payload: Record<string, unknown> = {...updates};
+  updateFuelReport(vehicleKey: string, record: FuelReport, updates: {vehicleKey?: string; date?: Moment; odometerKm?: number | null; liters?: number | null; note?: string}) {
+    const {vehicleKey: newVehicleKey, ...fields} = updates;
+    const payload: Record<string, unknown> = {...fields};
     if (updates.date) payload.date = updates.date.valueOf();
+
+    if (newVehicleKey && newVehicleKey !== vehicleKey) {
+      // The vehicle is the storage key (fuelReports/$vehicleKey/...), not a field, so changing
+      // it moves the whole record to the new vehicle's path — written as one multi-path update
+      // so the old path is only cleared once the new one has the (updated) data, rather than as
+      // a separate remove()+push() that could leave the report gone from both, or duplicated in
+      // both, if the write drops offline partway through.
+      //
+      // excludeFromStatistics is deliberately left out of that write: it's admin-only per
+      // database.rules.json's .validate on the field, and a multi-path update is all-or-nothing
+      // against the rules — carrying it along would fail the *entire* move for a driver moving
+      // their own report that an admin had separately flagged. It's restored below instead, as
+      // a best-effort follow-up that only ever needs to succeed for the admins who set it.
+      const move = update(ref(db), {
+        [`fuelReports/${vehicleKey}/${record.$key}`]: null,
+        [`fuelReports/${newVehicleKey}/${record.$key}`]: {
+          date: (updates.date ?? record.date).valueOf(),
+          driverKey: record.driverKey,
+          odometerKm: updates.odometerKm !== undefined ? updates.odometerKm : record.odometerKm,
+          liters: updates.liters !== undefined ? updates.liters : record.liters,
+          note: (updates.note !== undefined ? updates.note : record.note) || '',
+        },
+      });
+      if (record.excludeFromStatistics) {
+        return move.then(() => this.setFuelReportExcluded(newVehicleKey, record, true).catch(() => undefined));
+      }
+      return move;
+    }
+
     return update(child(this.fuelReportsRef, `${vehicleKey}/${record.$key}`), payload);
   }
 

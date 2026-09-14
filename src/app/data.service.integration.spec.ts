@@ -892,6 +892,23 @@ describe('DataStore against the emulator', () => {
       expect(await firstValueFrom(store.getFuelReports('v1', DAY, DAY))).toEqual([]);
     }, 30000);
 
+    // A driver picking the wrong vehicle by mistake is exactly what this is for — the vehicle is
+    // fuelReports' storage key rather than a plain field (see FuelReport's doc comment), so
+    // "editing" it means moving the whole record to the new vehicle's path.
+    it('moves a report to a different vehicle, carrying its other fields along', async () => {
+      await store.addFuelReport('v1', {date: at('09:00'), driverKey: 'd1', odometerKm: 1000, liters: 50, note: 'fuld tank'});
+      const [report] = await firstValueFrom(store.getFuelReports('v1', DAY, DAY));
+
+      await store.updateFuelReport('v1', report, {vehicleKey: 'v2', liters: 55});
+
+      expect(await firstValueFrom(store.getFuelReports('v1', DAY, DAY))).toEqual([]);
+      const [moved] = await firstValueFrom(store.getFuelReports('v2', DAY, DAY));
+      expect(moved.$key).toBe(report.$key);
+      expect(moved.liters).toBe(55);
+      expect(moved.driverKey).toBe('d1');
+      expect(moved.note).toBe('fuld tank');
+    }, 30000);
+
     // The regression this pins: these reads were briefly one-time `get`s, so a driver's own list
     // (FuelReportingComponent) only picked up the refuelling they had just saved once something
     // re-created the component — switching tabs and back. Nothing re-subscribes here either.

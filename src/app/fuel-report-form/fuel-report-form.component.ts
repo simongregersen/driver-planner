@@ -1,5 +1,4 @@
-import {ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal} from '@angular/core';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {ChangeDetectionStrategy, Component, OnInit, inject, signal} from '@angular/core';
 import {AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from '@angular/forms';
 import {AsyncPipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
@@ -30,11 +29,10 @@ function decimalValidator(control: AbstractControl): ValidationErrors | null {
   return isValidDecimalInput(control.value) ? null : {decimal: true};
 }
 
-// Create and edit share one form, following VehicleFormComponent's convention. The vehicle
-// itself can only be set on create — since it's the storage key (fuelReports/$vehicleKey/...)
-// rather than just a field, changing it on edit would mean moving the record between paths, so
-// edit mode shows it as plain read-only text instead (a report against the wrong vehicle is
-// deleted and re-created rather than moved).
+// Create and edit share one form, following VehicleFormComponent's convention. The vehicle is
+// editable in both modes — e.g. to fix a driver picking the wrong one by mistake — even though
+// it's the storage key (fuelReports/$vehicleKey/...) rather than just a field: changing it on
+// edit moves the record to the new vehicle's path (see DataStore.updateFuelReport).
 //
 // Opened via MatDialog.open() with no data binding — driverKey/mode/vehicleKey/record are set
 // directly on componentInstance by the caller straight after open(); that assignment happens
@@ -63,7 +61,8 @@ export class FuelReportFormComponent implements OnInit {
    * (if they have one) as a starting point that's still free to be changed to anyone else. */
   defaultDriverKey?: string;
   mode: FuelReportFormMode = 'create';
-  /** Required when mode is 'edit'. */
+  /** Required when mode is 'edit'. The vehicle the record currently lives under — the form's own
+   * vehicleKey control starts out set to this, but is free to be changed (see class doc). */
   vehicleKey!: string;
   /** Required when mode is 'edit'. */
   record!: FuelReport;
@@ -78,17 +77,24 @@ export class FuelReportFormComponent implements OnInit {
    * can't turn an impatient second tap into a second record — and stays true for a write that
    * hasn't been acknowledged yet, which offline is every write. See WriteFeedbackService. */
   readonly saving = signal(false);
-  private readonly destroyRef = inject(DestroyRef);
   readonly dialogRef = inject(MatDialogRef<FuelReportFormComponent>);
 
-  // Both are pickers: exclude deleted drivers/vehicles, same as the selects elsewhere.
-  readonly vehicles$: Observable<Vehicle[]> = this.dataStore.getAllVehicles().pipe(map(Utility.filterDeleted));
+  // Both are pickers: exclude deleted drivers/vehicles, same as the selects elsewhere — except
+  // that in edit mode the record's current vehicle stays in the list even if it's since been
+  // deleted (mirroring FuelTrackingComponent.vehicleOptions' own comment on the same case), so
+  // reopening an old report against a deleted vehicle doesn't show the select as empty.
+  readonly vehicles$: Observable<Vehicle[]> = this.dataStore.getAllVehicles().pipe(map(vehicles => {
+    const active = Utility.filterDeleted(vehicles);
+    if (this.mode === 'edit' && !active.some(v => v.$key === this.vehicleKey)) {
+      const current = vehicles.find(v => v.$key === this.vehicleKey);
+      if (current) return [...active, current];
+    }
+    return active;
+  }));
   readonly drivers$: Observable<Driver[]> = this.dataStore.getAllDrivers().pipe(map(Utility.filterDeleted));
   readonly minDate = this.dateUtility.minDate(5);
 
   fuelReportForm!: FormGroup;
-  /** Only populated (and shown) in edit mode, where the vehicle can no longer be changed. */
-  existingVehicleName: string | null = null;
   /** True when nobody supplied a driverKey up front — an admin creating a report on a driver's
    * behalf, rather than a driver reporting their own. Gates the in-form driver picker. */
   needsDriverPicker = false;
@@ -105,19 +111,13 @@ export class FuelReportFormComponent implements OnInit {
     const isEdit = this.mode === 'edit';
     this.needsDriverPicker = !isEdit && !this.driverKey;
     this.fuelReportForm = this.fb.group({
-      vehicleKey: [null, isEdit ? [] : Validators.required],
+      vehicleKey: [isEdit ? this.vehicleKey : null, Validators.required],
       driverKey: [this.needsDriverPicker ? (this.defaultDriverKey ?? null) : null, this.needsDriverPicker ? Validators.required : []],
       date: [isEdit ? this.record.date : this.dateUtility.today(), Validators.required],
       odometerKm: [isEdit ? formatDecimal(this.record.odometerKm) : '', [Validators.required, decimalValidator]],
       liters: [isEdit ? formatDecimal(this.record.liters) : '', [Validators.required, decimalValidator]],
       note: [isEdit ? (this.record.note ?? '') : ''],
     });
-
-    if (isEdit) {
-      this.vehicles$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(vehicles => {
-        this.existingVehicleName = vehicles.find(v => v.$key === this.vehicleKey)?.displayName ?? 'Ukendt køretøj';
-      });
-    }
   }
 
   /** The one message this form shows, in the box at the foot of it — the same reporting
@@ -150,6 +150,7 @@ export class FuelReportFormComponent implements OnInit {
     const val = this.fuelReportForm.value;
     const saved = this.mode === 'edit'
       ? this.dataStore.updateFuelReport(this.vehicleKey, this.record, {
+          vehicleKey: val.vehicleKey,
           date: val.date,
           odometerKm: parseDecimal(val.odometerKm),
           liters: parseDecimal(val.liters),
