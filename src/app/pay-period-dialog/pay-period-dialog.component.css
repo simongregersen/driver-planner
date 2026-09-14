@@ -1,6 +1,11 @@
-/* The period this timesheet covers, directly under the dialog title — see the .html. */
+/* The period this timesheet covers, as a subheader between the dialog title and its scrolling
+   content — see the .html. Padded to match mat-dialog-title/mat-dialog-content's own 24px
+   horizontal inset, since as a plain sibling of both it gets none of that for free; the bottom
+   padding also replaces the padding-top mat-dialog-content would otherwise have lost by no
+   longer directly following mat-dialog-title (Material's own title+content adjacency rule). */
 .period-range {
-  margin: 0 0 12px;
+  margin: 0;
+  padding: 0 24px 12px;
   font-weight: 600;
   color: var(--mat-sys-on-surface-variant);
 }

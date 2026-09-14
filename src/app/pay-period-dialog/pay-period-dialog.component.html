@@ -1,10 +1,11 @@
 <h2 mat-dialog-title>Timeseddel &ndash; {{ driverName }}</h2>
+<!-- Which period this is, as a subheader under the title rather than in the scrolling content
+     below: it's part of what identifies this dialog, not something that should scroll out of
+     view along with the report body. Kept off the title itself since the title already carries
+     the driver's name, and a date range wrapping into a heading on a phone reads badly. -->
+<p class="period-range">{{ period.start.toDate() | date:'d. MMM' }} &ndash; {{ period.end.toDate() | date:'d. MMM y' }} &middot; {{ period.label }}</p>
 
 <mat-dialog-content>
-  <!-- Which period this is, on its own line under the title rather than in it: the title already
-       carries the driver's name, and a date range wrapping into a heading on a phone reads
-       badly. Same treatment as .trip-name in trip-report-form. -->
-  <p class="period-range">{{ period.start.toDate() | date:'d. MMM' }} &ndash; {{ period.end.toDate() | date:'d. MMM y' }} &middot; {{ period.label }}</p>
   <app-pay-period-report [driverKey]="driverKey" [periodStart]="periodStart"></app-pay-period-report>
 </mat-dialog-content>
 
