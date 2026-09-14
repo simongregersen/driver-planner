@@ -1,6 +1,7 @@
 import moment from 'moment';
 import {ClockRecord} from './clock-record';
 import {
+  assignmentMoment,
   clockRecordTotals,
   formatDogn,
   formatDuration,
@@ -164,14 +165,24 @@ describe('recentPayPeriods', () => {
 
 describe('payPeriodKeyOf', () => {
   // The same rule the day-by-day view files records under: the day (and so the period) a shift
-  // began, never the one it ended in.
-  it('files a shift by its clock-in, even when it ends in the next period', () => {
+  // ended, so it's paid out with a period that may still be open rather than one already settled.
+  it('files a shift by its clock-out, when that runs into the next period', () => {
     // 2026-08-16 is the last day of the period starting 2026-08-03.
-    expect(payPeriodKeyOf(record('2026-08-16 23:00', '2026-08-17 07:00'))).toBe('2026-08-03');
+    expect(payPeriodKeyOf(record('2026-08-16 23:00', '2026-08-17 07:00'))).toBe('2026-08-17');
   });
 
   it('files a shift starting in a new period under that new period', () => {
     expect(payPeriodKeyOf(record('2026-08-17 00:30', '2026-08-17 08:00'))).toBe('2026-08-17');
+  });
+
+  it('falls back to clock-in for a still-open shift, which has no end yet', () => {
+    // Still within the period starting 2026-08-03 even though it would fall in the next one were
+    // it to close right now.
+    expect(payPeriodKeyOf(record('2026-08-16 23:00', null))).toBe('2026-08-03');
+  });
+
+  it('falls back to clock-in for a shift whose clock-out precedes it (a data-entry mistake)', () => {
+    expect(payPeriodKeyOf(record('2026-08-16 23:00', '2026-08-16 20:00'))).toBe('2026-08-03');
   });
 
   it('round-trips through payPeriodFromKey', () => {
@@ -199,6 +210,23 @@ describe('recordMinutes and recordHasError', () => {
 
   it('counts a shift running past midnight in full', () => {
     expect(recordMinutes(record('2026-08-03 22:00', '2026-08-04 06:00'))).toBe(480);
+  });
+});
+
+describe('assignmentMoment', () => {
+  it('is the clock-out for an ordinary closed shift', () => {
+    const r = record('2026-08-03 08:00', '2026-08-03 16:00');
+    expect(assignmentMoment(r).isSame(r.clockOut)).toBe(true);
+  });
+
+  it('is the clock-in for a still-open shift', () => {
+    const r = record('2026-08-03 08:00', null);
+    expect(assignmentMoment(r).isSame(r.clockIn)).toBe(true);
+  });
+
+  it('is the clock-in for a shift whose clock-out precedes it', () => {
+    const r = record('2026-08-03 16:00', '2026-08-03 08:00');
+    expect(assignmentMoment(r).isSame(r.clockIn)).toBe(true);
   });
 });
 
@@ -275,11 +303,11 @@ describe('a period summed whole against the same period summed day by day', () =
   it('agrees to the minute', () => {
     const whole = clockRecordTotals(RECORDS);
 
-    // How the day-by-day view reaches the same number: bucket by clock-in date, total each day,
-    // then add the days up.
+    // How the day-by-day view reaches the same number: bucket by assignment date, total each
+    // day, then add the days up.
     const byDay = new Map<string, ClockRecord[]>();
     for (const r of RECORDS) {
-      const day = r.clockIn.format('YYYY-MM-DD');
+      const day = assignmentMoment(r).format('YYYY-MM-DD');
       byDay.set(day, [...(byDay.get(day) ?? []), r]);
     }
     const dayTotals = [...byDay.values()].map(clockRecordTotals);
@@ -293,8 +321,34 @@ describe('a period summed whole against the same period summed day by day', () =
     expect(whole.dognCount).toBe(3);
   });
 
+  // The same invariant one level up: partitioning by *period* (payPeriodKeyOf, which one record
+  // here — the last — deliberately keys to a different period than all the others) must also
+  // never lose or double a minute, however many periods the records end up spread across.
+  it('also agrees to the minute when summed by pay period instead of by day', () => {
+    const whole = clockRecordTotals(RECORDS);
+
+    const byPeriod = new Map<string, ClockRecord[]>();
+    for (const r of RECORDS) {
+      const key = payPeriodKeyOf(r);
+      byPeriod.set(key, [...(byPeriod.get(key) ?? []), r]);
+    }
+    // Confirms the record set actually exercises more than one bucket — otherwise this would
+    // pass trivially no matter how payPeriodKeyOf were implemented.
+    expect(byPeriod.size).toBe(2);
+
+    const periodTotals = [...byPeriod.values()].map(clockRecordTotals);
+    const summed = {
+      minutes: periodTotals.reduce((sum, t) => sum + t.minutes, 0),
+      dognCount: periodTotals.reduce((sum, t) => sum + t.dognCount, 0),
+    };
+
+    expect(summed).toEqual(whole);
+  });
+
   it('files every one of those records in the period the overview would put it in', () => {
     const keys = RECORDS.map(payPeriodKeyOf);
-    expect(keys).toEqual(['2026-08-03', '2026-08-03', '2026-08-03', '2026-08-03', '2026-08-03', '2026-08-03']);
+    // The last record ends 2026-08-17, the first day of the next period — every other record
+    // both starts and ends within the period starting 2026-08-03.
+    expect(keys).toEqual(['2026-08-03', '2026-08-03', '2026-08-03', '2026-08-03', '2026-08-03', '2026-08-17']);
   });
 });

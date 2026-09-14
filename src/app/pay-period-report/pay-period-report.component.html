@@ -42,19 +42,41 @@
               </tr>
               </thead>
               <tbody>
-                @for (dayRecord of day.records; track dayRecord.record.$key) {
-                  <tr class="hoverable">
-                    <td><span class="report-start">{{ dayRecord.record.clockIn.toDate() | date:'HH:mm' }}</span></td>
+                @for (dayRecord of day.records; track dayRecord.record.$key + (dayRecord.muted ? '-echo' : '')) {
+                  <!-- A muted row is this record's echo on the day it was punched — its hours are
+                       actually counted on the day named below, not here (see
+                       PayPeriodReportComponent.buildDay). Kept visible, heavily dimmed like
+                       .row-excluded in fuel-tracking.component.css (same meaning: shown for
+                       reference, doesn't count toward the totals below it), so the day it was
+                       punched doesn't just look empty. The explanation is on the whole row rather
+                       than only the small date annotation, since that's the one thing about this
+                       row worth hovering for. -->
+                  <tr class="hoverable" [class.day-record-muted]="dayRecord.muted"
+                      [matTooltip]="dayRecord.muted
+                        ? ('Timerne tælles med ' + (dayRecord.record.clockOut!.toDate() | date:'EEEE d. MMMM'))
+                        : ''">
+                    <td>
+                      <span class="report-start">{{ dayRecord.record.clockIn.toDate() | date:'HH:mm' }}</span>
+                      <!-- The reverse of .report-end-date below: this row is shown on the day the
+                           shift *ended* (its counted day), so a start time from an earlier day
+                           needs the same "which day?" annotation the end time used to need. -->
+                      @if (dayRecord.showStartDate) {
+                        <div class="report-start-date"
+                             [matTooltip]="'Startede ' + (dayRecord.record.clockIn.toDate() | date:'EEEE d. MMMM')">
+                          {{ dayRecord.record.clockIn.toDate() | date:'d/M' }}
+                        </div>
+                      }
+                    </td>
                     <td>
                       @if (dayRecord.record.clockOut) {
                         <span class="report-end">{{ dayRecord.record.clockOut.toDate() | date:'HH:mm' }}</span>
-                        <!-- A shift that ran past midnight: the date it actually ended on, on
-                             its own line under the time — see the same block in
-                             time-reporting.component.html for why it's dated this briefly.
-                             Here the day it began is the heading this whole table sits under. -->
-                        @if (dayRecord.crossesDay) {
+                        <!-- Not muted away entirely, and deliberately not .no-print — see the
+                             .report-end-date rule in the .css. Its own tooltip is only needed for
+                             the non-muted (error-record) case; a muted row's explanation is
+                             already on the whole row above. -->
+                        @if (dayRecord.showEndDate) {
                           <div class="report-end-date"
-                               [matTooltip]="dayRecord.record.clockOut.toDate() | date:'EEEE d. MMMM'">
+                               [matTooltip]="dayRecord.muted ? '' : (dayRecord.record.clockOut.toDate() | date:'EEEE d. MMMM')">
                             {{ dayRecord.record.clockOut.toDate() | date:'d/M' }}
                           </div>
                         }
@@ -71,7 +93,12 @@
                     </td>
                     <td class="col-computed" [class.cell-warning]="dayRecord.hasError"
                         [matTooltip]="dayRecord.hasError ? 'Slut er registreret før start' : ''">
-                      {{ dayRecord.durationLabel }}
+                      <!-- A dash rather than the real duration: this row's whole point is that
+                           these hours are not this day's, so a number here — even a muted one —
+                           is one more thing to explain rather than read. Same dash
+                           durationLabel already uses for an open shift, just for a different
+                           reason. -->
+                      {{ dayRecord.muted ? '—' : dayRecord.durationLabel }}
                     </td>
                   </tr>
                 } @empty {

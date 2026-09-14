@@ -131,9 +131,9 @@ export class TimeReportComponent {
     const periods = this.periods();
     const paid = new Set(this.paidPeriods());
 
-    // Keyed '<driverKey>/<periodKey>', bucketed by clock-in — a shift that runs past the end of
-    // a period belongs wholly to the period it started in, the same rule the day-by-day view
-    // uses to file it under the day it began.
+    // Keyed '<driverKey>/<periodKey>', bucketed by where each shift ended (payPeriodKeyOf) — a
+    // shift that runs past the end of a period is paid out with the period it finished in, the
+    // same rule the day-by-day view uses to file it under the day it ended.
     const byCell = new Map<string, ClockRecord[]>();
     for (const record of records) {
       const key = `${record.driverKey}/${payPeriodKeyOf(record)}`;

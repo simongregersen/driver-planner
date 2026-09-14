@@ -95,14 +95,31 @@ describe('PayPeriodReportComponent', () => {
     expect(report.dognCount).toBe(3);
   });
 
-  it('files a shift that runs past midnight under the day it began, and says where it ended', () => {
+  it('files a shift that runs past midnight under the day it ended, with a muted echo on the day it began', () => {
     const report = create({records: [record('r1', '2026-08-03 22:00', '2026-08-04 06:00')]}).componentInstance.report()!;
 
     const days = report.weeks[0].days;
+    // The day it started: a muted echo, not counted.
     expect(days[0].records.length).toBe(1);
-    expect(days[0].totalLabel).toBe('8:00');
-    expect(days[0].records[0].crossesDay).toBe(true);
-    expect(days[1].records.length).toBe(0);
+    expect(days[0].records[0].muted).toBe(true);
+    expect(days[0].records[0].showEndDate).toBe(true);
+    expect(days[0].totalLabel).toBe('0:00');
+    // The day it ended: the real, counted row.
+    expect(days[1].records.length).toBe(1);
+    expect(days[1].records[0].muted).toBe(false);
+    expect(days[1].records[0].showStartDate).toBe(true);
+    expect(days[1].totalLabel).toBe('8:00');
+  });
+
+  it('moves a shift\'s hours out of the week it began in and into the week it ended in', () => {
+    // 2026-08-09 is the last day of week 32; 2026-08-10 is the first day of week 33.
+    const report = create({
+      records: [record('r1', '2026-08-09 22:00', '2026-08-10 06:00')],
+    }).componentInstance.report()!;
+
+    expect(report.weeks[0].totalLabel).toBe('0:00');
+    expect(report.weeks[1].totalLabel).toBe('8:00');
+    expect(report.totalLabel).toBe('8:00');
   });
 
   it('marks a record whose end precedes its start as an error worth nothing', () => {

@@ -4,16 +4,11 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatDialog} from '@angular/material/dialog';
 import moment from 'moment';
 import {map, switchMap} from 'rxjs/operators';
-import {DataStore} from '../data.service';
+import {CLOCK_RECORD_LOOKBACK_DAYS, DataStore} from '../data.service';
 import {ClockRecord} from '../clock-record';
 import {ClockRecordFormComponent} from '../clock-record-form/clock-record-form.component';
 import {ClockRecordStopComponent} from '../clock-record-stop/clock-record-stop.component';
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
-
-// A driver can be clocked in across a shift that started a few days ago (a multi-day trip),
-// so this has to look back further than "today" to find a still-open record — but an
-// unbounded query would be wasteful, so it's capped at a week.
-const OPEN_RECORD_LOOKBACK_DAYS = 7;
 
 @Component({
   standalone: true,
@@ -31,7 +26,7 @@ export class ClockPunchComponent {
 
   readonly openRecord = toSignal(
     toObservable(this.driverKey).pipe(
-      switchMap(driverKey => this.dataStore.getClockRecords(driverKey, moment().subtract(OPEN_RECORD_LOOKBACK_DAYS, 'days'))),
+      switchMap(driverKey => this.dataStore.getClockRecords(driverKey, moment().subtract(CLOCK_RECORD_LOOKBACK_DAYS, 'days'))),
       map(records => records.find(r => !r.clockOut) ?? null),
     ),
     {initialValue: null as ClockRecord | null},

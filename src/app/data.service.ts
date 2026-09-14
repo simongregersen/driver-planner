@@ -42,6 +42,12 @@ export const DAY_PLAN_OVERNIGHT_HOURS = 3;
 // still gets the right answer, short enough that an offline save isn't left hanging.
 const PUBLIC_LOOKUP_TIMEOUT_MS = 3000;
 
+// The longest a single shift is assumed to run — used two ways: ClockPunchComponent looks back
+// this far to find a still-open record, and getClockRecords below widens its own query by the
+// same margin so a shift that started before a requested window but *ends* inside it (see
+// pay-period.ts's assignmentMoment) is still fetched, not just one that started inside it.
+export const CLOCK_RECORD_LOOKBACK_DAYS = 14;
+
 @Injectable({providedIn: 'root'})
 export class DataStore {
   private driversRef = ref(db, '/drivers');
@@ -404,11 +410,25 @@ export class DataStore {
   // Open-ended above when `to` is omitted — callers wanting a rolling "since X" window (the
   // punch widget's open-record lookback, the reporting list's recent window) don't want this
   // silently narrowed to a single day the way getTrips's default range is.
+  //
+  // A bounded query's lower bound is widened by CLOCK_RECORD_LOOKBACK_DAYS: this is indexed and
+  // range-scoped on clockIn, but a caller asking for records belonging to [from, to] means
+  // records *assigned* to that window (see pay-period.ts's assignmentMoment), which can include a
+  // shift whose clockIn precedes `from` but whose clockOut lands inside it. No corresponding
+  // widening is needed on the upper bound — clockIn is never later than a record's own
+  // assignmentMoment, so nothing with a relevant clockOut falls outside the existing `endAt`.
+  // Deliberately not filtered back down to [from, to] here: a caller scoped to the *earlier*
+  // window such a record's clockIn falls in still needs it returned too (see PayPeriodReportComponent,
+  // which shows a muted echo of it on the day it started).
   getClockRecords(driverKey: string, from: Moment, to?: Moment): Observable<ClockRecord[]> {
     const fromDate = this.dateUtility.toMoment(from)!;
     const driverRef = child(this.clockRecordsRef, driverKey);
     const q = to
-      ? query(driverRef, orderByChild('clockIn'), startAt(fromDate.valueOf()), endAt(this.dateUtility.toMoment(to)!.add(1, 'days').valueOf() - 1))
+      ? query(
+        driverRef, orderByChild('clockIn'),
+        startAt(fromDate.clone().subtract(CLOCK_RECORD_LOOKBACK_DAYS, 'days').valueOf()),
+        endAt(this.dateUtility.toMoment(to)!.add(1, 'days').valueOf() - 1),
+      )
       : query(driverRef, orderByChild('clockIn'), startAt(fromDate.valueOf()));
     return listVal<StoredClockRecord>(q, {keyField: '$key'}).pipe(map(rs => rs.map(toClockRecord)));
   }

@@ -135,14 +135,32 @@ describe('TimeReportComponent', () => {
       expect(rows[1].cells.at(-1)!.dognLabel).toBeNull();
     });
 
-    // Clock-in, not clock-out: a shift begun on the last night of a period is that period's work.
-    it('files a shift crossing the period boundary under the period it began in', () => {
+    // Clock-out, not clock-in: a shift that runs into the next period is that period's work, not
+    // one that may already be settled — see pay-period.ts's assignmentMoment.
+    it('does not file a shift crossing the period boundary under the period it began in', () => {
       const rows = create({
         isAdmin: true,
         records: [record('r1', 'd1', '2026-08-16 23:00', '2026-08-17 07:00')],
       }).componentInstance.overviewRows();
 
+      expect(rows[0].cells.at(-1)!.isEmpty).toBe(true);
+    });
+
+    it('files a shift crossing the period boundary under the period it ends in, with no double-count', () => {
+      const fixture = create({
+        isAdmin: true,
+        records: [record('r1', 'd1', '2026-08-16 23:00', '2026-08-17 07:00')],
+      });
+      const c = fixture.componentInstance;
+      // One period forward from create()'s pinned window, so '2026-08-17' — the shift's own end
+      // date — is the rightmost (selected) column instead of just inside the visible window.
+      c.period.set({start: moment('2026-08-17'), end: moment('2026-08-30'), key: '2026-08-17', label: 'Uge 34-35'});
+      const rows = c.overviewRows();
+
+      expect(c.periods().at(-1)!.key).toBe('2026-08-17');
       expect(rows[0].cells.at(-1)!.hoursLabel).toBe('8:00');
+      // The period it began in (now the second-to-last column) doesn't also count it.
+      expect(rows[0].cells.at(-2)!.isEmpty).toBe(true);
     });
 
     it('marks the cells that have been settled', () => {

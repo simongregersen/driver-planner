@@ -21,6 +21,7 @@ import {goOffline} from 'firebase/database';
 import moment, {Moment} from 'moment';
 import {firstValueFrom} from 'rxjs';
 import {DataStore, DAY_PLAN_OVERNIGHT_HOURS} from './data.service';
+import {clockRecordTotals, payPeriodFor, payPeriodKeyOf} from './pay-period';
 import {Template} from './template';
 import {Trip} from './trip';
 import {Utility} from './utility';
@@ -305,6 +306,78 @@ describe('DataStore against the emulator', () => {
 
     it('reads no drivers at all as an empty list rather than hanging', async () => {
       expect(await firstValueFrom(store.getClockRecordsForDrivers([], DAY, DAY))).toEqual([]);
+    }, 30000);
+
+    // The overview and day-by-day views bucket a record by where it *ends* (see pay-period.ts's
+    // assignmentMoment), so a window's own query has to catch a shift that started before it but
+    // ends inside it too — not just one that started inside it. getClockRecords is indexed on
+    // clockIn alone, so this only works because it widens its own lower bound by
+    // CLOCK_RECORD_LOOKBACK_DAYS before querying.
+    it('finds a record whose clock-in precedes the window but whose clock-out falls inside it', async () => {
+      const clockIn = DAY.clone().subtract(3, 'days').hour(22);
+      const clockOut = DAY.clone().hour(6);
+      await store.addClockRecord('d1', clockIn, null, clockOut);
+
+      const [record] = await firstValueFrom(store.getClockRecords('d1', DAY, DAY));
+
+      expect(record.clockOut?.format('YYYY-MM-DD HH:mm')).toBe(clockOut.format('YYYY-MM-DD HH:mm'));
+    }, 30000);
+
+    it('still excludes a record entirely outside the widened lookback window', async () => {
+      const farClockIn = DAY.clone().subtract(20, 'days').hour(8);
+      const farClockOut = DAY.clone().subtract(19, 'days').hour(16);
+      await store.addClockRecord('d1', farClockIn, null, farClockOut);
+
+      expect(await firstValueFrom(store.getClockRecords('d1', DAY, DAY))).toEqual([]);
+    }, 30000);
+
+    // The end-to-end version of the widened-query tests above: a boundary-crossing shift must be
+    // *fetched* by both the period it began in (so that one can render its muted echo) and the
+    // period it ended in (so that one can count it) — but payPeriodKeyOf must only ever agree
+    // with one of them, so the hours land in exactly one place, never both and never neither.
+    // Each half of this is covered separately elsewhere (the widened query itself above; the
+    // bucketing math in pay-period.spec.ts; each component's own rendering in their specs) — this
+    // is the one test that exercises the real query and the real bucketing rule together.
+    it('fetches a period-boundary-crossing shift on both sides, but counts it only where it ended', async () => {
+      const originPeriod = payPeriodFor(DAY);
+      const destinationPeriod = payPeriodFor(originPeriod.end.clone().add(1, 'day'));
+      const clockIn = originPeriod.end.clone().hour(22);
+      const clockOut = destinationPeriod.start.clone().hour(6);
+      await store.addClockRecord('d1', clockIn, null, clockOut);
+
+      const [originRecords, destinationRecords] = await Promise.all([
+        firstValueFrom(store.getClockRecords('d1', originPeriod.start, originPeriod.end)),
+        firstValueFrom(store.getClockRecords('d1', destinationPeriod.start, destinationPeriod.end)),
+      ]);
+
+      // Fetched on both sides of the boundary...
+      expect(originRecords.length).toBe(1);
+      expect(destinationRecords.length).toBe(1);
+
+      // ...but payPeriodKeyOf claims it for the destination period alone.
+      expect(originRecords.filter(r => payPeriodKeyOf(r) === originPeriod.key)).toEqual([]);
+      const countedInDestination = destinationRecords.filter(r => payPeriodKeyOf(r) === destinationPeriod.key);
+      expect(countedInDestination.length).toBe(1);
+
+      // And its full duration lands exactly once — not split, not doubled.
+      expect(clockRecordTotals(countedInDestination).minutes).toBe(clockOut.diff(clockIn, 'minutes'));
+    }, 30000);
+
+    // The flip side of the lookback test above, spelled out as a known limitation rather than an
+    // untested assumption: a shift that started further back than CLOCK_RECORD_LOOKBACK_DAYS
+    // before the period it ends in is invisible to that period's query. It would still render as
+    // a muted echo in the period it began (its clockIn is found there regardless), but nowhere
+    // would count it — pinned here so shortening the lookback, or a business need for longer
+    // shifts, is a deliberate choice rather than a silent regression.
+    it('cannot find a boundary-crossing shift that started further back than the lookback window', async () => {
+      const destinationPeriod = payPeriodFor(DAY);
+      const clockIn = destinationPeriod.start.clone().subtract(28, 'days').hour(22);
+      const clockOut = destinationPeriod.start.clone().hour(6);
+      await store.addClockRecord('d1', clockIn, null, clockOut);
+
+      const destinationRecords = await firstValueFrom(store.getClockRecords('d1', destinationPeriod.start, destinationPeriod.end));
+
+      expect(destinationRecords).toEqual([]);
     }, 30000);
   });
 

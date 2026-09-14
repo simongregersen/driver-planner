@@ -16,6 +16,7 @@ import {ClockRecordFormComponent} from '../clock-record-form/clock-record-form.c
 import {SMALL_DIALOG_CONFIG} from '../dialog-config';
 import {RichTextComponent} from '../rich-text/rich-text.component';
 import {
+  assignmentMoment,
   clockRecordTotals,
   formatDogn,
   formatDuration,
@@ -38,7 +39,17 @@ interface DayRecord {
   durationMinutes: number;
   durationLabel: string;
   hasError: boolean;
-  crossesDay: boolean;
+  /** True when this record started on a different day than the one it's shown under — a
+   * multi-day shift rendered (counted) on its end day. Drives the small start-date annotation. */
+  showStartDate: boolean;
+  /** True when this record ended on a different day than the one it's shown under. True for
+   * every muted row by construction (that's why it's muted), and also for the pre-existing
+   * clockOut-before-clockIn error edge case. Drives the small end-date annotation. */
+  showEndDate: boolean;
+  /** A muted echo: this record started on this day but its hours are counted elsewhere (see
+   * assignmentMoment) — shown so the day it was punched doesn't just look empty, but excluded
+   * from this day's totals so the real, counted row (elsewhere) is the only one that counts. */
+  muted: boolean;
   dognbetaling: boolean;
   dognCount: number;
 }
@@ -159,35 +170,48 @@ export class PayPeriodReportComponent {
     return {weeks, totalLabel: formatDuration(totalMinutes), dognCount};
   }
 
-  // Records are bucketed by their clock-in date — a record that runs past midnight (a
-  // multi-day trip) is attached to the day it started, not the day it ended.
+  // A record's hours are attributed to the day it *ended* (assignmentMoment), not the day it
+  // began — see pay-period.ts. A record that started on this day but is attributed to a
+  // different one still gets a row here (muted, excluded from this day's totals) so the day it
+  // was actually punched doesn't just look empty.
   private buildDay(date: Moment, trips: Trip[], records: ClockRecord[]): DayReport {
     const dayTrips: DayTrip[] = trips
       .filter(t => this.dateUtility.equals(t.start, date))
       .map(t => ({key: t.$key, name: t.name, start: t.start, end: t.end}));
 
-    const dayRecords: DayRecord[] = records
-      .filter(r => this.dateUtility.equals(r.clockIn, date))
-      .map(record => {
-        const hasError = recordHasError(record);
-        const durationMinutes = recordMinutes(record);
-        const dognbetaling = !!record.dognbetaling;
-        const dognCount = recordDognCount(record);
-        return {
-          record,
-          durationMinutes,
-          durationLabel: hasError ? 'Fejl' : (record.clockOut ? (dognbetaling ? formatDogn(dognCount) : formatDuration(durationMinutes)) : '—'),
-          hasError,
-          crossesDay: !!(record.clockOut && !this.dateUtility.equals(record.clockIn, record.clockOut)),
-          dognbetaling,
-          dognCount,
-        };
-      });
+    const countedRecords = records.filter(r => this.dateUtility.equals(assignmentMoment(r), date));
+    const echoRecords = records.filter(r =>
+      this.dateUtility.equals(r.clockIn, date) && !this.dateUtility.equals(assignmentMoment(r), date));
+
+    const buildRow = (record: ClockRecord, muted: boolean): DayRecord => {
+      const hasError = recordHasError(record);
+      const durationMinutes = recordMinutes(record);
+      const dognbetaling = !!record.dognbetaling;
+      const dognCount = recordDognCount(record);
+      return {
+        record,
+        durationMinutes,
+        durationLabel: hasError ? 'Fejl' : (record.clockOut ? (dognbetaling ? formatDogn(dognCount) : formatDuration(durationMinutes)) : '—'),
+        hasError,
+        showStartDate: !this.dateUtility.equals(record.clockIn, date),
+        showEndDate: !!record.clockOut && !this.dateUtility.equals(record.clockOut, date),
+        muted,
+        dognbetaling,
+        dognCount,
+      };
+    };
+
+    const dayRecords: DayRecord[] = [
+      ...countedRecords.map(r => buildRow(r, false)),
+      ...echoRecords.map(r => buildRow(r, true)),
+    ];
 
     // Through clockRecordTotals rather than summed here, so this breakdown and the admin
     // overview's single figure for the same period are the same arithmetic — including the rule
-    // that a døgnbetaling record is counted as whole days and kept out of the hourly total.
-    const {minutes, dognCount} = clockRecordTotals(dayRecords.map(r => r.record));
+    // that a døgnbetaling record is counted as whole days and kept out of the hourly total. Only
+    // the counted records: a muted echo's hours are counted on the day it actually belongs to,
+    // not here as well.
+    const {minutes, dognCount} = clockRecordTotals(countedRecords);
     return {date, trips: dayTrips, records: dayRecords, totalMinutes: minutes, totalLabel: formatDuration(minutes), dognCount};
   }
 }

@@ -115,11 +115,20 @@ export function formatDogn(count: number): string {
   return `${count} døgn`;
 }
 
-/** The period a clock record belongs to, as a period key. Bucketed by clock-in: a shift that runs
- * past midnight — or past the end of a period — belongs wholly to the period it started in, the
- * same rule the day-by-day view uses to file it under the day it began. */
+/** The moment a clock record's hours are attributed to, for both the day-by-day view and the pay
+ * period it counts toward: the shift's end, not its start, so a shift that runs into the next day
+ * or the next pay period is paid out with whichever one it actually finished in — the one that
+ * might still be open, rather than one that could already be settled. A still-open shift (no
+ * clockOut yet) or one whose clockOut precedes its clockIn (recordHasError — a data-entry mistake)
+ * has no valid end to move to yet, so both fall back to clockIn. */
+export function assignmentMoment(record: ClockRecord): Moment {
+  return (record.clockOut && !recordHasError(record)) ? record.clockOut : record.clockIn;
+}
+
+/** The period a clock record belongs to, as a period key. See assignmentMoment: bucketed by where
+ * the shift ends, the same rule the day-by-day view uses to file it under the day it ended. */
 export function payPeriodKeyOf(record: ClockRecord): string {
-  return payPeriodStartFor(record.clockIn).format('YYYY-MM-DD');
+  return payPeriodStartFor(assignmentMoment(record)).format('YYYY-MM-DD');
 }
 
 /** Parses a period key back into its period. For a key read from storage. */
